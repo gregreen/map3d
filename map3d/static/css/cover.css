@@ -1,0 +1,158 @@
+
+html, body {
+  height: 100%;
+}
+
+html {
+  background: url("../media/anticenter-background-q50.jpg") no-repeat center center fixed;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+
+body {
+  margin: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.cover-banner {
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+  padding-top: 20px;
+  padding-bottom: 20px;
+  padding-left: 0px;
+  padding-right: 0px;
+}
+
+.no-lr-margin {
+  margin-left: 0px;
+  margin-right: 0px;
+}
+
+.centered {
+  text-align: center;
+}
+
+.white {
+  color: #fff;
+}
+
+.light-gray {
+  color: #ccc;
+}
+
+.med-gray {
+  color: #aaa;
+}
+
+h1, h2, li {
+  font-family: "Droid Sans", sans-serif;
+  letter-spacing: 0.15rem;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+h1 {
+  font-size: 28px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+h2 {
+  font-size: 22px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+ul {
+  padding-top: 20px;
+  padding-left: 0px;
+  list-style: none;
+}
+
+li {
+  display: inline-block;
+  font-size: 17px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+a {
+  text-decoration: none;
+  color: #eee;
+  -webkit-transition: color 0.5s;
+}
+
+a:hover {
+  text-decoration: none;
+  color: #999;
+}
+
+a .fa {
+  -webkit-transition: color 0.5s;
+}
+
+a:hover .fa {
+  color: #222;
+}
+
+.fa {
+  color: #888; /*#194775;*/
+  /*-webkit-text-stroke-width: 2px;
+  -webkit-text-stroke-color: #aaa;*/
+}
+
+a .fa-stack-1x {
+  color: #222;
+  -webkit-transition: color 0.5s;
+}
+
+a:hover .fa-stack-1x {
+  color: #eee;
+}
+
+a .semi-transparent {
+  font-size: 16px;
+  opacity: 1;
+  -webkit-transition: color 0.5s, opacity 0.5s;
+  -webkit-backface-visibility: hidden;
+  transition: color 0.5s, opacity 0.5s;
+}
+
+a:hover .semi-transparent {
+  opacity: 0;
+}
+
+.underlay-frame {
+  position: relative;
+}
+
+.underlay-centered {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  z-index: -1;
+}
+
+.v-spacer {
+  padding-bottom: 20px;
+}
+
+
+/* xs */
+@media (max-width: 767px) {
+  .no-padding-xs {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+  
+  li {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}

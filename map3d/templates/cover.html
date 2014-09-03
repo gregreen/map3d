@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+{% set active_page = "cover" %}
+
+{% block content %}
+
+<div class="container cover-banner centered">
+  <div class="row no-lr-margin">
+    <div class="col-xs-12 col-xs-offset-0 no-padding-xs col-sm-10 col-sm-offset-1 col-md-6 col-md-offset-3">
+      
+      <div class="v-spacer"></div>
+      
+      <h1 class="centered white">3D Dust Mapping</h1>
+      <h2 class="centered white">with Pan-STARRS 1</h2>
+      
+      <div class="v-spacer"></div>
+      
+      <ul class="centered white">
+        <li><a href="/query">
+          <div class="underlay-frame">
+            <div class="semi-transparent">
+              Query<br class="visible-xs"> <span class="hidden-xs"> </span>Map<br>
+            </div>
+            <span class="fa-stack fa-3x underlay-centered">
+              <i class="fa fa-square fa-stack-2x"></i>
+              <i class="fa fa-search fa-stack-1x"></i>
+            </span>
+          </div>
+        </a></li>
+        
+        <li><a href="#">
+          <div class="underlay-frame">
+            <div class="semi-transparent">
+              Download<br class="visible-xs"> <span class="hidden-xs"> </span>Data<br>
+            </div>
+            <span class="fa-stack fa-3x underlay-centered">
+              <i class="fa fa-square fa-stack-2x"></i>
+              <i class="fa fa-cloud-download fa-stack-1x"></i>
+            </span>
+          </div>
+        </a></li>
+        
+        <li><a href="#">
+          <div class="underlay-frame">
+            <div class="semi-transparent">
+              Read<br class="visible-xs"> <span class="hidden-xs"> </span>Paper<br>
+            </div>
+            <span class="fa-stack fa-3x underlay-centered">
+              <i class="fa fa-square fa-stack-2x"></i>
+              <i class="fa fa-file fa-stack-1x"></i>
+            </span>
+          </div>
+        </a></li>
+      </ul>
+    
+      <div class="v-spacer"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

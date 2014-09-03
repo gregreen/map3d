@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+{% set active_page = "query" %}
+
+{% block content %}
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-xs-12 col-sm-5 col-md-4 col-lg-3 red">
+      <div class="row black">
+        
+        <div class="col-xs-6 col-sm-12 padding-xs-5 green">
+          <div class="input-group">
+            <span class="input-group-addon"><i>&#x2113</i></span>
+            <input name="gal-l" type="text" class="form-control" placeholder="lon. (&deg)">
+          </div>
+        </div>
+        
+        <div class="col-xs-6 col-sm-12 padding-xs-5 blue">
+          <div class="input-group">
+            <span class="input-group-addon"><i>b</i></span>
+            <input name="gal-b" type="text" class="form-control" placeholder="lat. (&deg)">
+            <span class="input-group-btn">
+              <button class="btn btn-success" type="submit" id="submit-btn">
+                <span class="glyphicon glyphicon-ok"></span>
+              </button>
+            </span>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+    
+    <div class="col-xs-12 col-sm-7 col-md-8 col-lg-9 brown">
+      <h1>Plot</h1>
+    </div>
+  </div>
+</div>
+
+<script type=text/javascript>
+  $(document).ready(function() {
+    
+    $(function() {
+      $("#submit-btn").click(function() {
+        data = {
+                 l: $('input[name="gal-l"]').val(),
+                 b: $('input[name="gal-b"]').val()
+               };
+        
+        $.ajax({
+          type: "POST",
+          url: "/gal-lb-query",
+          contentType: "application/json; charset=utf-8",
+          data: JSON.stringify(data),
+          success: function(data) {
+            console.log(data);
+          }
+        });
+      });
+    });
+    
+  });
+</script>
+
+{% endblock %}
