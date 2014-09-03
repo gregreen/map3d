@@ -14,6 +14,8 @@ A cover page connects these three pages.
 Query map
 ---------
 
+In progress.
+
 This functionality is being implemented using Ajax
 queries. It is envisioned that there will be a worker
 process on the backend processing query requests.
@@ -40,6 +42,8 @@ on how to access and properly interpret the data.
 
 Read Paper(s)
 -------------
+
+TODO.
 
 Will contain a link to the map release paper, and
 possibly links to other papers related to the map.
