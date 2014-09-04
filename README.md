@@ -30,6 +30,16 @@ from the Markov Chain. The main process will then
 send this data back to the user, where front-end
 jQuery and D3 will display it.
 
+Security concerns:
+
+  * How to prevent bots or over-ambitious users
+    from flooding the queue with requests. Require
+    login? Use some sort of automatic session or
+    user identifier?
+  * Is it possible for middlemen to insert malicious
+    links/content into the data returned to the
+    user's browser?
+
 Download Map
 ------------
 
@@ -49,7 +59,7 @@ Will contain a link to the map release paper, and
 possibly links to other papers related to the map.
 
 One possibility is including a set of linked thumbnails,
-like in [Greg's home page](greg.ory.gr/een#papers).
+like in [Greg's home page](http://greg.ory.gr/een#papers).
 
 Credit
 ------
