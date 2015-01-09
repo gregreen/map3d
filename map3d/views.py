@@ -1,6 +1,8 @@
 from map3d import app
 
-from flask import render_template, redirect, request
+from flask import render_template, redirect, request, jsonify
+
+import postage_stamp
 
 
 @app.route('/')
@@ -16,12 +18,18 @@ def gal_lb_query():
     l = float(request.json['l'])
     b = float(request.json['b'])
     
+    assert((b <= 90.) and (b >= -90.))
+    
+    dists = [300., 1000., 5000.]
+    
     print 'l,b = (%.2f, %.2f)' % (l, b)
     
-    # TODO:
-    #   * Pass (l,b) to plot generating function
-    #   * Get filename from function
-    #   * Return filename through AJAX
+    img = postage_stamp.postage_stamps(l, b, dists=dists)
+    img = [postage_stamp.encode_image(img_d) for img_d in img]
     
-    return str(request.json)
-
+    label = ['%d pc' % d for d in dists]
+    
+    return jsonify(l=l, b=b,
+                   label1=label[0], image1=img[0],
+                   label2=label[1], image2=img[1],
+                   label3=label[2], image3=img[2])

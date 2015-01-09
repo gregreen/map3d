@@ -4,35 +4,50 @@
 {% block content %}
 
 <div class="container-fluid">
-  <div class="row">
-    <div class="col-xs-12 col-sm-5 col-md-4 col-lg-3 red">
-      <div class="row black">
-        
-        <div class="col-xs-6 col-sm-12 padding-xs-5 green">
-          <div class="input-group">
-            <span class="input-group-addon"><i>&#x2113</i></span>
-            <input name="gal-l" type="text" class="form-control" placeholder="lon. (&deg)">
-          </div>
-        </div>
-        
-        <div class="col-xs-6 col-sm-12 padding-xs-5 blue">
-          <div class="input-group">
-            <span class="input-group-addon"><i>b</i></span>
-            <input name="gal-b" type="text" class="form-control" placeholder="lat. (&deg)">
-            <span class="input-group-btn">
-              <button class="btn btn-success" type="submit" id="submit-btn">
-                <span class="glyphicon glyphicon-ok"></span>
-              </button>
-            </span>
-          </div>
-        </div>
-        
+  <div class="row black">
+    
+    <div class="col-xs-12 col-sm-6 col-md-6 padding-xs-5 green">
+      <div class="input-group">
+        <span class="input-group-addon"><i>&#x2113</i></span>
+        <input name="gal-l" type="text" class="form-control" placeholder="lon. (&deg)">
       </div>
     </div>
     
-    <div class="col-xs-12 col-sm-7 col-md-8 col-lg-9 brown">
-      <h1>Plot</h1>
+    <div class="col-xs-12 col-sm-6 col-md-6 padding-xs-5 blue">
+      <div class="input-group">
+        <span class="input-group-addon"><i>b</i></span>
+        <input name="gal-b" type="text" class="form-control" placeholder="lat. (&deg)">
+        <span class="input-group-btn">
+          <button class="btn btn-success" type="submit" id="submit-btn">
+            <span class="glyphicon glyphicon-ok"></span>
+          </button>
+      </span>
+      </div>
     </div>
+    
+    <div class="col-xs-12 col-sm-12 brown">
+      <h1>Interactive Line Plot</h1>
+    </div>
+    
+    <div class="col-xs-12 col-sm-12 cyan">
+      <h1>Postage Stamps</h1>
+      
+      <div class="row">
+        <div class="thumbnail col-xs-12 col-sm-4 red">
+          <img id="postage-stamp-1" src="" class="img-responsive" />
+          <h4 id="ps-label-1" class="ps-label"></h4>
+        </div>
+        <div class="thumbnail col-xs-12 col-sm-4 red">
+          <img id="postage-stamp-2" src="" class="img-responsive" />
+          <h4 id="ps-label-2" class="ps-label"></h4>
+        </div>
+        <div class="thumbnail col-xs-12 col-sm-4 red">
+          <img id="postage-stamp-3" src="" class="img-responsive" />
+          <h4 id="ps-label-3" class="ps-label"></h4>
+        </div>
+      </div>
+    </div>
+  
   </div>
 </div>
 
@@ -53,6 +68,12 @@
           data: JSON.stringify(data),
           success: function(data) {
             console.log(data);
+            $("#postage-stamp-1").attr("src", data.image1);
+            $("#postage-stamp-2").attr("src", data.image2);
+            $("#postage-stamp-3").attr("src", data.image3);
+            $("#ps-label-1").text(data.label1);
+            $("#ps-label-2").text(data.label2);
+            $("#ps-label-3").text(data.label3);
           }
         });
       });

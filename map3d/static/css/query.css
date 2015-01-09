@@ -23,7 +23,14 @@
   background: #a52;
 }
 
+.cyan {
+  background: #0ff;
+}
 
+
+.ps-label {
+  text-align: center;
+}
 
 /* xs */
 @media (max-width: 767px) {
