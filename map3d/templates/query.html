@@ -27,6 +27,9 @@
     
     <div class="col-xs-12 col-sm-12 brown">
       <h1>Interactive Line Plot</h1>
+      <div class="box-aspect-2-1">
+        <div class="line-plot-container"></div>
+      </div>
     </div>
     
     <div class="col-xs-12 col-sm-12 cyan">
@@ -68,6 +71,7 @@
           data: JSON.stringify(data),
           success: function(data) {
             console.log(data);
+            createplot($.parseJSON(data.mu), $.parseJSON(data.EBV));
             $("#postage-stamp-1").attr("src", data.image1);
             $("#postage-stamp-2").attr("src", data.image2);
             $("#postage-stamp-3").attr("src", data.image3);
@@ -78,6 +82,70 @@
         });
       });
     });
+    
+    var createplot = function(mu, EBV) {
+      d3.select("svg").remove();
+      
+      var margins = {left:50, right:20,
+                     bottom:50, top:20,
+                     xlabel:20, ylabel:20};
+      
+      var $container = $(".line-plot-container"),
+        width = $container.width() - margins.left - margins.right,
+        height = $container.height() - margins.bottom - margins.top;
+      
+      var x = d3.scale.linear()
+        .domain(d3.extent(mu))
+        .range([0, width]);
+      
+      var y = d3.scale.linear()
+        .domain([0, d3.max(EBV)])
+        .range([height, 0]);
+      
+      var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+      
+      var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left");
+      
+      var line = d3.svg.line()
+        .x(function(d) { return x(d[0]); })
+        .y(function(d) { return y(d[1]); });
+      
+      var svg = d3.select(".line-plot-container").append("svg")
+        .attr("width", "100%")
+        .attr("height", "100%")
+        .attr("viewBox", "0 0 " + (width + margins.left + margins.right) + " " + (height + margins.bottom + margins.top))
+        //"-" + margins.left + " -" + margins.bottom + " " + (width + margins.right) + " " + (height + margins.top))
+        .attr("preserveAspectRatio", "xMinYMin")
+        .append("g")
+          .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
+      
+      svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis)
+        .append("text")
+          .attr("dy", "2.8em")
+          .text("Distance Modulus (mags)");
+      
+      svg.append("g")
+          .attr("class", "y axis")
+          .call(yAxis)
+        .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 0)
+          .attr("dy", "-2.8em")
+          .style("text-anchor", "end")
+          .text("E(B-V) (mags)");
+      
+      svg.append("path")
+        .data([d3.zip(mu,EBV)])
+        .attr("class", "line")
+        .attr("d", line);
+    };
     
   });
 </script>

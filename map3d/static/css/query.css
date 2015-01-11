@@ -39,3 +39,39 @@
     padding-right: 5px;
   }
 }
+
+
+.line-plot-container{
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+
+.box-aspect-2-1 {
+  position: relative;
+  width: 100%;
+}
+
+.box-aspect-2-1:before{
+  content: "";
+  display: block;
+  padding-top: 50%; /* initial ratio of 2:1*/
+}
+
+
+/* d3 Properties */
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}

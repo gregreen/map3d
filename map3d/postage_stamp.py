@@ -1,9 +1,9 @@
 import numpy as np
+np.seterr(invalid='ignore')
+
 import healpy as hp
-import h5py
 
 import itertools
-import os
 
 import urllib
 from PIL import Image
@@ -12,51 +12,20 @@ from StringIO import StringIO
 import hputils
 
 
-script_dir = os.path.dirname(os.path.realpath(__file__))
-static_path = os.path.join(script_dir, 'static')
-
-
-def load_data():
-    slice_idx = [7, 12, 19]
+def encode_image(img_arr, c_mask=(202,222,219)):
+    img_arr = img_arr.T[::-1,:]
+    nan_mask = ~np.isfinite(img_arr)
     
-    print 'Loading map ...'
+    img_arr[img_arr > 1.] = 1.
     
-    fname = os.path.join(static_path, 'EBV_1024_f4.h5')
-    f = h5py.File(fname, 'r')
-    nside = f['EBV'].attrs['nside']
-    EBV_slices = f['EBV'][slice_idx,:]
-    f.close()
+    img_arr = (255. * img_arr).astype(np.uint8)
+    img_arr.shape = (img_arr.shape[0], img_arr.shape[1], 1)
+    img_arr = np.repeat(img_arr, 3, axis=2)
     
-    print 'Done loading.'
+    for k in xrange(3):
+        img_arr[nan_mask, k] = c_mask[k]
     
-    return nside, EBV_slices.T
-    
-    '''
-    nside = 512
-    radius = 5.
-    l, b = 30., 15.
-    
-    print 'Generating map...'
-    n_pix = hp.pixelfunc.nside2npix(nside)
-    
-    t_0 = np.radians(90. - b)
-    p_0 = np.radians(l)
-    
-    theta, phi = hp.pixelfunc.pix2ang(nside, np.arange(n_pix), nest=True)
-    dist = hp.rotator.angdist([t_0, p_0], [theta, phi])
-    
-    m = np.sinc(3.5 * dist/np.radians(radius))
-    m = np.sqrt(np.abs(m))
-    m /= np.max(m)
-    print m
-    
-    return nside, np.array([m/3., m*2./3., m]).T
-    '''
-
-
-def encode_image(img_arr):
-    img_arr = (255. * img_arr.T[::-1,:]).astype(np.uint8)
-    img = Image.fromarray(img_arr, mode='L')
+    img = Image.fromarray(img_arr, mode='RGB')
     
     img_io = StringIO()
     img.save(img_io, 'PNG')
@@ -68,7 +37,10 @@ def encode_image(img_arr):
     return data
 
 
-def postage_stamps(l, b, radius=15., width=500, dists=[300., 1000., 5000.]):
+def postage_stamps(map_pixval, map_nside, l, b,
+                   radius=15., width=500,
+                   dists=[300., 1000., 5000.],
+                   difference=False):
     img_shape = (2*width, 2*width)
     
     x0 = width/2
@@ -88,11 +60,15 @@ def postage_stamps(l, b, radius=15., width=500, dists=[300., 1000., 5000.]):
     
     img = [rasterizer(pix_val[:,k])[x0:x1, y0:y1] for k,d in enumerate(dists)]
     
-    vmax = np.percentile(img[-1], 99.)
+    if difference:
+        img[2] -= img[1]
+        img[1] -= img[0]
+        vmax = np.percentile(img[np.isfinite(img)], 99.5)
+    else:
+        vmax = np.percentile(img[-1][np.isfinite(img[-1])], 99.)
     
     for i in img:
         i *= 1./vmax
-        i[i > 1.] = 1.
     
     return img
 
@@ -120,6 +96,3 @@ def rasterize_region(m, l, b, radius=1.,
     img = rasterizer(m[pix_idx])
     
     return img
-
-
-map_nside, map_pixval = load_data()
