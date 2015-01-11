@@ -30,7 +30,9 @@
 
 .ps-label {
   text-align: center;
+  font-family: "Lora", serif;
 }
+
 
 /* xs */
 @media (max-width: 767px) {
@@ -76,4 +78,3 @@
   stroke: steelblue;
   stroke-width: 2.5px;
 }
-

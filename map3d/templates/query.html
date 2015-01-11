@@ -26,7 +26,7 @@
     </div>
     
     <div class="col-xs-12 col-sm-12 brown">
-      <h1>Interactive Line Plot</h1>
+      <h2>Reddening vs. Distance</h2>
       <div class="box-aspect-2-1">
         <div class="line-plot-container"></div>
       </div>
@@ -59,7 +59,6 @@
     
     var drawplot = function(container, xdata, ydata) {
       $(container).empty();
-      //d3.select("svg").remove();
       
       var fullwidth = $(container).width(),
           fullheight = $(container).height();
@@ -92,7 +91,8 @@
       
       var yAxis = d3.svg.axis()
         .scale(y)
-        .orient("left");
+        .orient("left")
+        .ticks(6);
       
       var line = d3.svg.line()
         .x(function(d) { return x(d[0]); })
@@ -102,11 +102,6 @@
         .attr("width", fullwidth)
         .attr("height", fullheight)
         .attr("viewBox", "0 0 " + fullwidth + " " + fullheight)
-        //.attr("width", "100%")
-        //.attr("height", "100%")
-        //.attr("viewBox", "0 0 " + (width + margins.left + margins.right) + " " + (height + margins.bottom + margins.top))
-        //"-" + margins.left + " -" + margins.bottom + " " + (width + margins.right) + " " + (height + margins.top))
-        //.attr("preserveAspectRatio", "xMinYMin")
         .append("g")
           .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
       
@@ -115,8 +110,10 @@
           .attr("transform", "translate(0," + height + ")")
           .call(xAxis)
         .append("text")
-          .attr("dy", (3.4*ticksize) + "pt")
-          .text("Distance Modulus (mags)");
+          .attr("x", width/2)
+          .attr("dy", (3*ticksize) + "pt")
+          .text("Distance Modulus (mags)")
+          .style("text-anchor", "middle");
       
       svg.append("g")
           .attr("class", "y axis")
@@ -124,8 +121,9 @@
         .append("text")
           .attr("transform", "rotate(-90)")
           .attr("y", 0)
-          .attr("dy", (-3.4*ticksize) + "pt")
-          .style("text-anchor", "end")
+          .attr("x", -height/2)
+          .attr("dy", (-3*ticksize) + "pt")
+          .style("text-anchor", "middle")
           .text("E(B-V) (mags)");
       
       svg.append("path")
@@ -135,11 +133,11 @@
       
       d3.selectAll(".tick > text")
         .style("font-size", ticksize + "pt")
-        .style("font-family", "Droid Sans");
+        .style("font-family", "Lora");
       
       d3.selectAll(".axis > text")
         .style("font-size", labelsize + "pt")
-        .style("font-family", "Droid Sans");
+        .style("font-family", "Lora");
     };
     
     var debounce = function(fn, timeout) {
