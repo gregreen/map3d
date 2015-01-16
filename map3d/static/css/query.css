@@ -61,6 +61,10 @@ h1, h2 {
 }
 
 
+/*
+ * Container divs
+ */
+
 .line-plot-container{
   position: absolute;
   top: 0;
@@ -80,6 +84,27 @@ h1, h2 {
   padding-top: 50%; /* initial ratio of 2:1*/
 }
 
+.ps-container {
+  display: inline-block;
+  position: relative;
+  text-align: center;
+}
+
+.ps-container span {
+  position: absolute;
+  line-height: 20px;
+  display: block;
+  top: 50%;
+  margin-top: -10px;
+  width: 100%;
+  color: steelblue;
+  font-size: x-large;
+}
+
+h1 {
+  text-align: center;
+}
+
 
 /* d3 Properties */
 
@@ -93,6 +118,4 @@ h1, h2 {
 
 .line {
   fill: none;
-  stroke: steelblue;
-  stroke-width: 2.5px;
 }

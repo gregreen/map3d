@@ -37,15 +37,24 @@
       
       <div class="row">
         <div class="thumbnail col-xs-12 col-sm-4 red">
-          <img id="postage-stamp-1" src="" class="img-responsive" />
+          <div class="ps-container">
+            <img id="postage-stamp-1" src="" class="img-responsive" />
+            <span>+</span>
+          </div>
           <h4 id="ps-label-1" class="ps-label"></h4>
         </div>
         <div class="thumbnail col-xs-12 col-sm-4 red">
-          <img id="postage-stamp-2" src="" class="img-responsive" />
+          <div class="ps-container">
+            <img id="postage-stamp-2" src="" class="img-responsive" />
+            <span>+</span>
+          </div>
           <h4 id="ps-label-2" class="ps-label"></h4>
         </div>
         <div class="thumbnail col-xs-12 col-sm-4 red">
-          <img id="postage-stamp-3" src="" class="img-responsive" />
+          <div class="ps-container">
+            <img id="postage-stamp-3" src="" class="img-responsive" />
+            <span>+</span>
+          </div>
           <h4 id="ps-label-3" class="ps-label"></h4>
         </div>
       </div>
@@ -57,9 +66,13 @@
 <script type=text/javascript>
   $(document).ready(function() {
     
-    var drawplot = function(container, xdata, ydata) {
-      $(container).empty();
-      
+    function packData(xVals, yData) {
+      return d3.range(yData.length).map( function(idx) {
+        return d3.zip(xVals, yData[idx]);
+      });
+    };
+    
+    function drawPlot(container, dt, xVals, yBest, ySamples) {
       var fullwidth = $(container).width(),
           fullheight = $(container).height();
       
@@ -85,6 +98,10 @@
         .domain([0, 1.1*d3.max(best)])
         .range([height, 0]);
       
+      var line = d3.svg.line()
+        .x(function(d) { return x(d[0]); })
+        .y(function(d) { return y(d[1]); });
+      
       var xAxis = d3.svg.axis()
         .scale(x)
         .orient("bottom");
@@ -94,43 +111,68 @@
         .orient("left")
         .ticks(6);
       
-      var line = d3.svg.line()
-        .x(function(d) { return x(d[0]); })
-        .y(function(d) { return y(d[1]); });
+      // SVG Canvas
+      if (d3.select(container).selectAll("svg")[0].length < 1) {
+        svg = d3.select(container).append("svg")
+          .attr("width", fullwidth)
+          .attr("height", fullheight)
+          .attr("viewBox", "0 0 " + fullwidth + " " + fullheight)
+          .append("g")
+            .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
+      } else {
+        d3.select(container).select("svg")
+          .attr("width", fullwidth)
+          .attr("height", fullheight)
+          .attr("viewBox", "0 0 " + fullwidth + " " + fullheight)
+          .select("g")
+            .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
+      }
       
-      var svg = d3.select(".line-plot-container").append("svg")
-        .attr("width", fullwidth)
-        .attr("height", fullheight)
-        .attr("viewBox", "0 0 " + fullwidth + " " + fullheight)
-        .append("g")
-          .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
-      
-      svg.append("g")
+      // x-Axis
+      if (svg.selectAll(".x.axis")[0].length < 1) {
+        svg.append("g")
           .attr("class", "x axis")
           .attr("transform", "translate(0," + height + ")")
           .call(xAxis)
         .append("text")
+          .attr("id", "xlabel")
           .attr("x", width/2)
           .attr("dy", (3*ticksize) + "pt")
           .text("Distance Modulus (mags)")
           .style("text-anchor", "middle");
+      } else {
+        svg.selectAll(".x.axis")
+          .attr("transform", "translate(0," + height + ")")
+          .transition(dt).duration(dt)
+          .call(xAxis)
+        .select("#xlabel")
+          .attr("x", width/2)
+          .attr("dy", (3*ticksize) + "pt");
+      }
       
-      svg.append("g")
+      // y-Axis
+      if (svg.selectAll(".y.axis")[0].length < 1) {
+        svg.append("g")
           .attr("class", "y axis")
           .call(yAxis)
         .append("text")
+          .attr("id", "ylabel")
           .attr("transform", "rotate(-90)")
           .attr("y", 0)
           .attr("x", -height/2)
           .attr("dy", (-3*ticksize) + "pt")
           .style("text-anchor", "middle")
           .text("E(B-V) (mags)");
+      } else {
+        svg.selectAll(".y.axis")
+          .transition().duration(dt)
+          .call(yAxis)
+        .select("#ylabel")
+          .attr("x", -height/2)
+          .attr("dy", (-3*ticksize) + "pt");
+      }
       
-      svg.append("path")
-        .data([d3.zip(xdata,ydata)])
-        .attr("class", "line")
-        .attr("d", line);
-      
+      // Fonts
       d3.selectAll(".tick > text")
         .style("font-size", ticksize + "pt")
         .style("font-family", "Lora");
@@ -138,6 +180,51 @@
       d3.selectAll(".axis > text")
         .style("font-size", labelsize + "pt")
         .style("font-family", "Lora");
+      
+      // Best Line
+      data = [d3.zip(xVals, yBest)];
+      
+      var lines = svg.selectAll("#best").data(data).attr("class", "line");
+      
+      // transition from previous paths to new paths
+      lines.transition().duration(dt)
+        .attr("d", line);
+      
+      // enter any new data
+      lines.enter()
+        .append("path")
+        .attr("id", "best")
+        .attr("class", "line")
+        .attr("d", line)
+        .attr("stroke", "steelblue")
+        .attr("stroke-width", "2.5px");
+      
+      // exit
+      lines.exit()
+        .remove();
+      
+      // Samples
+      data = packData(xVals, ySamples);
+      
+      var lines = svg.selectAll("#samples").data(data).attr("class", "line");
+      
+      // transition from previous paths to new paths
+      lines.transition().duration(dt)
+        .attr("d", line);
+      
+      // enter any new data
+      lines.enter()
+        .append("path")
+        .attr("id", "samples")
+        .attr("class", "line")
+        .attr("d", line)
+        .attr("opacity", 0.2)
+        .attr("stroke", "steelblue")
+        .attr("stroke-width", "1.5px");
+      
+      // exit
+      lines.exit()
+        .remove();
     };
     
     var debounce = function(fn, timeout) {
@@ -150,12 +237,16 @@
       }
     };
     
-    lineplotcontainer = $(".line-plot-container");
+    lineplotcontainer = ".line-plot-container";
     
-    mu = [4, 19];
-    best = [0, 0];
+    mu = d3.range(4, 19, 0.5);
+    best = Array.apply(null, new Array(32)).map(Number.prototype.valueOf,0);
+    samples = [best];
     
-    drawplot(lineplotcontainer, mu, best);
+    console.log(mu);
+    console.log(best);
+    
+    drawPlot(lineplotcontainer, 0, mu, best, samples);
     
     $(function() {
       $("#submit-btn").click(function() {
@@ -173,7 +264,8 @@
             console.log(data);
             mu = $.parseJSON(data.mu);
             best = $.parseJSON(data.best);
-            drawplot(lineplotcontainer, mu, best);
+            samples = $.parseJSON(data.samples);
+            drawPlot(lineplotcontainer, 500, mu, best, samples);
             $("#postage-stamp-1").attr("src", data.image1);
             $("#postage-stamp-2").attr("src", data.image2);
             $("#postage-stamp-3").attr("src", data.image3);
@@ -186,7 +278,7 @@
     });
     
     var debounced_drawplot = debounce(function() {
-      drawplot(lineplotcontainer, mu, EBV);
+      drawPlot(lineplotcontainer, 200, mu, best, samples);
     }, 125);
     
     $(window).resize(debounced_drawplot);

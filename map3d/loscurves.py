@@ -10,6 +10,14 @@ def get_los(map_query, l, b):
     
     los_data = map_query(l, b)
     
+    if los_data == None:
+        best = np.zeros(len(mu)).tolist()
+        samples = [best]
+        n_stars = 0
+        converged = 0
+        
+        return mu, best, samples, n_stars, converged
+    
     best = los_data['best'].tolist()
     samples = los_data['samples'].tolist()
     n_stars = los_data['n_stars'].tolist()
