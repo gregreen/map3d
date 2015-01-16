@@ -63,9 +63,20 @@ def postage_stamps(map_pixval, map_nside, l, b,
     if difference:
         img[2] -= img[1]
         img[1] -= img[0]
-        vmax = np.percentile(img[np.isfinite(img)], 99.5)
+        
+        idx = np.isfinite(img)
+        
+        if np.sum(idx) == 0:
+            return img
+        
+        vmax = np.percentile(img[idx], 99.5)
     else:
-        vmax = np.percentile(img[-1][np.isfinite(img[-1])], 99.)
+        idx = np.isfinite(img[-1])
+        
+        if np.sum(idx) == 0:
+            return img
+        
+        vmax = np.percentile(img[-1][idx], 99.)
     
     for i in img:
         i *= 1./vmax

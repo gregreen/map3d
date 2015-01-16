@@ -31,7 +31,7 @@ def gal_lb_query():
                                        l, b, dists=dists)
     img = [postage_stamp.encode_image(img_d) for img_d in img]
     
-    mu, EBV = loscurves.get_encoded_los(mapdata.mapper, l, b)
+    mu, best, samples, n_stars, converged = loscurves.get_encoded_los(mapdata.map_query, l, b)
     
     label = ['%d pc' % d for d in dists]
     
@@ -39,4 +39,5 @@ def gal_lb_query():
                    label1=label[0], image1=img[0],
                    label2=label[1], image2=img[1],
                    label3=label[2], image3=img[2],
-                   mu=mu, EBV=EBV)
+                   mu=mu, best=best, samples=samples,
+                   n_stars=n_stars, converged=converged)

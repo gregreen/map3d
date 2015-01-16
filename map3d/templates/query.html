@@ -26,7 +26,7 @@
     </div>
     
     <div class="col-xs-12 col-sm-12 brown">
-      <h2>Reddening vs. Distance</h2>
+      <h1>Reddening vs. Distance</h1>
       <div class="box-aspect-2-1">
         <div class="line-plot-container"></div>
       </div>
@@ -82,7 +82,7 @@
         .range([0, width]);
       
       var y = d3.scale.linear()
-        .domain([0, d3.max(EBV)])
+        .domain([0, 1.1*d3.max(best)])
         .range([height, 0]);
       
       var xAxis = d3.svg.axis()
@@ -153,9 +153,9 @@
     lineplotcontainer = $(".line-plot-container");
     
     mu = [4, 19];
-    EBV = [0, 0];
+    best = [0, 0];
     
-    drawplot(lineplotcontainer, mu, EBV);
+    drawplot(lineplotcontainer, mu, best);
     
     $(function() {
       $("#submit-btn").click(function() {
@@ -172,8 +172,8 @@
           success: function(data) {
             console.log(data);
             mu = $.parseJSON(data.mu);
-            EBV = $.parseJSON(data.EBV);
-            drawplot(lineplotcontainer, mu, EBV);
+            best = $.parseJSON(data.best);
+            drawplot(lineplotcontainer, mu, best);
             $("#postage-stamp-1").attr("src", data.image1);
             $("#postage-stamp-2").attr("src", data.image2);
             $("#postage-stamp-3").attr("src", data.image3);

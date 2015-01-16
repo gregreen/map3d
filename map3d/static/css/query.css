@@ -1,4 +1,17 @@
 
+body {
+  padding-bottom: 0px;
+}
+
+html {
+  background-color:#EDF2F7;
+}
+
+div {
+  background:#EDF2F7;
+}
+
+/*
 .red {
   background: #f00;
 }
@@ -26,7 +39,12 @@
 .cyan {
   background: #0ff;
 }
+*/
 
+
+h1, h2 {
+  font-family: "Lora", serif;
+}
 
 .ps-label {
   text-align: center;
