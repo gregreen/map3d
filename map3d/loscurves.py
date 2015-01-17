@@ -23,10 +23,9 @@ def get_los(map_query, l, b):
     n_stars = los_data['n_stars'].tolist()
     converged = int(np.all(los_data['GR'] < 1.2))
     
-    #mu_0 = np.random.normal(loc=10., scale=3.)
-    #sigma = 0.5 + 4.5 * np.random.random()
-    #dE = np.random.random(mu.shape) * np.exp(-0.5 * ((mu-mu_0)/sigma)**2.)
-    #E = np.cumsum(dE)
+    #print converged
+    #converged = np.random.randint(0,2)
+    #print converged
     
     return mu, best, samples, n_stars, converged
 

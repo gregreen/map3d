@@ -72,7 +72,7 @@
       });
     };
     
-    function drawPlot(container, dt, xVals, yBest, ySamples) {
+    function drawPlot(container, dt, xVals, yBest, ySamples, conv) {
       var fullwidth = $(container).width(),
           fullheight = $(container).height();
       
@@ -118,16 +118,42 @@
           .attr("height", fullheight)
           .attr("viewBox", "0 0 " + fullwidth + " " + fullheight)
           .append("g")
+            .attr("id", "main-group")
             .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
         
-        lineGroup = svg.append("g");
+        lineGroup = svg.append("g")
+          .attr("id", "DM-EBV-lines");
+        
+        svg.append("g")
+          .attr("class", "toggle-converged")
+          .style("opacity", 0)
+          .append("text")
+            .attr("id", "convergence-warning")
+            .attr("x", 0.975*width)
+            .attr("y", height)
+            .attr("dy", (-1*ticksize) + "pt")
+            .style("text-anchor", "end")
+            .style("font-size", ticksize + "pt")
+            .style("font-family", "Cutive Mono")
+            .style("fill", "red")
+            .text("non-converged!");
       } else {
         d3.select(container).select("svg")
           .attr("width", fullwidth)
           .attr("height", fullheight)
-          .attr("viewBox", "0 0 " + fullwidth + " " + fullheight)
-          .select("g")
-            .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
+          .attr("viewBox", "0 0 " + fullwidth + " " + fullheight);
+        
+        d3.select("#main-group")
+          .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
+        
+        console.log(d3.selectAll("#convergence-warning").length);
+        
+        d3.select("#convergence-warning")
+          .transition().duration(dt)
+          .attr("x", 0.975*width)
+          .attr("y", height)
+          .attr("dy", (-1*ticksize) + "pt")
+          .style("font-size", ticksize + "pt");
       }
       
       // x-Axis
@@ -146,8 +172,9 @@
         svg.selectAll(".x.axis")
           .attr("transform", "translate(0," + height + ")")
           .transition(dt).duration(dt)
-          .call(xAxis)
-        .select("#xlabel")
+          .call(xAxis);
+        
+        d3.select("#xlabel")
           .attr("x", width/2)
           .attr("dy", (3*ticksize) + "pt");
       }
@@ -168,8 +195,9 @@
       } else {
         svg.selectAll(".y.axis")
           .transition().duration(dt)
-          .call(yAxis)
-        .select("#ylabel")
+          .call(yAxis);
+        
+        d3.select("#ylabel")
           .attr("x", -height/2)
           .attr("dy", (-3*ticksize) + "pt");
       }
@@ -183,6 +211,21 @@
         .style("font-size", labelsize + "pt")
         .style("font-family", "Lora");
       
+      // Change plot appearance based on (non-)convergence
+      if (conv == 0) {
+        lineColor = "red";
+        
+        d3.selectAll(".toggle-converged")
+          .transition().duration(dt)
+          .style("opacity", 1);
+      } else {
+        lineColor = "steelblue";
+        
+        d3.selectAll(".toggle-converged")
+          .transition().duration(dt)
+          .style("opacity", 0);
+      }
+      
       // Best Line
       bestData = [d3.zip(xVals, yBest)];
       
@@ -190,6 +233,7 @@
       
       // transition from previous paths to new paths
       lines.transition().duration(dt)
+        .attr("stroke", lineColor)
         .attr("d", line);
       
       // enter any new data
@@ -198,7 +242,7 @@
         .attr("id", "best")
         .attr("class", "line")
         .attr("d", line)
-        .attr("stroke", "steelblue")
+        .attr("stroke", lineColor)
         .attr("stroke-width", "2.5px");
       
       // exit
@@ -212,6 +256,7 @@
       
       // transition from previous paths to new paths
       lines.transition().duration(dt)
+        .attr("stroke", lineColor)
         .attr("d", line);
       
       // enter any new data
@@ -221,7 +266,7 @@
         .attr("class", "line")
         .attr("d", line)
         .attr("opacity", 0.2)
-        .attr("stroke", "steelblue")
+        .attr("stroke", lineColor)
         .attr("stroke-width", "1.5px");
       
       // exit
@@ -366,9 +411,10 @@
     mu = d3.range(4, 19.01, 0.5);
     best = Array.apply(null, new Array(mu.length)).map(Number.prototype.valueOf,0);
     samples = [best];
+    converged = 1;
     
     // Draw initial plot
-    drawPlot(linePlotContainer, 0, mu, best, samples);
+    drawPlot(linePlotContainer, 0, mu, best, samples, converged);
     
     // Execute the query
     function submitQuery() {
@@ -389,7 +435,8 @@
           mu = $.parseJSON(data.mu);
           best = $.parseJSON(data.best);
           samples = $.parseJSON(data.samples);
-          drawPlot(linePlotContainer, 500, mu, best, samples);
+          converged = $.parseJSON(data.converged);
+          drawPlot(linePlotContainer, 500, mu, best, samples, converged);
           $("#postage-stamp-1").attr("src", data.image1);
           $("#postage-stamp-2").attr("src", data.image2);
           $("#postage-stamp-3").attr("src", data.image3);
@@ -431,7 +478,7 @@
     };
     
     var debouncedDrawPlot = debounce(function() {
-      drawPlot(linePlotContainer, 200, mu, best, samples);
+      drawPlot(linePlotContainer, 200, mu, best, samples, converged);
     }, 125);
     
     $(window).resize(debouncedDrawPlot);
