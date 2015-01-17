@@ -97,8 +97,9 @@ h1, h2 {
   top: 50%;
   margin-top: -10px;
   width: 100%;
-  color: steelblue;
+  color: #FFD35C;
   font-size: large;
+  opacity: 0.5;
 }
 
 h1 {
@@ -119,3 +120,9 @@ h1 {
 .line {
   fill: none;
 }
+
+.overlay {
+  fill: none;
+  pointer-events: all;
+}
+

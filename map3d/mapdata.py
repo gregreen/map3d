@@ -7,13 +7,13 @@ import hputils
 
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
-static_path = os.path.join(script_dir, 'static')
+data_path = os.path.join(script_dir, 'static', 'data')
 
 
 def load_images():
     slice_idx = [7, 12, 19]
     
-    fname = os.path.join(static_path, 'EBV_1024_f4.h5')
+    fname = os.path.join(data_path, 'EBV_1024_f4.h5')
     f = h5py.File(fname, 'r')
     nside = f['EBV'].attrs['nside']
     EBV_slices = f['EBV'][slice_idx,:]
@@ -95,7 +95,7 @@ class MapQuery:
 
 
 print 'Loading map query object ...'
-map_query = MapQuery(os.path.join(static_path, 'compact_10samp_small.h5'))
+map_query = MapQuery(os.path.join(data_path, 'compact_10samp_small.h5'))
 print 'Loading map images ...'
 map_nside, map_pixval = load_images()
 print 'Done loading data.'

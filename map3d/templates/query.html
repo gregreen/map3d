@@ -90,12 +90,12 @@
       var width = fullwidth - margins.left - margins.right,
           height = fullheight - margins.bottom - margins.top;
       
-      var x = d3.scale.linear()
-        .domain(d3.extent(mu))
+      x = d3.scale.linear()
+        .domain(d3.extent(xVals))
         .range([0, width]);
       
-      var y = d3.scale.linear()
-        .domain([0, 1.1*d3.max(best)])
+      y = d3.scale.linear()
+        .domain([0, 1.1*d3.max(yBest)])
         .range([height, 0]);
       
       var line = d3.svg.line()
@@ -119,6 +119,8 @@
           .attr("viewBox", "0 0 " + fullwidth + " " + fullheight)
           .append("g")
             .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
+        
+        lineGroup = svg.append("g");
       } else {
         d3.select(container).select("svg")
           .attr("width", fullwidth)
@@ -182,9 +184,9 @@
         .style("font-family", "Lora");
       
       // Best Line
-      data = [d3.zip(xVals, yBest)];
+      bestData = [d3.zip(xVals, yBest)];
       
-      var lines = svg.selectAll("#best").data(data).attr("class", "line");
+      var lines = lineGroup.selectAll("#best").data(bestData).attr("class", "line");
       
       // transition from previous paths to new paths
       lines.transition().duration(dt)
@@ -204,9 +206,9 @@
         .remove();
       
       // Samples
-      data = packData(xVals, ySamples);
+      sampleData = packData(xVals, ySamples);
       
-      var lines = svg.selectAll("#samples").data(data).attr("class", "line");
+      var lines = lineGroup.selectAll("#samples").data(sampleData).attr("class", "line");
       
       // transition from previous paths to new paths
       lines.transition().duration(dt)
@@ -225,13 +227,144 @@
       // exit
       lines.exit()
         .remove();
+      
+      /*
+       *  Mouseover
+       */
+      
+      if (svg.selectAll("#focus")[0].length < 1) {
+        console.log("Creating focus");
+        
+        focus = svg.append("g")
+          .attr("id", "focus")
+          .attr("display", "none");
+        
+        svg.append("rect")
+          .attr("id", "mouse-overlay")
+          .attr("class", "overlay")
+          .attr("width", width)
+          .attr("height", height)
+          .on("mouseover", function() { d3.select("#focus").attr("display", null); })
+          .on("mouseout", function() { d3.select("#focus").attr("display", "none"); })
+          .on("mousemove", mouseMove);
+        
+        focus.append("line")
+          .attr("id", "x-indicator")
+          .attr("x1", 0)
+          .attr("x2", 0)
+          .attr("y1", 0)
+          .attr("y2", height)
+          .attr("stroke", "black")
+          .attr("stroke-width", "2px")
+          .attr("opacity", 0.15);
+        
+        focus.append("line")
+          .attr("id", "y-indicator")
+          .attr("x1", 0)
+          .attr("x2", width)
+          .attr("y1", 0)
+          .attr("y2", 0)
+          .attr("stroke", "black")
+          .attr("stroke-width", "2px")
+          .attr("opacity", 0.15);
+        
+        txtEl = focus.append("text")
+          .attr("id", "text-indicator")
+          .attr("x", 0)
+          .attr("y", 0)
+          .style("text-anchor", "start")
+          .style("font-size", ticksize + "pt")
+          .style("font-family", "Cutive Mono")
+          .style("fill", "steelblue")
+          .style("opacity", 0.75)
+          .text("");
+        
+        txtEl.append("tspan")
+          .attr("id", "dist-label")
+          .attr("x", 0.8*ticksize + "pt")
+          .text("");
+        
+        txtEl.append("tspan")
+          .attr("id", "EBV-label")
+          .attr("x", 0.8*ticksize + "pt")
+          .attr("dy", ticksize + "pt")
+          .text("");
+      } else {
+        d3.select("#mouse-overlay")
+          .attr("width", width)
+          .attr("height", height);
+        
+        d3.select("#dist-label")
+          .attr("x", 0.8*ticksize + "pt");
+        
+        d3.select("#EBV-label")
+          .attr("x", 0.8*ticksize + "pt")
+          .attr("dy", ticksize + "pt");
+      }
+      
+      d3.select("#text-indicator")
+        .transition().duration(dt)
+        .attr("x", 0.025*width)
+        .attr("y", 0.015*height)
+        .style("font-size", ticksize + "pt")
+        .attr("dy", 0.5*ticksize + "pt");
+      
+      var bisect_x = d3.bisector(function(d) { return d; }).left;
+      var text_formatter = d3.format(".2f");
+      
+      function mouseMove() {
+        var xDisp = d3.mouse(this)[0];
+        var xCoord = x.invert(xDisp);
+        var i = bisect_x(mu, xCoord, 1);
+        y0 = best[i-1];
+        y1 = best[i];
+        x0 = mu[i-1];
+        x1 = mu[i];
+        var yCoord = y0 + (y1-y0)/(x1-x0) * (xCoord-x0);
+        var yDisp = y(yCoord);
+        
+        DM = Math.pow(10, xCoord/5 - 2);
+        
+        /*
+        console.log(best);
+        console.log(best.length);
+        console.log(i);
+        console.log("x0:" + x0);
+        console.log("x1:" + x1);
+        console.log("y0:" + y0);
+        console.log("y1:" + y1);
+        console.log("(" + xDisp + ", " + yDisp + ") -> (" + xCoord + ", " + yCoord + ")");
+        */
+        
+        d3.select("#x-indicator")
+          .attr("y1", y(0))
+          .attr("y2", yDisp)
+          .attr("x1", xDisp)
+          .attr("x2", xDisp);
+        
+        d3.select("#y-indicator")
+          .attr("y1", yDisp)
+          .attr("y2", yDisp)
+          .attr("x1", x(xVals[0]))
+          .attr("x2", xDisp);
+        
+        d3.select("#dist-label")
+          .text("d = " + text_formatter(DM) + " kpc");
+        
+        d3.select("#EBV-label")
+          .text("E(B-V) = " + text_formatter(yCoord));
+        
+        //console.log(d3.select("#text-indicator"));
+        //console.log(text_formatter(xCoord));
+        //console.log(xCoord);
+      }
     };
     
     linePlotContainer = ".line-plot-container";
     
     // Initial data
-    mu = d3.range(4, 19, 0.5);
-    best = Array.apply(null, new Array(32)).map(Number.prototype.valueOf,0);
+    mu = d3.range(4, 19.01, 0.5);
+    best = Array.apply(null, new Array(mu.length)).map(Number.prototype.valueOf,0);
     samples = [best];
     
     // Draw initial plot
