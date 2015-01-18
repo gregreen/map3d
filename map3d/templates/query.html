@@ -64,14 +64,12 @@
   
   <div class="row">
     <h1>Download Results</h1>
-    <div class="col-lg-1 center-block brown">
-      <button class="btn btn-default btn-lg fancy-serif center-block" id="table-btn">
+    <div class="col-xs-8 col-xs-offset-2 col-sm-4 col-sm-offset-4 col-lg-4 col-lg-offset-4 bottom-spacer brown">
+      <a class="btn btn-default btn-lg fancy-serif center-block disabled" href="#" target="_blank" id="table-btn">
         <span class="fa fa-table fa-lg"></span> &nbsp View ASCII Table
-      </button>
+      </a>
     </div>
-    <br>
   </div>
-  
 </div>
 
 
@@ -84,7 +82,7 @@
       });
     };
     
-    function drawPlot(container, dt, xVals, yBest, ySamples, conv) {
+    function drawPlot(container, dt, xVals, yBest, ySamples, conv, noData) {
       var fullwidth = $(container).width(),
           fullheight = $(container).height();
       
@@ -149,6 +147,21 @@
             .style("font-family", "Cutive Mono")
             .style("fill", "red")
             .text("non-converged!");
+        
+        svg.append("g")
+          .attr("class", "toggle-nodata")
+          .style("opacity", 0)
+          .append("text")
+            .attr("id", "nodata-indicator")
+            .attr("x", 0.5*width)
+            .attr("y", 0.5*height)
+            .attr("dy", (-0.5*ticksize) + "pt")
+            .style("text-anchor", "middle")
+            .style("font-size", (3*ticksize) + "pt")
+            .style("font-family", "Cutive Mono")
+            .style("fill", "steelblue")
+            .style("opacity", 0.5)
+            .text("No Data");
       } else {
         d3.select(container).select("svg")
           .attr("width", fullwidth)
@@ -164,6 +177,13 @@
           .attr("y", height)
           .attr("dy", (-1*ticksize) + "pt")
           .style("font-size", ticksize + "pt");
+        
+        d3.select("#nodata-indicator")
+          .transition().duration(dt)
+          .attr("x", 0.5*width)
+          .attr("y", 0.5*height)
+          .attr("dy", (-0.5*ticksize) + "pt")
+          .style("font-size", (3*ticksize) + "pt");
       }
       
       // x-Axis
@@ -232,6 +252,17 @@
         lineColor = "steelblue";
         
         d3.selectAll(".toggle-converged")
+          .transition().duration(dt)
+          .style("opacity", 0);
+      }
+      
+      // Indicate absence of data
+      if (noData == 1) {
+        d3.selectAll(".toggle-nodata")
+          .transition().duration(dt)
+          .style("opacity", 1);
+      } else {
+        d3.selectAll(".toggle-nodata")
           .transition().duration(dt)
           .style("opacity", 0);
       }
@@ -421,9 +452,10 @@
     samples = [best];
     converged = 1;
     tableData = "";
+    noData = 0;
     
     // Draw initial plot
-    drawPlot(linePlotContainer, 0, mu, best, samples, converged);
+    drawPlot(linePlotContainer, 0, mu, best, samples, converged, noData);
     
     // Execute the query
     function submitQuery() {
@@ -440,14 +472,16 @@
         contentType: "application/json; charset=utf-8",
         data: JSON.stringify(data),
         success: function(data) {
-          //console.log(data);
+          querySuccess = $.parseJSON(data.success);
           mu = $.parseJSON(data.mu);
           best = $.parseJSON(data.best);
           samples = $.parseJSON(data.samples);
           converged = $.parseJSON(data.converged);
           tableData = $.parseJSON(data.table_data);
           
-          drawPlot(linePlotContainer, 500, mu, best, samples, converged);
+          noData = 1 - querySuccess;
+          
+          drawPlot(linePlotContainer, 500, mu, best, samples, converged, noData);
           
           $("#postage-stamp-1").attr("src", data.image1);
           $("#postage-stamp-2").attr("src", data.image2);
@@ -456,11 +490,19 @@
           $("#ps-label-2").text(data.label2);
           $("#ps-label-3").text(data.label3);
           $("#submit-btn-icon").attr("class", "glyphicon glyphicon-ok");
-          $("#table-btn").prop("disabled", false);
+          
+          if (querySuccess == 1) {
+            toggleTableBtn(false);
+            $("#table-btn").attr("href", tableData);
+          } else {
+            toggleTableBtn(true);
+            console.log("toggling button off");
+          }
         },
         error: function() {
           $("#submit-btn-icon").attr("class", "glyphicon glyphicon-ok");
-          $("#table-btn").prop("disabled", true);
+          
+          toggleTableBtn(true);
         }
       });
     };
@@ -480,9 +522,10 @@
       }
     });
     
-    // Open ASCII table
-    $("#table-btn").prop("disabled", true);
-    $("#table-btn").click(function() { window.open(tableData); });
+    // Toggle ASCII table link
+    function toggleTableBtn(disable) {
+      d3.select("#table-btn").classed("disabled", disable);
+    }
     
     // Handle window resizing
     var debounce = function(fn, timeout) {
@@ -496,7 +539,7 @@
     };
     
     var debouncedDrawPlot = debounce(function() {
-      drawPlot(linePlotContainer, 200, mu, best, samples, converged);
+      drawPlot(linePlotContainer, 200, mu, best, samples, converged, noData);
     }, 125);
     
     $(window).resize(debouncedDrawPlot);

@@ -59,6 +59,10 @@ h1 {
   font-family: "Lora", serif;
 }
 
+.bottom-spacer {
+  margin-bottom: 20px;
+}
+
 
 /* xs */
 @media (max-width: 767px) {

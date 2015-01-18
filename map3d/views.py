@@ -33,9 +33,12 @@ def gal_lb_query():
     
     mu, best, samples, n_stars, converged, table_data = loscurves.get_encoded_los(mapdata.map_query, l, b)
     
+    success = int(int(n_stars) != 0)
+    
     label = ['%d pc' % d for d in dists]
     
-    return jsonify(l=l, b=b,
+    return jsonify(success=success,
+                   l=l, b=b,
                    label1=label[0], image1=img[0],
                    label2=label[1], image2=img[1],
                    label3=label[2], image3=img[2],

@@ -16,23 +16,18 @@ def get_los(map_query, l, b):
         best = np.zeros(len(mu)).tolist()
         samples = [best]
         n_stars = 0
-        converged = 0
+        converged = 1
+        table_enc = encode_ascii('')
         
-        return mu, best, samples, n_stars, converged
+        return mu, best, samples, n_stars, converged, table_enc
     
     best = los_data['best'].tolist()
     samples = los_data['samples'].tolist()
     n_stars = los_data['n_stars'].tolist()
     converged = int(np.all(los_data['GR'] < 1.2))
     
-    #print converged
-    #converged = np.random.randint(0,2)
-    #print converged
-    
     table_txt = los_to_ascii(l, b, mu, best, samples, n_stars, converged)
     table_enc = encode_ascii(table_txt)
-    
-    #print table_txt
     
     return mu, best, samples, n_stars, converged, table_enc
 
@@ -44,19 +39,24 @@ def get_encoded_los(map_query, l, b):
 def los_to_ascii(l, b, mu, best, samples, n_stars, converged, colwidth=6):
     # Pixel header
     txt  = '# Line-of-Sight Reddening Results\n'
+    txt += '# ===============================\n'
+    txt += '#\n'
     txt += '# Galactic coordinates (in degrees):\n'
     txt += '#     l = %.4f\n' % l
     txt += '#     b = %.4f\n' % b
     txt += '# Number of stars: %d\n' % (n_stars)
-    txt += '# fit converged: %s\n' % ('True' if converged else 'False')
-    txt += '\n'
+    txt += '# Fit converged: %s\n' % ('True' if converged else 'False')
+    txt += '#\n'
     
     # Explanation
     txt += '# The table contains E(B-V) in magnitudes out to the specified distance moduli.\n'
     txt += '# Each column corresponds to a different distance modulus, and each row\n'
     txt += '# corresponds to a different sample. The first sample is the best fit, while\n'
     txt += '# the following samples are drawn from the posterior distribution of\n'
-    txt += '# distance-reddening profiles.\n\n'
+    txt += '# distance-reddening profiles.\n'
+    txt += '#\n'
+    txt += '# See Green et al. (2014) & Green et al. (2015) for a detailed description\n'
+    txt += '# of how the line-of-sight reddening is computed.\n\n'
     
     n_rows = len(mu) + 1
     
