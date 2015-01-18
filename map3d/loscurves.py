@@ -3,6 +3,8 @@ import numpy as np
 import healpy as hp
 
 import json
+import urllib
+#from StringIO import StringIO
 
 
 def get_los(map_query, l, b):
@@ -27,8 +29,75 @@ def get_los(map_query, l, b):
     #converged = np.random.randint(0,2)
     #print converged
     
-    return mu, best, samples, n_stars, converged
+    table_txt = los_to_ascii(l, b, mu, best, samples, n_stars, converged)
+    table_enc = encode_ascii(table_txt)
+    
+    #print table_txt
+    
+    return mu, best, samples, n_stars, converged, table_enc
 
 
 def get_encoded_los(map_query, l, b):
     return [json.dumps(d) for d in get_los(map_query, l, b)]
+
+
+def los_to_ascii(l, b, mu, best, samples, n_stars, converged, colwidth=6):
+    # Pixel header
+    txt  = '# Line-of-Sight Reddening Results\n'
+    txt += '# Galactic coordinates (in degrees):\n'
+    txt += '#     l = %.4f\n' % l
+    txt += '#     b = %.4f\n' % b
+    txt += '# Number of stars: %d\n' % (n_stars)
+    txt += '# fit converged: %s\n' % ('True' if converged else 'False')
+    txt += '\n'
+    
+    # Explanation
+    txt += '# The table contains E(B-V) in magnitudes out to the specified distance moduli.\n'
+    txt += '# Each column corresponds to a different distance modulus, and each row\n'
+    txt += '# corresponds to a different sample. The first sample is the best fit, while\n'
+    txt += '# the following samples are drawn from the posterior distribution of\n'
+    txt += '# distance-reddening profiles.\n\n'
+    
+    n_rows = len(mu) + 1
+    
+    # Table column headings
+    txt += 'SampleNo'.center(10)
+    txt += '|'
+    txt += ' DistanceModulus\n'
+    
+    txt += ''.center(10)
+    txt += '|'
+    
+    for m in mu:
+        txt += ('%.2f' % m).rjust(colwidth)
+    
+    txt += '\n'
+    txt += '-' * (11 + len(mu)*colwidth)
+    txt += '\n'
+    
+    # Best fit
+    txt += 'BestFit'.center(10)
+    txt += '|'
+    
+    for E in best:
+        txt += ('%.3f' % E).rjust(colwidth)
+    
+    txt += '\n'
+    
+    # Samples
+    for k,samp in enumerate(samples):
+        txt += ('%d' % k).center(10)
+        txt += '|'
+        
+        for E in samp:
+            txt += ('%.3f' % E).rjust(colwidth)
+        
+        txt += '\n'
+    
+    return txt
+
+def encode_ascii(txt):
+    data = txt.encode('US-ASCII')
+    data = 'data:text/plain;charset=US-ASCII,{0}'.format(urllib.quote(data))
+    
+    return data

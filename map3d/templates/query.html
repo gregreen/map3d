@@ -59,9 +59,21 @@
         </div>
       </div>
     </div>
-  
+    
   </div>
+  
+  <div class="row">
+    <h1>Download Results</h1>
+    <div class="col-lg-1 center-block brown">
+      <button class="btn btn-default btn-lg fancy-serif center-block" id="table-btn">
+        <span class="fa fa-table fa-lg"></span> &nbsp View ASCII Table
+      </button>
+    </div>
+    <br>
+  </div>
+  
 </div>
+
 
 <script type=text/javascript>
   $(document).ready(function() {
@@ -145,8 +157,6 @@
         
         d3.select("#main-group")
           .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
-        
-        console.log(d3.selectAll("#convergence-warning").length);
         
         d3.select("#convergence-warning")
           .transition().duration(dt)
@@ -278,8 +288,6 @@
        */
       
       if (svg.selectAll("#focus")[0].length < 1) {
-        console.log("Creating focus");
-        
         focus = svg.append("g")
           .attr("id", "focus")
           .attr("display", "none");
@@ -412,6 +420,7 @@
     best = Array.apply(null, new Array(mu.length)).map(Number.prototype.valueOf,0);
     samples = [best];
     converged = 1;
+    tableData = "";
     
     // Draw initial plot
     drawPlot(linePlotContainer, 0, mu, best, samples, converged);
@@ -436,7 +445,10 @@
           best = $.parseJSON(data.best);
           samples = $.parseJSON(data.samples);
           converged = $.parseJSON(data.converged);
+          tableData = $.parseJSON(data.table_data);
+          
           drawPlot(linePlotContainer, 500, mu, best, samples, converged);
+          
           $("#postage-stamp-1").attr("src", data.image1);
           $("#postage-stamp-2").attr("src", data.image2);
           $("#postage-stamp-3").attr("src", data.image3);
@@ -444,9 +456,11 @@
           $("#ps-label-2").text(data.label2);
           $("#ps-label-3").text(data.label3);
           $("#submit-btn-icon").attr("class", "glyphicon glyphicon-ok");
+          $("#table-btn").prop("disabled", false);
         },
         error: function() {
           $("#submit-btn-icon").attr("class", "glyphicon glyphicon-ok");
+          $("#table-btn").prop("disabled", true);
         }
       });
     };
@@ -465,6 +479,10 @@
         submitQuery();
       }
     });
+    
+    // Open ASCII table
+    $("#table-btn").prop("disabled", true);
+    $("#table-btn").click(function() { window.open(tableData); });
     
     // Handle window resizing
     var debounce = function(fn, timeout) {
