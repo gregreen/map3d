@@ -36,25 +36,18 @@
       <h1>Postage Stamps</h1>
       
       <div class="row">
-        <div class="thumbnail col-xs-12 col-sm-4 red">
-          <div class="ps-container">
-            <img id="postage-stamp-1" src="" class="img-responsive" />
-            <span class="fa fa-dot-circle-o"></span>
-          </div>
+        <div class="thumbnail col-xs-12 col-sm-4 ps-container red">
+          <!--<div class="ps-container">-->
+            <img id="postage-stamp-1" src="" class="img-responsive ps-img" />
+          <!--</div>-->
           <h4 id="ps-label-1" class="ps-label"></h4>
         </div>
-        <div class="thumbnail col-xs-12 col-sm-4 red">
-          <div class="ps-container">
-            <img id="postage-stamp-2" src="" class="img-responsive" />
-            <span class="fa fa-dot-circle-o"></span>
-          </div>
+        <div class="thumbnail col-xs-12 col-sm-4 ps-container red">
+          <img id="postage-stamp-2" src="" class="img-responsive ps-img" />
           <h4 id="ps-label-2" class="ps-label"></h4>
         </div>
-        <div class="thumbnail col-xs-12 col-sm-4 red">
-          <div class="ps-container">
-            <img id="postage-stamp-3" src="" class="img-responsive" />
-            <span class="fa fa-dot-circle-o"></span>
-          </div>
+        <div class="thumbnail col-xs-12 col-sm-4 ps-container red">
+          <img id="postage-stamp-3" src="" class="img-responsive ps-img" />
           <h4 id="ps-label-3" class="ps-label"></h4>
         </div>
       </div>
@@ -454,6 +447,11 @@
     tableData = "";
     noData = 0;
     
+    // Current view
+    lCur = 0;
+    bCur = 0;
+    rCur = 0;
+    
     // Draw initial plot
     drawPlot(linePlotContainer, 0, mu, best, samples, converged, noData);
     
@@ -479,6 +477,10 @@
           converged = $.parseJSON(data.converged);
           tableData = $.parseJSON(data.table_data);
           
+          lCur = $.parseJSON(data.l);
+          bCur = $.parseJSON(data.b);
+          rCur = $.parseJSON(data.radius);
+          
           noData = 1 - querySuccess;
           
           drawPlot(linePlotContainer, 500, mu, best, samples, converged, noData);
@@ -498,6 +500,8 @@
             toggleTableBtn(true);
             console.log("toggling button off");
           }
+          
+          drawPSOverlays();
         },
         error: function() {
           $("#submit-btn-icon").attr("class", "glyphicon glyphicon-ok");
@@ -527,6 +531,220 @@
       d3.select("#table-btn").classed("disabled", disable);
     }
     
+    
+    /*
+     * Postage Stamp Overlays
+     */
+    
+    drawPSOverlays();
+    
+    function drawPSOverlays() {
+      var psContainers = d3.selectAll(".ps-container");
+      
+      // Create SVG overlays, if they do not yet exist
+      var psSVG = d3.selectAll(".ps-overlay");
+      
+      if (psSVG[0].length < 1) {
+        psSVG = psContainers.append("svg")
+          .attr("class", "ps-overlay")
+          .style("position", "absolute")
+          .style("top", "0px")
+          .style("left", "0px");
+        
+        var psBullseye = psSVG.append("g")
+          .attr("class", "ps-bullseye")
+          .style("opacity", 0.75);
+        
+        psBullseye.append("circle")
+          .attr("class", "ps-bullseye-outer")
+          .attr("fill", "none")
+          .attr("stroke", "#FFD35C")
+          .attr("stroke-width", "3px")
+          .attr("x", 0)
+          .attr("y", 0);
+        
+        psBullseye.append("circle")
+          .attr("class", "ps-bullseye-inner")
+          .attr("fill", "#FFD35C")
+          .attr("x", 0)
+          .attr("y", 0);
+        
+        focus = psSVG.append("g")
+          .attr("class", "ps-focus")
+          .attr("display", "none");
+        
+        //var psTxtBG = focus.append("rect")
+        //  .attr("class", "ps-text-bg");
+        
+        var psTxtEl = focus.append("text")
+          .attr("class", "ps-text-indicator")
+          .style("text-anchor", "start");
+        
+        psTxtEl.append("tspan")
+          .text("l = 0")
+          .attr("class", "ps-l-label");
+        
+        psTxtEl.append("tspan")
+          .attr("class", "ps-b-label")
+          .text("b = 0");
+        
+        psOverlayRect = psSVG.append("rect")
+          .attr("class", "overlay");
+        
+        psOverlayRect.each(function(d,i) {
+          var assocFocus = d3.selectAll(".ps-focus")[0][i];
+          d3.select(this)
+            .on("mouseover", function() {
+              d3.select(assocFocus).attr("display", null);
+            })
+            .on("mouseout", function() {
+              d3.select(assocFocus).attr("display", "none");
+            });
+        });
+      }
+      
+      psContainers.each(function(d,i) {
+        var imgProp = getPosExtent(d3.select(this).select(".ps-img")[0]);
+        
+        d3.select(this).select(".ps-overlay")
+          .attr("width", imgProp.width + "px")
+          .attr("height", imgProp.height + "px")
+          .style("left", imgProp.left + "px")
+          .style("top", imgProp.top + "px");
+        
+        // Update bullseye
+        var rOuter = imgProp.width / 40;
+        rOuter = d3.max([rOuter, 8]);
+        rOuter = d3.min([rOuter, 24]);
+        
+        var rInner = rOuter / 4.
+        
+        d3.select(this).select(".ps-bullseye-outer")
+          .attr("r", rOuter);
+        d3.select(this).select(".ps-bullseye-inner")
+          .attr("r", rInner);
+        d3.select(this).select(".ps-bullseye")
+          .attr("transform", "translate(" + imgProp.width/2. + "," + imgProp.height/2. + ")");
+        
+        // Update coordinate labels
+        var psScaling = imgProp.width / 200;
+        psScaling = d3.max([psScaling, 0.5]);
+        psScaling = d3.min([psScaling, 3.]);
+        
+        var psFontSize = 14 * psScaling;
+        
+        var psTxt = d3.select(this).select(".ps-text-indicator")
+          .attr("x", 1.2*psFontSize + "pt")
+          .attr("y", 1.2*psFontSize + "pt")
+          .style("font-size", psFontSize + "pt");
+        
+        psTxt.select(".ps-l-label")
+          .attr("x", 0.5*psFontSize + "pt");
+        
+        psTxt.select(".ps-b-label")
+          .attr("x", 0.5*psFontSize + "pt")
+          .attr("dy", psFontSize + "pt");
+        
+        // Update mouse overlay
+        var self = this;
+        
+        // Properties of Postage-stamp Gnomonic projection
+        var lng0 = deg2rad(lCur);
+        var cLat0 = Math.cos(deg2rad(bCur));
+        var sLat0 = Math.sin(deg2rad(bCur));
+        var xMaxProj = GnomonicProj(deg2rad(rCur), 0, 0, 1, 0).x;
+        
+        var lb_formatter = d3.format(".1f");
+        
+        //console.log(rCur);
+        //console.log(xMaxProj);
+        
+        d3.select(this).select(".overlay")
+          .attr("width", imgProp.width)
+          .attr("height", imgProp.height)
+          .on("mousemove", function() {
+            var xDisp = d3.mouse(this)[0];
+            var yDisp = d3.mouse(this)[1];
+            
+            var xProj = -2 * (xDisp / imgProp.width - 0.5) * xMaxProj;
+            var yProj = -2 * (yDisp / imgProp.height - 0.5) * xMaxProj;
+            
+            var coords = GnomonicProjInv(xProj, yProj, lng0, cLat0, sLat0);
+            
+            d3.select(self).select(".ps-l-label")
+              .text("\u2113 = " + lb_formatter(rad2deg(coords.lng)) + "\u00B0");
+            d3.select(self).select(".ps-b-label")
+              .text("b = " + lb_formatter(rad2deg(coords.lat)) + "\u00B0");
+          });
+      });
+    }
+    
+    function getPosExtent(obj) {
+      var xy0 = $(obj).position();
+      var x0 = xy0.left;
+      var y0 = xy0.top;
+      
+      x0 += parseInt($(obj).css("padding-left"), 10);
+      y0 += parseInt($(obj).css("padding-top"), 10);
+      
+      x0 += parseInt($(obj).css("margin-left"), 10);
+      y0 += parseInt($(obj).css("margin-top"), 10);
+      
+      var w = parseInt($(obj).css("width"), 10);
+      var h = parseInt($(obj).css("height"), 10);
+      
+      return {"left": x0, "top": y0, "width": w, "height": h};
+    }
+    
+    function dispCoord() {
+      var xDisp = d3.mouse(this)[0];
+      var yDisp = d3.mouse(this)[1];
+      console.log("(x,y) = (" + xDisp + ", " + yDisp + ")");
+    }
+    
+    
+    // Gnomonic projection
+    function GnomonicProj(lng, lat, lng0, cLat0, sLat0) {
+      var cLat = Math.cos(lat);
+      var sLat = Math.sin(lat);
+      
+      var cDLng = Math.cos(lng - lng0);
+      var sDLng = Math.sin(lng - lng0);
+      
+      var aProj = 1. / (sLat0 * sLat + cLat0 * cLat * cDLng);
+      
+      var xProj = aProj * cLat * sDLng;
+      var yProj = aProj * (cLat0 * sLat - sLat0 * cLat * cDLng);
+      
+      return {"x": xProj, "y": yProj};
+    }
+    
+    function GnomonicProjInv(xProj, yProj, lng0, cLat0, sLat0) {
+      var rho = Math.sqrt(xProj*xProj + yProj*yProj);
+      var c = Math.atan(rho);
+      
+      var cc = Math.cos(c);
+      var sc = Math.sin(c);
+      
+      var lat = Math.asin(cc * sLat0 + yProj * sc * cLat0 / rho);
+      var lng = lng0 + Math.atan2((xProj * sc), (rho * cLat0 * cc - yProj * sLat0 * sc));
+      
+      if (lng > 360) {
+        lng -= 360;
+      }
+      
+      return {"lng": lng, "lat": lat};
+    }
+    
+    function deg2rad(theta) {
+      return Math.PI / 180 * theta;
+    }
+    
+    function rad2deg(theta) {
+      return 180 / Math.PI * theta;
+    }
+    
+    
     // Handle window resizing
     var debounce = function(fn, timeout) {
       var timeoutID = -1;
@@ -540,9 +758,17 @@
     
     var debouncedDrawPlot = debounce(function() {
       drawPlot(linePlotContainer, 200, mu, best, samples, converged, noData);
+      //drawPSOverlays();
     }, 125);
     
+    var debouncedDrawPSOverlays = debounce(function() {
+      //drawPlot(linePlotContainer, 200, mu, best, samples, converged, noData);
+      drawPSOverlays();
+    }, 250);
+    
     $(window).resize(debouncedDrawPlot);
+    $(window).resize(debouncedDrawPSOverlays);
+    
     
   });
 </script>

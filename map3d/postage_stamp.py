@@ -38,7 +38,7 @@ def encode_image(img_arr, c_mask=(202,222,219)):
 
 
 def postage_stamps(map_pixval, map_nside, l, b,
-                   radius=15., width=500,
+                   radius=7.5, width=500,
                    dists=[300., 1000., 5000.],
                    difference=False):
     img_shape = (2*width, 2*width)
@@ -48,7 +48,7 @@ def postage_stamps(map_pixval, map_nside, l, b,
     y0 = width/2
     y1 = -width/2
     
-    pix_idx = grab_region(map_nside, l, b, radius=radius)
+    pix_idx = grab_region(map_nside, l, b, radius=2*radius)
     nside = map_nside * np.ones(pix_idx.size, dtype='i8')
     
     proj = hputils.Gnomonic_projection()

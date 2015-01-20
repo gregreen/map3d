@@ -96,24 +96,6 @@ h1 {
   padding-top: 50%; /* initial ratio of 2:1*/
 }
 
-.ps-container {
-  display: inline-block;
-  position: relative;
-  text-align: center;
-}
-
-.ps-container span {
-  position: absolute;
-  line-height: 20px;
-  display: block;
-  top: 50%;
-  margin-top: -10px;
-  width: 100%;
-  color: #FFD35C;
-  font-size: large;
-  opacity: 0.7;
-}
-
 
 /* d3 Properties */
 
@@ -134,3 +116,11 @@ h1 {
   pointer-events: all;
 }
 
+.ps-text-indicator {
+  font-family: "Anonymous Pro";
+  font-weight: 700;
+  fill: #C2E3FF;
+  stroke: black;
+  stroke-width: 1pt;
+  opacity: 1;
+}

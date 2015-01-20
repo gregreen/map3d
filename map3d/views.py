@@ -23,12 +23,14 @@ def gal_lb_query():
     assert((b <= 90.) and (b >= -90.))
     
     dists = [300., 1000., 5000.]
+    radius = 7.5
     
     print 'l,b = (%.2f, %.2f)' % (l, b)
     
     img = postage_stamp.postage_stamps(mapdata.map_pixval,
                                        mapdata.map_nside,
-                                       l, b, dists=dists)
+                                       l, b, dists=dists,
+                                       radius=radius)
     img = [postage_stamp.encode_image(img_d) for img_d in img]
     
     mu, best, samples, n_stars, converged, table_data = loscurves.get_encoded_los(mapdata.map_query, l, b)
@@ -39,6 +41,7 @@ def gal_lb_query():
     
     return jsonify(success=success,
                    l=l, b=b,
+                   radius=radius,
                    label1=label[0], image1=img[0],
                    label2=label[1], image2=img[1],
                    label3=label[2], image3=img[2],
