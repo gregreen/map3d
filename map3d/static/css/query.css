@@ -117,10 +117,16 @@ h1 {
 }
 
 .ps-text-indicator {
-  font-family: "Anonymous Pro";
-  font-weight: 700;
-  fill: #C2E3FF;
-  stroke: black;
-  stroke-width: 1pt;
+  font-family: "Cutive Mono";
+  fill: #C2E3FF; /* #C2E3FF; */
+  stroke: white;
+  stroke-width: 0.05pt;
   opacity: 1;
+}
+
+.ps-text-bg {
+  fill: black;
+  stroke: #C2E3FF;
+  stroke-width: 1.5pt;
+  opacity: 0.5;
 }

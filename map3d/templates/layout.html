@@ -11,7 +11,9 @@
     <link href="http://fonts.googleapis.com/css?family=Droid Sans" rel="stylesheet" type="text/css">
     <link href='http://fonts.googleapis.com/css?family=Lora' rel='stylesheet' type='text/css'>
     <link href='http://fonts.googleapis.com/css?family=Cutive+Mono' rel='stylesheet' type='text/css'>
+    <!--
     <link href='http://fonts.googleapis.com/css?family=Anonymous+Pro:700' rel='stylesheet' type='text/css'>
+    -->
     
     <!-- Bootstrap -->
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
@@ -19,6 +21,10 @@
     <!-- Font Awesome -->
     <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
     
+    <!-- Bootstrap Toggle -->
+    <link href="https://gitcdn.github.io/bootstrap-toggle/2.1.0/css/bootstrap-toggle.min.css" rel="stylesheet">
+    
+    <!-- Icon -->
     <link href="{{ url_for('static', filename='media/yuri-gagarin-2-circle-75x75.png') }}" rel="shortcut icon">
     
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
@@ -45,8 +51,14 @@
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
     
+    <!-- Bootstrap toggle -->
+    <script src="https://gitcdn.github.io/bootstrap-toggle/2.1.0/js/bootstrap-toggle.min.js"></script>
+    
     <!-- d3 -->
     <script src="http://d3js.org/d3.v3.js"></script>
+    
+    <!-- Astronomical Coordinate Transformations -->
+    <script src="{{ url_for('static', filename='js/astrocoords.js')  }}"></script>
     
     {% block content %}
     {% endblock %}
