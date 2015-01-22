@@ -95,7 +95,7 @@ class MapQuery:
 
 
 print 'Loading map query object ...'
-map_query = MapQuery(os.path.join(data_path, 'compact_10samp_small.h5'))
+map_query = MapQuery(os.path.join(data_path, 'compact_10samp.h5'))
 print 'Loading map images ...'
 map_nside, map_pixval = load_images()
 print 'Done loading data.'

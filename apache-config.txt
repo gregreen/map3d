@@ -1,0 +1,18 @@
+NameVirtualHost *:80
+
+WSGISocketPrefix run/wsgi
+
+<VirtualHost *:80>
+    ServerName argonaut.rc.fas.harvard.edu
+
+    WSGIDaemonProcess map3d user=appsfink group=finkbeiner_lab threads=1
+    WSGIScriptAlias / /var/www/html/map3d.wsgi
+    # WSGIScriptReloading On
+
+    <Directory />
+        WSGIProcessGroup map3d
+        WSGIApplicationGroup %{GLOBAL}
+        Order deny,allow
+       	Allow from all
+    </Directory>
+</VirtualHost>
