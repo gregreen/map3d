@@ -5,7 +5,7 @@ WSGISocketPrefix run/wsgi
 <VirtualHost *:80>
     ServerName argonaut.rc.fas.harvard.edu
 
-    WSGIDaemonProcess map3d user=appsfink group=finkbeiner_lab threads=1
+    WSGIDaemonProcess map3d user=appsfink group=finkbeiner_lab processes=3 threads=1
     WSGIScriptAlias / /var/www/html/map3d.wsgi
     # WSGIScriptReloading On
 
