@@ -788,16 +788,6 @@
       return {"lng": lng, "lat": lat};
     }
     
-    /*
-    function deg2rad(theta) {
-      return Math.PI / 180 * theta;
-    }
-    
-    function rad2deg(theta) {
-      return 180 / Math.PI * theta;
-    }
-    */
-    
     // Handle window resizing
     var debounce = function(fn, timeout) {
       var timeoutID = -1;
@@ -811,17 +801,14 @@
     
     var debouncedDrawPlot = debounce(function() {
       drawPlot(linePlotContainer, 200, mu, best, samples, converged, noData);
-      //drawPSOverlays();
     }, 125);
     
     var debouncedDrawPSOverlays = debounce(function() {
-      //drawPlot(linePlotContainer, 200, mu, best, samples, converged, noData);
       drawPSOverlays();
     }, 250);
     
     $(window).resize(debouncedDrawPlot);
     $(window).resize(debouncedDrawPSOverlays);
-    
     
   });
 </script>
