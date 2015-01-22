@@ -596,7 +596,8 @@
         
         focus = psSVG.append("g")
           .attr("class", "ps-focus")
-          .attr("display", "none");
+          .style("opacity", 0);
+          //.attr("display", "none");
         
         focus.append("rect")
           .attr("class", "ps-text-bg");
@@ -620,10 +621,12 @@
           var assocFocus = d3.selectAll(".ps-focus")[0][i];
           d3.select(this)
             .on("mouseover", function() {
-              d3.select(assocFocus).attr("display", null);
+              //d3.select(assocFocus).attr("display", null);
+              d3.select(assocFocus).style("opacity", 1);
             })
             .on("mouseout", function() {
-              d3.select(assocFocus).attr("display", "none");
+              //d3.select(assocFocus).attr("display", "none");
+              d3.select(assocFocus).style("opacity", 0);
             });
         });
       }
@@ -745,14 +748,6 @@
       return {"left": x0, "top": y0, "width": w, "height": h};
     }
     
-    /*
-    function dispCoord() {
-      var xDisp = d3.mouse(this)[0];
-      var yDisp = d3.mouse(this)[1];
-      console.log("(x,y) = (" + xDisp + ", " + yDisp + ")");
-    }
-    */
-    
     // Gnomonic projection
     function GnomonicProj(lng, lat, lng0, cLat0, sLat0) {
       var cLat = Math.cos(lat);
@@ -799,6 +794,23 @@
       }
     };
     
+    function listenResize(obj, fn, dt) {
+      var w0 = $(obj).width();
+      var h0 = $(obj).height();
+      
+      setInterval(function() {
+        var w1 = $(obj).width();
+        var h1 = $(obj).height();
+        
+        if((w1 != w0) || (h1 != h0)) {
+          w0 = w1;
+          h0 = h1;
+          console.log("resized");
+          fn();
+        }
+      }, dt);
+    }
+    
     var debouncedDrawPlot = debounce(function() {
       drawPlot(linePlotContainer, 200, mu, best, samples, converged, noData);
     }, 125);
@@ -808,7 +820,9 @@
     }, 250);
     
     $(window).resize(debouncedDrawPlot);
-    $(window).resize(debouncedDrawPSOverlays);
+    //$(window).resize(debouncedDrawPSOverlays);
+    
+    listenResize(d3.select(".ps-container")[0][0], drawPSOverlays, 250);
     
   });
 </script>
