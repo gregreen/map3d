@@ -470,9 +470,34 @@
     drawPlot(linePlotContainer, 0, mu, best, samples, converged, noData);
     
     // Execute the query
-    function submitQuery() {
-      var lIn = $('input[name="gal-l"]').val();
-      var bIn = $('input[name="gal-b"]').val();
+    submitTimeLast = 0;
+    queryTimeout = 5000;
+    queryLock = false;
+    
+    function submitQuery(lon, lat) {
+      // Minimum time between queries
+      var submitTime = $.now();
+      if (queryLock && ((submitTime - submitTimeLast) < queryTimeout)) {
+        console.log("Query already in progress.");
+        return false;
+      } else {
+        submitTimeLast = submitTime;
+        queryLock = false;
+      }
+      
+      // Read input
+      var updateInputBoxes = false;
+      
+      if((typeof(lon) === 'undefined') || (typeof(lat) === 'undefined')) {
+        lon = $('input[name="gal-l"]').val();
+        lat = $('input[name="gal-b"]').val();
+      } else {
+        updateInputBoxes = true;
+      }
+      
+      // Convert from (RA,Dec) to (l,b) if necessary
+      var lIn = lon;
+      var bIn = lat;
       
       if (!useGalactic) {
         var coordsGal = equ2gal_J2000(lIn, bIn);
@@ -487,7 +512,11 @@
         b: bIn
       };
       
+      // Animate query button
       $("#submit-btn-icon").attr("class", "fa fa-spinner fa-spin fa-lg");
+      
+      // Handle AJAX request
+      queryLock = true;
       
       $.ajax({
         type: "POST",
@@ -495,6 +524,8 @@
         contentType: "application/json; charset=utf-8",
         data: JSON.stringify(data),
         success: function(data) {
+          queryLock = false;
+          
           querySuccess = $.parseJSON(data.success);
           mu = $.parseJSON(data.mu);
           best = $.parseJSON(data.best);
@@ -527,13 +558,23 @@
           }
           
           drawPSOverlays();
+          
+          if (updateInputBoxes) {
+            var formatter_3f = d3.format(".3f");
+            $('input[name="gal-l"]').val(formatter_3f(lon));
+            $('input[name="gal-b"]').val(formatter_3f(lat));
+          }
         },
         error: function() {
+          queryLock = false;
+          
           $("#submit-btn-icon").attr("class", "glyphicon glyphicon-ok");
           
           toggleTableBtn(true);
         }
       });
+      
+      return true;
     };
     
     // Bind the query to button click and enter key
@@ -698,11 +739,23 @@
         
         var lb_formatter = d3.format(".1f");
         
+        var get_ps_lb = function(objOverlay) {
+          var xDisp = d3.mouse(objOverlay)[0];
+          var yDisp = d3.mouse(objOverlay)[1];
+          
+          var xProj = -2 * (xDisp / imgProp.width - 0.5) * xMaxProj;
+          var yProj = -2 * (yDisp / imgProp.height - 0.5) * xMaxProj;
+          
+          var coords = GnomonicProjInv(xProj, yProj, lng0, cLat0, sLat0);
+          
+          return {"l": rad2deg(coords.lng), "b": rad2deg(coords.lat)};
+        }
         
         d3.select(this).select(".overlay")
           .attr("width", imgProp.width)
           .attr("height", imgProp.height)
           .on("mousemove", function() {
+            /*
             var xDisp = d3.mouse(this)[0];
             var yDisp = d3.mouse(this)[1];
             
@@ -710,15 +763,18 @@
             var yProj = -2 * (yDisp / imgProp.height - 0.5) * xMaxProj;
             
             var coords = GnomonicProjInv(xProj, yProj, lng0, cLat0, sLat0);
+            */
+            
+            var coordsGal = get_ps_lb(this);
             
             var lTxt = "";
             var bTxt = "";
             
             if (useGalactic) {
-              lTxt = "l = " + lb_formatter(rad2deg(coords.lng)) + "\u00B0";
-              bTxt = "b = " + lb_formatter(rad2deg(coords.lat)) + "\u00B0";
+              lTxt = "l = " + lb_formatter(coordsGal.l) + "\u00B0";
+              bTxt = "b = " + lb_formatter(coordsGal.b) + "\u00B0";
             } else {
-              var coordsEqu = gal2equ_J2000(rad2deg(coords.lng), rad2deg(coords.lat));
+              var coordsEqu = gal2equ_J2000(coordsGal.l, coordsGal.b);
               lTxt = "\u03B1 = " + lb_formatter(coordsEqu.a) + "\u00B0";
               bTxt = "\u03B4 = " + lb_formatter(coordsEqu.d) + "\u00B0";
             }
@@ -727,6 +783,25 @@
               .text(lTxt); // \u2113
             d3.select(self).select(".ps-b-label")
               .text(bTxt);
+          })
+          .on("click", function() {
+            var coordsGal = get_ps_lb(this);
+            
+            if (useGalactic) {
+              submitQuery(coordsGal.l, coordsGal.b);
+              //console.log(ret);
+              //if (ret) {
+              //  $('input[name="gal-l"]').val(formatter_3f(coordsGal.l));
+              //  $('input[name="gal-b"]').val(formatter_3f(coordsGal.b));
+              //}
+            } else {
+              var coordsEqu = gal2equ_J2000(coordsGal.l, coordsGal.b);
+              submitQuery(coordsEqu.a, coordsEqu.d);
+              //if (submitQuery(coordsEqu.a, coordsEqu.d)) {
+              //  $('input[name="gal-l"]').val(formatter_3f(coordsEqu.a));
+              //  $('input[name="gal-b"]').val(formatter_3f(coordsEqu.d));
+              //}
+            }
           });
       });
     }
