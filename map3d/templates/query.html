@@ -707,15 +707,20 @@
           .attr("y", 1.2*psFontSize + "pt")
           .style("font-size", psFontSize + "pt");
         
-        psTxt.select(".ps-l-label")
-          .attr("x", 0.5*psFontSize + "pt")
-          .text("l = 359.9\u00B0");
+        lLabPS = psTxt.select(".ps-l-label");
+        
+        lTxtTmp = lLabPS.text();
+        
+        lLabPS.attr("x", 0.5*psFontSize + "pt")
+          .text("l = 359.9\u00B0"); // Set l-label to longest possible value
         
         psTxt.select(".ps-b-label")
           .attr("x", 0.5*psFontSize + "pt")
           .attr("dy", psFontSize + "pt");
         
         var psTxtBounds = psTxt[0][0].getBBox();
+        
+        lLabPS.text(lTxtTmp); // Set l-label back to previous value
         
         xMargin = 0.5 * psTxtBounds.x;
         yMargin = 0.5 * psTxtBounds.y;
