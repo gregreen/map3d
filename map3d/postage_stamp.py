@@ -10,6 +10,7 @@ from PIL import Image
 from StringIO import StringIO
 
 import hputils
+import proj_fast
 
 
 def encode_image(img_arr, c_mask=(202,222,219)):
@@ -41,6 +42,8 @@ def postage_stamps(map_pixval, map_nside, l, b,
                    radius=7.5, width=500,
                    dists=[300., 1000., 5000.],
                    difference=False):
+    
+    '''
     img_shape = (2*width, 2*width)
     
     x0 = width/2
@@ -59,6 +62,12 @@ def postage_stamps(map_pixval, map_nside, l, b,
     pix_val = map_pixval[pix_idx]
     
     img = [rasterizer(pix_val[:,k])[x0:x1, y0:y1] for k,d in enumerate(dists)]
+    '''
+    
+    img_shape = (width, width)
+    rasterizer = proj_fast.MapRasterizerFast(map_nside, img_shape, fov=2*radius)
+    pix_val = [map_pixval[:,k] for k in xrange(len(dists))]
+    img = rasterizer.rasterize(pix_val, l, b)
     
     if difference:
         img[2] -= img[1]

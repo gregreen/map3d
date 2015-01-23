@@ -898,7 +898,7 @@ class MapRasterizer:
         
         for n in nside_unique:
             pix_scale = 180./np.pi * hp.nside2resol(n)
-                
+            
             # Determine pixel centers
             idx = (nside == n)
             
