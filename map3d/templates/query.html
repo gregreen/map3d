@@ -108,6 +108,8 @@
       var fullwidth = $(container).width(),
           fullheight = $(container).height();
       
+      var naiveScaling = fullwidth/600;
+      
       scaling = d3.max([0.5, fullwidth/600]);
       scaling = d3.min([2, scaling]);
       
@@ -126,8 +128,10 @@
         .domain(d3.extent(xVals))
         .range([0, width]);
       
+      yMax = d3.max(ySamples, function(a) { return d3.max(a); });
+      
       y = d3.scale.linear()
-        .domain([0, 1.1*d3.max(yBest)])
+        .domain([0, 1.1*yMax])
         .range([height, 0]);
       
       var line = d3.svg.line()
@@ -171,7 +175,7 @@
             .text("non-converged!");
         
         svg.append("g")
-          .attr("class", "toggle-nodata")
+          .attr("class", "nodata-on")
           .style("opacity", 0)
           .append("text")
             .attr("id", "nodata-indicator")
@@ -280,13 +284,19 @@
       
       // Indicate absence of data
       if (noData == 1) {
-        d3.selectAll(".toggle-nodata")
+        d3.selectAll(".nodata-on")
           .transition().duration(dt)
           .style("opacity", 1);
-      } else {
-        d3.selectAll(".toggle-nodata")
+        d3.selectAll(".nodata-off")
           .transition().duration(dt)
           .style("opacity", 0);
+      } else {
+        d3.selectAll(".nodata-on")
+          .transition().duration(dt)
+          .style("opacity", 0);
+        d3.selectAll(".nodata-off")
+          .transition().duration(dt)
+          .style("opacity", 1);
       }
       
       // Best Line
@@ -336,9 +346,155 @@
       lines.exit()
         .remove();
       
+      
+      /*
+       * Legend
+       */
+      
+      var xLegendStart = 15.5;
+      var xLegend = d3.range(0., 1.251, 0.25)
+        .map(function(a) { return xLegendStart + a; });
+      console.log(xLegend);
+      //var xLegend =         [15.00, 15.25, 15.50,  15.75, 16.00, 16.25];
+      var yLegendBest =     [ 0.05,  0.20,  0.70,   0.80,  1.00, 1.00];
+      var yLegendSamples = [[ 0.10,  0.10,  0.15,   0.20,  0.25, 0.25],
+                            [ 0.20,  0.25,  0.25,   0.30,  0.35, 0.35],
+                            [ 0.00,  0.05,  0.30,   0.35,  0.40, 0.40]];
+      var yMinLegend = 0.25 * yMax;
+      var yMaxLegend = 0.45 * yMax;
+      var kLegendLast = xLegend.length-1;
+      
+      var yScaleLegend = function(a) { return yMinLegend + (yMaxLegend-yMinLegend)*a; };
+      
+      if (d3.select("#main-group").selectAll("#legend-wrapper")[0].length < 1) {
+        console.log("adding legend");
+        var legendWrapper = d3.select("#main-group").append("g")
+          .attr("id", "legend-wrapper")
+          .style("display", "none")
+          .attr("class", "nodata-off");
+        
+        var legend = legendWrapper.append("g")
+          .attr("id", "legend");
+        
+        legendWrapper.append("rect")
+          .attr("id", "legend-frame")
+          .style("fill", "black")
+          .style("fill-opacity", 0.01)
+          .style("stroke", "black")
+          .style("stroke-width", "1pt")
+          .style("stroke-opacity", 0.05);
+        
+        legend.append("text")
+          .attr("id", "legend-best-label")
+          .style("text-anchor", "start")
+          .style("font-family", "Cutive Mono")
+          .style("fill", "steelblue")
+          .style("opacity", 1)
+          .text("best fit");
+        
+        legend.append("text")
+          .attr("id", "legend-sample-label")
+            .style("text-anchor", "start")
+            .style("font-family", "Cutive Mono")
+            .style("fill", "steelblue")
+            .style("opacity", 1)
+            .text("samples");
+      } else {
+        d3.select("#legend-best-label")
+          .transition().duration(dt)
+          .attr("x", x(xLegend[kLegendLast]+0.25))
+          .attr("y", y(yScaleLegend(yLegendBest[kLegendLast])))
+          .attr("dy", (0.25*0.8*ticksize) + "pt")
+          .style("font-size", (0.8*ticksize) + "pt")
+          .style("fill", lineColor);
+        
+        d3.select("#legend-sample-label")
+          .transition().duration(dt)
+          .attr("x", x(xLegend[kLegendLast]+0.25))
+          .attr("y", y(yScaleLegend(0.325)))
+          .attr("dy", (0.25*0.8*ticksize) + "pt")
+          .style("font-size", (0.8*ticksize) + "pt")
+          .style("fill", lineColor);
+        
+        d3.select("#legend-wrapper")
+          .style("display", null);
+      }
+      
+      var legendBestData = [d3.zip(xLegend, yLegendBest.map(yScaleLegend))];
+      
+      var linesLegendBest = d3.select("#legend").selectAll("#legend-line-best")
+        .data(legendBestData)
+        .attr("class", "line");
+      
+      linesLegendBest.transition().duration(dt)
+        .attr("stroke", lineColor)
+        .attr("d", line)
+        .attr("stroke-width", "2.5px");
+      
+      console.log(linesLegendBest.enter());
+      
+      linesLegendBest.enter()
+        .append("path")
+        .attr("id", "legend-line-best")
+        .attr("class", "line")
+        .attr("d", line)
+        .attr("stroke", lineColor)
+        .attr("stroke-width", "2.5px");
+      
+      linesLegendBest.exit()
+        .remove();
+      
+      var yLegendSamplesScaled = yLegendSamples.map(function(a) { return a.map(yScaleLegend); });
+      
+      var legendSampleData = packData(xLegend, yLegendSamplesScaled);
+      
+      var linesLegendSamples = d3.select("#legend").selectAll("#legend-line-samples")
+        .data(legendSampleData)
+        .attr("class", "line");
+      
+      linesLegendSamples.transition().duration(dt)
+        .attr("stroke", lineColor)
+        .attr("d", line)
+        .attr("stroke-width", "1.5px");
+      
+      console.log(linesLegendBest.enter());
+      
+      linesLegendSamples.enter()
+        .append("path")
+        .attr("id", "legend-line-samples")
+        .attr("class", "line")
+        .attr("d", line)
+        .attr("opacity", 0.2)
+        .attr("stroke", lineColor)
+        .attr("stroke-width", "1.5px");
+      
+      linesLegendSamples.exit()
+        .remove();
+      
+      //var legendBounds = d3.select("#legend")[0][0].getBBox();
+      var h0 = (y(yMinLegend) - y(yMaxLegend));
+      var labelWidth = 1.7 * (scaling / naiveScaling);
+      
+      var legendBounds = {
+        "x": x(xLegend[0]),
+        "y": y(yMaxLegend)-0.1*h0,
+        "width": (1+labelWidth)*(x(xLegend[kLegendLast])-x(xLegend[0])),
+        "height": 1.1*h0
+      };
+      var legendMargins = {"x": 5, "y": 5};
+      
+      d3.select("#legend-frame")
+        .transition().duration(dt)
+        .attr("x", (legendBounds.x - legendMargins.x) + "px")
+        .attr("y", (legendBounds.y - legendMargins.y) + "px")
+        .attr("width", (legendBounds.width + 2*legendMargins.x) + "px")
+        .attr("height", (legendBounds.height + 2*legendMargins.y) + "px");
+      
       /*
        *  Mouseover
        */
+      
+      var pmScale = 0.7;
       
       if (svg.selectAll("#focus")[0].length < 1) {
         focus = svg.append("g")
@@ -374,6 +530,11 @@
           .attr("stroke-width", "2px")
           .attr("opacity", 0.15);
         
+        focus.append("rect")
+          .attr("id", "y-spread-indicator")
+          .attr("fill", "black")
+          .attr("fill-opacity", 0.05);
+        
         txtEl = focus.append("text")
           .attr("id", "text-indicator")
           .attr("x", 0)
@@ -382,19 +543,25 @@
           .style("font-size", ticksize + "pt")
           .style("font-family", "Cutive Mono")
           .style("fill", "steelblue")
-          .style("opacity", 0.75)
-          .text("");
+          .style("opacity", 0.75);
         
         txtEl.append("tspan")
           .attr("id", "dist-label")
-          .attr("x", 0.8*ticksize + "pt")
-          .text("");
+          .attr("x", 0.8*ticksize + "pt");
         
         txtEl.append("tspan")
           .attr("id", "EBV-label")
           .attr("x", 0.8*ticksize + "pt")
-          .attr("dy", ticksize + "pt")
-          .text("");
+          .attr("dy", ticksize + "pt");
+        
+        txtEl.append("tspan")
+          .attr("id", "EBV-plus")
+          .attr("dx", 0.25*ticksize + "pt")
+          .attr("dy", -pmScale*ticksize + "pt");
+        
+        txtEl.append("tspan")
+          .attr("id", "EBV-minus")
+          .attr("dy", pmScale*ticksize + "pt");
       } else {
         d3.select("#mouse-overlay")
           .attr("width", width)
@@ -406,6 +573,16 @@
         d3.select("#EBV-label")
           .attr("x", 0.8*ticksize + "pt")
           .attr("dy", ticksize + "pt");
+        
+        d3.select("#EBV-plus")
+          .attr("dx", 0.25*ticksize + "pt")
+          .attr("dy", -0.65*pmScale*ticksize + "pt")
+          .style("font-size", pmScale*ticksize + "pt");
+        
+        d3.select("#EBV-minus")
+          .attr("dx", -3*pmScale*ticksize + "pt")
+          .attr("dy", pmScale*ticksize + "pt")
+          .style("font-size", pmScale*ticksize + "pt");
       }
       
       d3.select("#text-indicator")
@@ -422,32 +599,64 @@
         var xDisp = d3.mouse(this)[0];
         var xCoord = x.invert(xDisp);
         var i = bisect_x(mu, xCoord, 1);
-        y0 = best[i-1];
-        y1 = best[i];
         x0 = mu[i-1];
         x1 = mu[i];
-        var yCoord = y0 + (y1-y0)/(x1-x0) * (xCoord-x0);
+        
+        // Best-fit E(B-V)
+        var y0 = best[i-1];
+        var y1 = best[i];
+        var xFactor = (xCoord-x0) / (x1-x0);
+        var yCoord = y0 + (y1-y0)*xFactor;
         var yDisp = y(yCoord);
+        
+        // Statistics from samples of E(B-V)
+        var ESamp = []
+        for (var k = 0; k < samples.length; k++) {
+          y0 = samples[k][i-1];
+          y1 = samples[k][i];
+          ESamp.push(y0 + (y1-y0)*xFactor);
+        }
+        ESamp.sort(d3.ascending);
+        var ELow = d3.quantile(ESamp, 0.1587);
+        var EHigh = d3.quantile(ESamp, 0.8413);
+        var EMed = d3.median(ESamp);
+        
+        var yLow = y(ELow);
+        var yHigh = y(EHigh);
+        var yMed = y(EMed);
+        var xDispLeft = x(xVals[0]);
         
         DM = Math.pow(10, xCoord/5 - 2);
         
         d3.select("#x-indicator")
           .attr("y1", y(0))
-          .attr("y2", yDisp)
+          .attr("y2", yMed)
           .attr("x1", xDisp)
           .attr("x2", xDisp);
         
         d3.select("#y-indicator")
-          .attr("y1", yDisp)
-          .attr("y2", yDisp)
-          .attr("x1", x(xVals[0]))
+          .attr("y1", yMed)
+          .attr("y2", yMed)
+          .attr("x1", xDispLeft)
           .attr("x2", xDisp);
+        
+        d3.select("#y-spread-indicator")
+          .attr("x", xDispLeft)
+          .attr("y", yHigh)
+          .attr("width", xDisp-xDispLeft)
+          .attr("height", yLow-yHigh);
         
         d3.select("#dist-label")
           .text("d = " + text_formatter(DM) + " kpc");
         
         d3.select("#EBV-label")
-          .text("E(B-V) = " + text_formatter(yCoord));
+          .text("E(B-V) = " + text_formatter(EMed));
+        
+        d3.select("#EBV-plus")
+          .text("+" + text_formatter(EHigh-EMed));
+        
+        d3.select("#EBV-minus")
+          .text("-" + text_formatter(EMed-ELow));
       }
     };
     
