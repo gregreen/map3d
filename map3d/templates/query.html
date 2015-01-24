@@ -567,6 +567,9 @@
           .attr("width", width)
           .attr("height", height);
         
+        d3.select("#focus")
+          .attr("display", "none");
+        
         d3.select("#dist-label")
           .attr("x", 0.8*ticksize + "pt");
         
@@ -596,6 +599,9 @@
       var text_formatter = d3.format(".2f");
       
       function mouseMove() {
+        d3.select("#focus")
+          .attr("display", null);
+        
         var xDisp = d3.mouse(this)[0];
         var xCoord = x.invert(xDisp);
         var i = bisect_x(mu, xCoord, 1);
