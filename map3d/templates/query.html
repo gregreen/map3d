@@ -4,7 +4,7 @@
 {% block content %}
 
 <div class="container-fluid">
-  <div class="row black">
+  <div class="row brown">
     
     <div class="col-xs-12 col-sm-5 col-md-4 col-lg-3 padding-xs-5 green">
       <div class="input-group">
@@ -21,7 +21,7 @@
           <button class="btn btn-success" type="submit" id="submit-btn">
             <span class="glyphicon glyphicon-search" id="submit-btn-icon"></span>
           </button>
-      </span>
+        </span>
       </div>
     </div>
     
@@ -29,14 +29,34 @@
       <input id="coord-toggle" type="checkbox" checked data-toggle="toggle" data-on="Galactic" data-off="Equ. (J2000)" data-onstyle="success" data-offstyle="primary">
     </div>
     
-    <div class="col-xs-12 col-sm-12 brown">
+  </div>
+  
+  <div class="row blue">
+    <div class="col-xs-12 col-sm-12 col-md-10 col-lg-7">
+      <div class="alert alert-success fade in" role="alert" id="enter-coords-alert">
+        <h3>Enter in query coordinates in degrees.</h3>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row cyan collapse" id="bad-coords-div">
+    <div class="col-xs-12 col-sm-12 col-md-10 col-lg-7">
+      <div class="alert alert-warning" role="alert" id="bad-coords-alert">
+        <h3>Invalid coordinates. Please enter valid coordinates (in degrees).</h3>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row black">
+    
+    <div class="col-xs-12 col-sm-12 collapse brown" id="line-plot-div">
       <h1>Reddening vs. Distance</h1>
       <div class="box-aspect-2-1">
         <div class="line-plot-container"></div>
       </div>
     </div>
     
-    <div class="col-xs-12 col-sm-12 cyan">
+    <div class="col-xs-12 col-sm-12 collapse cyan" id="postage-stamp-div">
       <h1>Postage Stamps</h1>
       
       <div class="row">
@@ -59,7 +79,7 @@
     
   </div>
   
-  <div class="row">
+  <div class="row collapse" id="download-div">
     <h1>Download Results</h1>
     <div class="col-xs-8 col-xs-offset-2 col-sm-4 col-sm-offset-4 col-lg-4 col-lg-offset-4 bottom-spacer brown">
       <a class="btn btn-default btn-lg fancy-serif center-block disabled" href="#" target="_blank" id="table-btn">
@@ -96,6 +116,27 @@
       }
     });
     
+    // Alerts
+    function showBadCoordsAlert() {
+      if (d3.select("#bad-coords-div").classed("collapse in")) {
+        return;
+      }
+      $("#bad-coords-div").collapse("show")
+      d3.select("#bad-coords-div")
+        .transition().duration(200)
+        .style("opacity", 1);
+    }
+    
+    function hideBadCoordsAlert() {
+      if (!d3.select("#bad-coords-div").classed("collapse in")) {
+        return;
+      }
+      $("#bad-coords-div").collapse("hide");
+      d3.select("#bad-coords-div")
+        .transition().duration(200)
+        .style("opacity", 0);
+    }
+    
     // D3 Plots
     
     function packData(xVals, yData) {
@@ -104,7 +145,48 @@
       });
     };
     
+    function drawPlotSafe(forceUncollapse, container, dt, xVals, yBest, ySamples, conv, noData) {
+      var linePlotDiv = d3.select("#line-plot-div");
+      
+      if (linePlotDiv.classed("collapse in")) {
+        drawPlot(container, dt, xVals, yBest, ySamples, conv, noData);
+      } else if(forceUncollapse) {
+        $(linePlotDiv[0][0]).on("shown.bs.collapse", function() {
+          drawPlot(container, dt, xVals, yBest, ySamples, conv, noData);
+          
+          $("#postage-stamp-div").on("shown.bs.collapse", function() {
+            drawPSOverlays();
+            
+            $("#download-div").collapse("show");
+          });
+          
+          $("#postage-stamp-div").collapse("show");
+        });
+        
+        $(linePlotDiv[0][0]).collapse("show");
+      }
+    }
+    
+    /*
+    function drawPSOverlaysSafe(forceUncollapse) {
+      var PSDiv = d3.select("#postage-stamp-div");
+      
+      if (linePlotDiv.classed("collapse in")) {
+        drawPlot(container, dt, xVals, yBest, ySamples, conv, noData);
+      } else if(forceUncollapse) {
+        $(PSDiv[0][0]).on("shown.bs.collapse", function() {
+          drawPlot(container, dt, xVals, yBest, ySamples, conv, noData);
+        });
+        $(PSDiv[0][0]).collapse("show");
+      }
+    }
+    */
+    
     function drawPlot(container, dt, xVals, yBest, ySamples, conv, noData) {
+      if (!d3.select("#line-plot-div").classed("collapse in")) {
+        return;
+      }
+      
       var fullwidth = $(container).width(),
           fullheight = $(container).height();
       
@@ -354,8 +436,6 @@
       var xLegendStart = 15.5;
       var xLegend = d3.range(0., 1.251, 0.25)
         .map(function(a) { return xLegendStart + a; });
-      console.log(xLegend);
-      //var xLegend =         [15.00, 15.25, 15.50,  15.75, 16.00, 16.25];
       var yLegendBest =     [ 0.05,  0.20,  0.70,   0.80,  1.00, 1.00];
       var yLegendSamples = [[ 0.10,  0.10,  0.15,   0.20,  0.25, 0.25],
                             [ 0.20,  0.25,  0.25,   0.30,  0.35, 0.35],
@@ -367,10 +447,9 @@
       var yScaleLegend = function(a) { return yMinLegend + (yMaxLegend-yMinLegend)*a; };
       
       if (d3.select("#main-group").selectAll("#legend-wrapper")[0].length < 1) {
-        console.log("adding legend");
         var legendWrapper = d3.select("#main-group").append("g")
           .attr("id", "legend-wrapper")
-          .style("display", "none")
+          //.style("display", "none")
           .attr("class", "nodata-off");
         
         var legend = legendWrapper.append("g")
@@ -399,26 +478,26 @@
             .style("fill", "steelblue")
             .style("opacity", 1)
             .text("samples");
-      } else {
-        d3.select("#legend-best-label")
-          .transition().duration(dt)
-          .attr("x", x(xLegend[kLegendLast]+0.25))
-          .attr("y", y(yScaleLegend(yLegendBest[kLegendLast])))
-          .attr("dy", (0.25*0.8*ticksize) + "pt")
-          .style("font-size", (0.8*ticksize) + "pt")
-          .style("fill", lineColor);
-        
-        d3.select("#legend-sample-label")
-          .transition().duration(dt)
-          .attr("x", x(xLegend[kLegendLast]+0.25))
-          .attr("y", y(yScaleLegend(0.325)))
-          .attr("dy", (0.25*0.8*ticksize) + "pt")
-          .style("font-size", (0.8*ticksize) + "pt")
-          .style("fill", lineColor);
-        
-        d3.select("#legend-wrapper")
-          .style("display", null);
       }
+      
+      d3.select("#legend-best-label")
+        .transition().duration(dt)
+        .attr("x", x(xLegend[kLegendLast]+0.25))
+        .attr("y", y(yScaleLegend(yLegendBest[kLegendLast])))
+        .attr("dy", (0.25*0.8*ticksize) + "pt")
+        .style("font-size", (0.8*ticksize) + "pt")
+        .style("fill", lineColor);
+      
+      d3.select("#legend-sample-label")
+        .transition().duration(dt)
+        .attr("x", x(xLegend[kLegendLast]+0.25))
+        .attr("y", y(yScaleLegend(0.325)))
+        .attr("dy", (0.25*0.8*ticksize) + "pt")
+        .style("font-size", (0.8*ticksize) + "pt")
+        .style("fill", lineColor);
+      
+      //d3.select("#legend-wrapper")
+      //  .style("display", null);
       
       var legendBestData = [d3.zip(xLegend, yLegendBest.map(yScaleLegend))];
       
@@ -430,8 +509,6 @@
         .attr("stroke", lineColor)
         .attr("d", line)
         .attr("stroke-width", "2.5px");
-      
-      console.log(linesLegendBest.enter());
       
       linesLegendBest.enter()
         .append("path")
@@ -456,8 +533,6 @@
         .attr("stroke", lineColor)
         .attr("d", line)
         .attr("stroke-width", "1.5px");
-      
-      console.log(linesLegendBest.enter());
       
       linesLegendSamples.enter()
         .append("path")
@@ -682,7 +757,7 @@
     rCur = 0;
     
     // Draw initial plot
-    drawPlot(linePlotContainer, 0, mu, best, samples, converged, noData);
+    //drawPlot(linePlotContainer, 0, mu, best, samples, converged, noData);
     
     // Execute the query
     submitTimeLast = 0;
@@ -700,14 +775,28 @@
         queryLock = false;
       }
       
+      // Remove initial instructional alert
+      $("#enter-coords-alert").alert("close");
+      
       // Read input
       var updateInputBoxes = false;
       
       if((typeof(lon) === 'undefined') || (typeof(lat) === 'undefined')) {
         lon = $('input[name="gal-l"]').val();
         lat = $('input[name="gal-b"]').val();
+        
+        if ((!$.isNumeric(lon)) || (!$.isNumeric(lat))) {
+          showBadCoordsAlert();
+          return;
+        } else if ((lat < -90) || (lat > 90)) {
+          showBadCoordsAlert();
+          return;
+        } else {
+          hideBadCoordsAlert();
+        }
       } else {
         updateInputBoxes = true;
+        hideBadCoordsAlert();
       }
       
       // Convert from (RA,Dec) to (l,b) if necessary
@@ -754,7 +843,7 @@
           
           noData = 1 - querySuccess;
           
-          drawPlot(linePlotContainer, 500, mu, best, samples, converged, noData);
+          drawPlotSafe(true, linePlotContainer, 500, mu, best, samples, converged, noData);
           
           $("#postage-stamp-1").attr("src", data.image1);
           $("#postage-stamp-2").attr("src", data.image2);
@@ -769,7 +858,6 @@
             $("#table-btn").attr("href", tableData);
           } else {
             toggleTableBtn(true);
-            console.log("toggling button off");
           }
           
           drawPSOverlays();
@@ -817,9 +905,11 @@
      * Postage Stamp Overlays
      */
     
-    drawPSOverlays();
+    //drawPSOverlays();
     
     function drawPSOverlays() {
+      if (!d3.select("#postage-stamp-div").classed("collapse in")) { return; }
+      
       var psContainers = d3.selectAll(".ps-container");
       
       // Create SVG overlays, if they do not yet exist
@@ -1009,18 +1099,10 @@
             
             if (useGalactic) {
               submitQuery(coordsGal.l, coordsGal.b);
-              //console.log(ret);
-              //if (ret) {
-              //  $('input[name="gal-l"]').val(formatter_3f(coordsGal.l));
-              //  $('input[name="gal-b"]').val(formatter_3f(coordsGal.b));
               //}
             } else {
               var coordsEqu = gal2equ_J2000(coordsGal.l, coordsGal.b);
               submitQuery(coordsEqu.a, coordsEqu.d);
-              //if (submitQuery(coordsEqu.a, coordsEqu.d)) {
-              //  $('input[name="gal-l"]').val(formatter_3f(coordsEqu.a));
-              //  $('input[name="gal-b"]').val(formatter_3f(coordsEqu.d));
-              //}
             }
           });
       });
@@ -1107,7 +1189,7 @@
     }
     
     var debouncedDrawPlot = debounce(function() {
-      drawPlot(linePlotContainer, 200, mu, best, samples, converged, noData);
+      drawPlotSafe(false, linePlotContainer, 200, mu, best, samples, converged, noData);
     }, 125);
     
     var debouncedDrawPSOverlays = debounce(function() {

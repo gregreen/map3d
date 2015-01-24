@@ -41,13 +41,21 @@ div {
 }
 */
 
-
-h1, h2 {
+h1, h2, h3 {
   font-family: "Lora", serif;
 }
 
 h1 {
   text-align: center;
+}
+
+h3 {
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
+}
+
+.alert {
+  margin-top: 10px;
 }
 
 .ps-label {
