@@ -16,7 +16,8 @@
     -->
     
     <!-- Bootstrap -->
-    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <!--<link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">-->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
     
     <!-- Font Awesome -->
     <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
@@ -37,7 +38,7 @@
     {% if active_page == "cover" %}
     <link href="{{ url_for('static', filename='css/cover.css') }}" rel="stylesheet">
     {% elif active_page == "query" %}
-    <link href="{{ url_for('static', filename='css/query.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/query.min.css') }}" rel="stylesheet">
     {% endif %}
     
   </head>
@@ -45,20 +46,22 @@
   <body>
     
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script> -->
-    <script src="{{ url_for('static', filename='js/jquery-1.11.0.min.js')  }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery.lazyload.min.js')  }}"></script>
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.lazyload/1.9.1/jquery.lazyload.min.js"></script>
+    <!--<script src="{{ url_for('static', filename='js/jquery-1.11.0.min.js')  }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery.lazyload.min.js')  }}"></script>-->
+    
+    <!--<script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>-->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
     
     <!-- Bootstrap toggle -->
     <script src="https://gitcdn.github.io/bootstrap-toggle/2.1.0/js/bootstrap-toggle.min.js"></script>
     
     <!-- d3 -->
-    <script src="http://d3js.org/d3.v3.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     
     <!-- Astronomical Coordinate Transformations -->
-    <script src="{{ url_for('static', filename='js/astrocoords.js')  }}"></script>
+    <script src="{{ url_for('static', filename='js/astrocoords.min.js')  }}"></script>
     
     {% block content %}
     {% endblock %}
