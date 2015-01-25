@@ -232,12 +232,8 @@
       // SVG Canvas
       if (d3.select(container).selectAll("svg")[0].length < 1) {
         svg = d3.select(container).append("svg")
-          .attr("width", fullwidth)
-          .attr("height", fullheight)
-          .attr("viewBox", "0 0 " + fullwidth + " " + fullheight)
           .append("g")
-            .attr("id", "main-group")
-            .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
+            .attr("id", "main-group");
         
         lineGroup = svg.append("g")
           .attr("id", "DM-EBV-lines");
@@ -247,11 +243,7 @@
           .style("opacity", 0)
           .append("text")
             .attr("id", "convergence-warning")
-            .attr("x", 0.975*width)
-            .attr("y", height)
-            .attr("dy", (-1*ticksize) + "pt")
             .style("text-anchor", "end")
-            .style("font-size", ticksize + "pt")
             .style("font-family", "Cutive Mono")
             .style("fill", "red")
             .text("non-converged!");
@@ -261,38 +253,34 @@
           .style("opacity", 0)
           .append("text")
             .attr("id", "nodata-indicator")
-            .attr("x", 0.5*width)
-            .attr("y", 0.5*height)
-            .attr("dy", (-0.5*ticksize) + "pt")
             .style("text-anchor", "middle")
-            .style("font-size", (3*ticksize) + "pt")
             .style("font-family", "Cutive Mono")
             .style("fill", "steelblue")
             .style("opacity", 0.5)
             .text("No Data");
-      } else {
-        d3.select(container).select("svg")
-          .attr("width", fullwidth)
-          .attr("height", fullheight)
-          .attr("viewBox", "0 0 " + fullwidth + " " + fullheight);
-        
-        d3.select("#main-group")
-          .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
-        
-        d3.select("#convergence-warning")
-          .transition().duration(dt)
-          .attr("x", 0.975*width)
-          .attr("y", height)
-          .attr("dy", (-1*ticksize) + "pt")
-          .style("font-size", ticksize + "pt");
-        
-        d3.select("#nodata-indicator")
-          .transition().duration(dt)
-          .attr("x", 0.5*width)
-          .attr("y", 0.5*height)
-          .attr("dy", (-0.5*ticksize) + "pt")
-          .style("font-size", (3*ticksize) + "pt");
       }
+      
+      d3.select(container).select("svg")
+        .attr("width", fullwidth)
+        .attr("height", fullheight)
+        .attr("viewBox", "0 0 " + fullwidth + " " + fullheight);
+      
+      d3.select("#main-group")
+        .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
+      
+      d3.select("#convergence-warning")
+        .transition().duration(dt)
+        .attr("x", x(xVals[xVals.length-1]))
+        .attr("y", height)
+        .attr("dy", (-1*ticksize) + "pt")
+        .style("font-size", ticksize + "pt");
+      
+      d3.select("#nodata-indicator")
+        .transition().duration(dt)
+        .attr("x", 0.5*width)
+        .attr("y", 0.5*height)
+        .attr("dy", (-0.5*ticksize) + "pt")
+        .style("font-size", (3*ticksize) + "pt");
       
       // x-Axis
       if (svg.selectAll(".x.axis")[0].length < 1) {
@@ -436,7 +424,7 @@
       var xLegendStart = 15.5;
       var xLegend = d3.range(0., 1.251, 0.25)
         .map(function(a) { return xLegendStart + a; });
-      var yLegendBest =     [ 0.05,  0.20,  0.70,   0.80,  1.00, 1.00];
+      var yLegendBest =     [ 0.70,  0.75,  0.75,   0.85,  1.00, 1.00];
       var yLegendSamples = [[ 0.10,  0.10,  0.15,   0.20,  0.25, 0.25],
                             [ 0.20,  0.25,  0.25,   0.30,  0.35, 0.35],
                             [ 0.00,  0.05,  0.30,   0.35,  0.40, 0.40]];
@@ -444,7 +432,10 @@
       var yMaxLegend = 0.45 * yMax;
       var kLegendLast = xLegend.length-1;
       
-      var yScaleLegend = function(a) { return yMinLegend + (yMaxLegend-yMinLegend)*a; };
+      var yScaleLegend = d3.scale.linear()
+        .domain([0, 1])
+        .range([yMinLegend, yMaxLegend]);
+      //function(a) { return yMinLegend + (yMaxLegend-yMinLegend)*a; };
       
       if (d3.select("#main-group").selectAll("#legend-wrapper")[0].length < 1) {
         var legendWrapper = d3.select("#main-group").append("g")
@@ -480,9 +471,31 @@
             .text("samples");
       }
       
+      var legendMargins = {"x": 5, "y": 5};
+      
+      var h0 = (y(yMinLegend) - y(yMaxLegend));
+      var labelFrameWidth = 1.7 * (scaling / naiveScaling);
+      labelFrameWidth = (1+labelFrameWidth) * (x(xLegend[kLegendLast])-x(xLegend[0]));
+      labelFrameWidth += 2*legendMargins.y;
+      var xOffsetLabel = x(xVals[xVals.length-1]) - (x(xLegend[0]) + labelFrameWidth);
+      
+      var legendBounds = {
+        "x": x(xLegend[0]) + xOffsetLabel,
+        "y": y(yMaxLegend)-0.1*h0,
+        "width": labelFrameWidth,
+        "height": 1.1*h0 + 2*legendMargins.y
+      };
+      
+      d3.select("#legend-frame")
+        .transition().duration(dt)
+        .attr("x", (legendBounds.x - legendMargins.x) + "px")
+        .attr("y", (legendBounds.y - legendMargins.y) + "px")
+        .attr("width", legendBounds.width + "px")
+        .attr("height", legendBounds.height + "px");
+      
       d3.select("#legend-best-label")
         .transition().duration(dt)
-        .attr("x", x(xLegend[kLegendLast]+0.25))
+        .attr("x", x(xLegend[kLegendLast]+0.25) + xOffsetLabel)
         .attr("y", y(yScaleLegend(yLegendBest[kLegendLast])))
         .attr("dy", (0.25*0.8*ticksize) + "pt")
         .style("font-size", (0.8*ticksize) + "pt")
@@ -490,7 +503,7 @@
       
       d3.select("#legend-sample-label")
         .transition().duration(dt)
-        .attr("x", x(xLegend[kLegendLast]+0.25))
+        .attr("x", x(xLegend[kLegendLast]+0.25) + xOffsetLabel)
         .attr("y", y(yScaleLegend(0.325)))
         .attr("dy", (0.25*0.8*ticksize) + "pt")
         .style("font-size", (0.8*ticksize) + "pt")
@@ -498,6 +511,10 @@
       
       //d3.select("#legend-wrapper")
       //  .style("display", null);
+      
+      xLegend = xLegend.map(function(a) {
+        return a + x.invert(xOffsetLabel) - x.invert(0);
+      });
       
       var legendBestData = [d3.zip(xLegend, yLegendBest.map(yScaleLegend))];
       
@@ -545,25 +562,6 @@
       
       linesLegendSamples.exit()
         .remove();
-      
-      //var legendBounds = d3.select("#legend")[0][0].getBBox();
-      var h0 = (y(yMinLegend) - y(yMaxLegend));
-      var labelWidth = 1.7 * (scaling / naiveScaling);
-      
-      var legendBounds = {
-        "x": x(xLegend[0]),
-        "y": y(yMaxLegend)-0.1*h0,
-        "width": (1+labelWidth)*(x(xLegend[kLegendLast])-x(xLegend[0])),
-        "height": 1.1*h0
-      };
-      var legendMargins = {"x": 5, "y": 5};
-      
-      d3.select("#legend-frame")
-        .transition().duration(dt)
-        .attr("x", (legendBounds.x - legendMargins.x) + "px")
-        .attr("y", (legendBounds.y - legendMargins.y) + "px")
-        .attr("width", (legendBounds.width + 2*legendMargins.x) + "px")
-        .attr("height", (legendBounds.height + 2*legendMargins.y) + "px");
       
       /*
        *  Mouseover
@@ -651,17 +649,17 @@
         d3.select("#EBV-label")
           .attr("x", 0.8*ticksize + "pt")
           .attr("dy", ticksize + "pt");
-        
-        d3.select("#EBV-plus")
-          .attr("dx", 0.25*ticksize + "pt")
-          .attr("dy", -0.65*pmScale*ticksize + "pt")
-          .style("font-size", pmScale*ticksize + "pt");
-        
-        d3.select("#EBV-minus")
-          .attr("dx", -3*pmScale*ticksize + "pt")
-          .attr("dy", pmScale*ticksize + "pt")
-          .style("font-size", pmScale*ticksize + "pt");
       }
+      
+      d3.select("#EBV-plus")
+        .attr("dx", 0.25*ticksize + "pt")
+        .attr("dy", -0.65*pmScale*ticksize + "pt")
+        .style("font-size", pmScale*ticksize + "pt");
+      
+      d3.select("#EBV-minus")
+        .attr("dx", -3*pmScale*ticksize + "pt")
+        .attr("dy", pmScale*ticksize + "pt")
+        .style("font-size", pmScale*ticksize + "pt");
       
       d3.select("#text-indicator")
         .transition().duration(dt)
@@ -724,7 +722,7 @@
         d3.select("#y-spread-indicator")
           .attr("x", xDispLeft)
           .attr("y", yHigh)
-          .attr("width", xDisp-xDispLeft)
+          .attr("width", d3.max([0,xDisp-xDispLeft]))
           .attr("height", yLow-yHigh);
         
         d3.select("#dist-label")
@@ -943,7 +941,6 @@
         focus = psSVG.append("g")
           .attr("class", "ps-focus")
           .style("opacity", 0);
-          //.attr("display", "none");
         
         focus.append("rect")
           .attr("class", "ps-text-bg");
@@ -967,11 +964,9 @@
           var assocFocus = d3.selectAll(".ps-focus")[0][i];
           d3.select(this)
             .on("mouseover", function() {
-              //d3.select(assocFocus).attr("display", null);
               d3.select(assocFocus).style("opacity", 1);
             })
             .on("mouseout", function() {
-              //d3.select(assocFocus).attr("display", "none");
               d3.select(assocFocus).style("opacity", 0);
             });
         });
@@ -1197,9 +1192,8 @@
     }, 250);
     
     $(window).resize(debouncedDrawPlot);
-    //$(window).resize(debouncedDrawPSOverlays);
     
-    listenResize(d3.select(".ps-container")[0][0], drawPSOverlays, 250);
+    listenResize(d3.select(".ps-container")[0][0], drawPSOverlays, 500);
     
   });
 </script>
