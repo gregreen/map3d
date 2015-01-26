@@ -129,12 +129,11 @@ h1 {
   pointer-events: all;
 }
 
-.ps-text-indicator {
-  font-family: "Cutive Mono";
+.ps-text {
+  font-family: "Ubuntu Mono"; /*"Cutive Mono";*/
   fill: #C2E3FF; /* #C2E3FF; */
   stroke: white;
   stroke-width: 0.05pt;
-  opacity: 1;
 }
 
 .ps-text-bg {

@@ -269,7 +269,7 @@ $(document).ready(function() {
           var yTickDigits = d3.select(".y.axis").select("text").text().length-1;
           
           if (yTickDigits > 3) {
-            console.log(d3.select(".y.axis").selectAll(".tick > text"));
+            //console.log(d3.select(".y.axis").selectAll(".tick > text"));
             
             d3.select(".y.axis").selectAll(".tick > text")
               .style("font-size", 0.85*ticksize + "pt");
@@ -869,8 +869,6 @@ $(document).ready(function() {
    * Postage Stamp Overlays
    */
   
-  //drawPSOverlays();
-  
   function drawPSOverlays() {
     if (!d3.select("#postage-stamp-div").classed("collapse in")) { return; }
     
@@ -911,17 +909,56 @@ $(document).ready(function() {
       focus.append("rect")
         .attr("class", "ps-text-bg");
       
-      var psTxtEl = focus.append("text")
-        .attr("class", "ps-text-indicator")
+      var psGalCoordEl = focus.append("text")
+        .attr("class", "ps-gal-indicator ps-text")
         .style("text-anchor", "start");
       
-      psTxtEl.append("tspan")
+      psGalCoordEl.append("tspan")
         .text("l = 0")
         .attr("class", "ps-l-label");
       
-      psTxtEl.append("tspan")
+      psGalCoordEl.append("tspan")
         .attr("class", "ps-b-label")
         .text("b = 0");
+      
+      var psEquCoordEl = focus.append("text")
+        .attr("class", "ps-equ-indicator ps-text")
+        .style("text-anchor", "start");
+      
+      var psRA = psEquCoordEl.append("tspan")
+        .text("\u03B1 = ")
+        .attr("class", "ps-a-label");
+      
+      // The RA label contains several parts, to allow superscript h, m, s
+      psRA.append("tspan")
+        .attr("class", "RA-hh");
+      
+      psRA.append("tspan")
+        .attr("class", "RA-hh-sup")
+        .text("h");
+      
+      psRA.append("tspan")
+        .attr("class", "RA-mm");
+      
+      psRA.append("tspan")
+        .attr("class", "RA-mm-sup")
+        .text("m");
+      
+      psRA.append("tspan")
+        .attr("class", "RA-ss")
+        .text("");
+      
+      psRA.append("tspan")
+        .attr("class", "RA-ss-sup")
+        .text("s");
+      
+      psRA.append("tspan")
+        .attr("class", "RA-end")
+        .text(" ");
+      
+      psEquCoordEl.append("tspan")
+        .attr("class", "ps-d-label")
+        .text("d = 0");
       
       psOverlayRect = psSVG.append("rect")
         .attr("class", "overlay");
@@ -961,37 +998,132 @@ $(document).ready(function() {
       d3.select(this).select(".ps-bullseye")
         .attr("transform", "translate(" + imgProp.width/2. + "," + imgProp.height/2. + ")");
       
-      // Update coordinate labels
+      // Update coordinate label positions
       var psScaling = imgProp.width / 200;
       psScaling = d3.max([psScaling, 0.5]);
       psScaling = d3.min([psScaling, 3.]);
       
       var psFontSize = 11 * psScaling;
       
-      var psTxt = d3.select(this).select(".ps-text-indicator")
+      var psGalTxt = d3.select(this).select(".ps-gal-indicator")
         .attr("x", 1.2*psFontSize + "pt")
         .attr("y", 1.2*psFontSize + "pt")
         .style("font-size", psFontSize + "pt");
       
-      lLabPS = psTxt.select(".ps-l-label");
-      
-      lTxtTmp = lLabPS.text();
-      
-      lLabPS.attr("x", 0.5*psFontSize + "pt");
+      var psEquTxt = d3.select(this).select(".ps-equ-indicator")
+        .attr("x", 1.2*psFontSize + "pt")
+        .attr("y", 1.2*psFontSize + "pt")
+        .style("font-size", psFontSize + "pt");
       
       if (useGalactic) {
-        lLabPS.text("l = 359.9\u00B0"); // Set l-label to longest possible value
+        psGalTxt.attr("opacity", 1);
+        psEquTxt.attr("opacity", 0);
       } else {
-        lLabPS.text("\u03B1 = 24:59:59");
+        psGalTxt.attr("opacity", 0);
+        psEquTxt.attr("opacity", 1);
       }
       
-      psTxt.select(".ps-b-label")
+      // Function to update RA label
+      var formatter_02d = d3.format("02d");
+      
+      var setRALab = function(alpha) {
+        if (alpha === null) {
+          psEquTxt.select(".RA-hh")
+            .text("");
+          psEquTxt.select(".RA-mm")
+            .text("");
+          psEquTxt.select(".RA-ss")
+            .text("");
+          return;
+        }
+        
+        var hms = deg2hms(alpha);
+        
+        psEquTxt.select(".RA-hh")
+          .text(hms.h);
+        psEquTxt.select(".RA-mm")
+          .text(formatter_02d(hms.m));
+        psEquTxt.select(".RA-ss")
+          .text(formatter_02d(Math.round(hms.s)));
+        
+        console.log(hms);
+        console.log(psEquTxt.select(".RA-ss"));
+      };
+      
+      // Format and position labels
+      var lLabPS = psGalTxt.select(".ps-l-label");
+      lLabPS
+        .attr("x", 0.5*psFontSize + "pt")
+        .attr("y", 1.2*psFontSize + "pt");
+      
+      psEquTxt.select(".ps-a-label")
+        .attr("x", 0.5*psFontSize + "pt")
+        .attr("y", 1.2*psFontSize + "pt");
+      
+      psEquTxt.select(".RA-hh")
+        .attr("font-size", psFontSize + "pt");
+      
+      psEquTxt.select(".RA-hh-sup")
+        .attr("font-size", 0.5*psFontSize + "pt")
+        .attr("dy", -0.5*psFontSize + "pt");
+      
+      psEquTxt.select(".RA-mm")
+        .attr("font-size", psFontSize + "pt")
+        .attr("dy", 0.5*psFontSize + "pt");
+      
+      psEquTxt.select(".RA-mm-sup")
+        .attr("font-size", 0.5*psFontSize + "pt")
+        .attr("dy", -0.5*psFontSize + "pt");
+      
+      psEquTxt.select(".RA-ss")
+        .attr("font-size", psFontSize + "pt")
+        .attr("dy", 0.5*psFontSize + "pt");
+      
+      psEquTxt.select(".RA-ss-sup")
+        .attr("font-size", 0.5*psFontSize + "pt")
+        .attr("dy", -0.5*psFontSize + "pt");
+      
+      psEquTxt.select(".RA-end")
+        .attr("font-size", 0.5*psFontSize + "pt")
+        .attr("dy", 0.5*psFontSize + "pt");
+      
+      psGalTxt.select(".ps-b-label")
         .attr("x", 0.5*psFontSize + "pt")
         .attr("dy", psFontSize + "pt");
       
-      var psTxtBounds = psTxt[0][0].getBBox();
+      psEquTxt.select(".ps-d-label")
+        .attr("x", 0.5*psFontSize + "pt")
+        .attr("dy", psFontSize + "pt");
       
-      lLabPS.text(lTxtTmp); // Set l-label back to previous value
+      // Update frame size
+      var lTxtTmp = lLabPS.text();
+      var hhTxtTmp = psEquTxt.select(".RA-hh").text();
+      var mmTxtTmp = psEquTxt.select(".RA-mm").text();
+      var ssTxtTmp = psEquTxt.select(".RA-ss").text();
+      
+      // Set longitude label to longest possible value
+      if (useGalactic) {
+        lLabPS.text("l = 359.9\u00B0");
+        setRALab(null);
+      } else {
+        lLabPS.text("");
+        setRALab(59.999);
+      }
+      
+      var getPSTxtBounds = function() {
+        if (useGalactic) {
+          return psGalTxt[0][0].getBBox();
+        } else {
+          return psEquTxt[0][0].getBBox();
+        }
+      };
+      
+      var psTxtBounds = getPSTxtBounds();
+      
+      lLabPS.html(lTxtTmp); // Set l-label back to previous value
+      psEquTxt.select(".RA-hh").text(hhTxtTmp);
+      psEquTxt.select(".RA-mm").text(mmTxtTmp);
+      psEquTxt.select(".RA-ss").text(ssTxtTmp);
       
       xMargin = 0.5 * psTxtBounds.x;
       yMargin = 0.5 * psTxtBounds.y;
@@ -1040,22 +1172,21 @@ $(document).ready(function() {
         .on("mousemove", function() {
           var coordsGal = get_ps_lb(this);
           
-          var lTxt = "";
-          var bTxt = "";
-          
           if (useGalactic) {
-            lTxt = "l = " + lb_formatter(coordsGal.l) + "\u00B0";
-            bTxt = "b = " + lb_formatter(coordsGal.b) + "\u00B0";
+            var lTxt = "l = " + lb_formatter(coordsGal.l) + "\u00B0";
+            var bTxt = "b = " + lb_formatter(coordsGal.b) + "\u00B0";
+            d3.select(self).select(".ps-l-label")
+              .text(lTxt);
+            d3.select(self).select(".ps-b-label")
+              .text(bTxt);
           } else {
             var coordsEqu = gal2equ_J2000(coordsGal.l, coordsGal.b);
-            lTxt = "\u03B1 = " + alpha_formatter(coordsEqu.a);// + "\u00B0";
-            bTxt = "\u03B4 = " + lb_formatter(coordsEqu.d) + "\u00B0";
+            //lTxt = "\u03B1 = " + RAasHTML(coordsEqu.a);// + "\u00B0";
+            setRALab(coordsEqu.a);
+            var dTxt = "\u03B4 = " + lb_formatter(coordsEqu.d) + "\u00B0";
+            d3.select(self).select(".ps-d-label")
+              .text(dTxt);
           }
-          
-          d3.select(self).select(".ps-l-label")
-            .text(lTxt); // \u2113
-          d3.select(self).select(".ps-b-label")
-            .text(bTxt);
         })
         .on("click", function() {
           var coordsGal = get_ps_lb(this);
