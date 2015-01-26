@@ -34,7 +34,7 @@
   <div class="row blue">
     <div class="col-xs-12 col-sm-12 col-md-10 col-lg-7">
       <div class="alert alert-success fade in" role="alert" id="enter-coords-alert">
-        <h3>Enter in query coordinates in degrees.</h3>
+        <h3>Enter query coordinates.</h3>
       </div>
     </div>
   </div>
@@ -42,7 +42,15 @@
   <div class="row cyan collapse" id="bad-coords-div">
     <div class="col-xs-12 col-sm-12 col-md-10 col-lg-7">
       <div class="alert alert-warning" role="alert" id="bad-coords-alert">
-        <h3>Invalid coordinates. Please enter valid coordinates (in degrees).</h3>
+        <h3>Invalid coordinates. Please enter valid coordinates.</h3>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row cyan collapse" id="custom-alert-div">
+    <div class="col-xs-12 col-sm-12 col-md-10 col-lg-7">
+      <div class="alert alert-warning" role="alert">
+        <h4>Nothing here.</h4>
       </div>
     </div>
   </div>
@@ -89,6 +97,6 @@
   </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/querypage.min.js')  }}"></script>
+<script src="{{ url_for('static', filename='js/querypage.js')  }}"></script>
 
 {% endblock %}

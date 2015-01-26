@@ -38,7 +38,7 @@
     {% if active_page == "cover" %}
     <link href="{{ url_for('static', filename='css/cover.css') }}" rel="stylesheet">
     {% elif active_page == "query" %}
-    <link href="{{ url_for('static', filename='css/query.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/query.css') }}" rel="stylesheet">
     {% endif %}
     
   </head>
@@ -61,7 +61,7 @@
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     
     <!-- Astronomical Coordinate Transformations -->
-    <script src="{{ url_for('static', filename='js/astrocoords.min.js')  }}"></script>
+    <script src="{{ url_for('static', filename='js/astrocoords.js')  }}"></script>
     
     {% block content %}
     {% endblock %}

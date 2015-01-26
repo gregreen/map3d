@@ -44,6 +44,41 @@ $(document).ready(function() {
       .style("opacity", 0);
   }
   
+  function showCustomAlert(msg) {
+    var alertDiv = d3.select("#custom-alert-div");
+    var prevMsg = alertDiv.select("h4").text();
+    
+    var execShow = function() {
+      alertDiv.select("h4").text(msg);
+      $("#custom-alert-div").collapse("show")
+      alertDiv.transition().duration(200)
+        .style("opacity", 1);
+    };
+    
+    if (d3.select("#custom-alert-div").classed("collapse in")) {
+      if (prevMsg == msg) {
+        return;
+      } else {
+        $("#custom-alert-div").on("hidden.bs.collapse", function() {
+          execShow();
+        });
+        $("#custom-alert-div").collapse("hide");
+      }
+    } else {
+      execShow();
+    }
+  }
+  
+  function hideCustomAlert() {
+    if (!d3.select("#custom-alert-div").classed("collapse in")) {
+      return;
+    }
+    $("#custom-alert-div").collapse("hide");
+    d3.select("#custom-alert-div")
+      .transition().duration(200)
+      .style("opacity", 0);
+  }
+  
   // D3 Plots
   
   function packData(xVals, yData) {
@@ -73,21 +108,6 @@ $(document).ready(function() {
       $(linePlotDiv[0][0]).collapse("show");
     }
   }
-  
-  /*
-  function drawPSOverlaysSafe(forceUncollapse) {
-    var PSDiv = d3.select("#postage-stamp-div");
-    
-    if (linePlotDiv.classed("collapse in")) {
-      drawPlot(container, dt, xVals, yBest, ySamples, conv, noData);
-    } else if(forceUncollapse) {
-      $(PSDiv[0][0]).on("shown.bs.collapse", function() {
-        drawPlot(container, dt, xVals, yBest, ySamples, conv, noData);
-      });
-      $(PSDiv[0][0]).collapse("show");
-    }
-  }
-  */
   
   function drawPlot(container, dt, xVals, yBest, ySamples, conv, noData) {
     if (!d3.select("#line-plot-div").classed("collapse in")) {
@@ -683,25 +703,43 @@ $(document).ready(function() {
     // Remove initial instructional alert
     $("#enter-coords-alert").alert("close");
     
-    // Read input
+    // Read and validate input
     var updateInputBoxes = false;
     
     if((typeof(lon) === 'undefined') || (typeof(lat) === 'undefined')) {
-      lon = $('input[name="gal-l"]').val();
-      lat = $('input[name="gal-b"]').val();
+      lon = parseAngle($('input[name="gal-l"]').val());
+      lat = parseAngle($('input[name="gal-b"]').val());
       
-      if ((!$.isNumeric(lon)) || (!$.isNumeric(lat))) {
+      console.log("lon:");
+      console.log(lon);
+      console.log("lat:");
+      console.log(lat);
+      
+      //if ((!$.isNumeric(lon)) || (!$.isNumeric(lat))) {
+      
+      if ((lon.val === null) || (lat.val === null)) {
         showBadCoordsAlert();
         return;
-      } else if ((lat < -90) || (lat > 90)) {
+      } else if ((lat.val < -90) || (lat.val > 90)) {
         showBadCoordsAlert();
         return;
       } else {
         hideBadCoordsAlert();
       }
+      
+      if (useGalactic & ((lon.format == "hms") || (lat.format == "hms"))) {
+        showCustomAlert("hh:mm:ss format detected. Did you mean to use Equatorial coordinates?");
+      } else {
+        hideCustomAlert();
+      }
+      
+      lon = lon.val;
+      lat = lat.val;
+      
     } else {
       updateInputBoxes = true;
       hideBadCoordsAlert();
+      hideCustomAlert();
     }
     
     // Convert from (RA,Dec) to (l,b) if necessary

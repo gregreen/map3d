@@ -10,6 +10,79 @@ function rad2deg(theta) {
   return 180 / Math.PI * theta;
 }
 
+function hms2deg(hh, mm, ss) {
+  var theta = 0.;
+  
+  if ($.isNumeric(hh)) {
+    theta += hh * 15.;
+  }
+  if ($.isNumeric(mm)) {
+    theta += mm / 4.;
+  }
+  if ($.isNumeric(ss)) {
+    theta += ss / 240.;
+  }
+  
+  return theta;
+}
+
+function dms2deg(dd, mm, ss) {
+  var theta = 0.;
+  
+  if ($.isNumeric(dd)) {
+    theta += dd * 1.;
+  }
+  if ($.isNumeric(mm)) {
+    theta += mm / 60.;
+  }
+  if ($.isNumeric(ss)) {
+    theta += ss / 3600.;
+  }
+  
+  return theta;
+}
+
+
+/*
+ * Parse angle specification
+ */
+
+function parseAngle(s) {
+  console.log("parsing angle:")
+  console.log(s);
+  
+  // Try to read the angle as a number
+  if($.isNumeric(s)) {
+    return {"val": s, "format": "deg"};
+  }
+  
+  // Try to parse as an hour angle (e.g., "10h5m3.45s" or "10:5:3.45")
+  var re = /^([-]?\d*[.]?\d*)(?:[h:]?\s*)(\d*[.]?\d*)(?:[m:]?\s*)(\d*[.]?\d*)(?:[s]?\s*)$/i;
+  var matches = s.match(re);
+  
+  console.log("hms matches:");
+  console.log(matches);
+  
+  if (matches !== null) {
+    var val = hms2deg(matches[1], matches[2], matches[3]);
+    return {"val": val, "format": "hms"};
+  }
+  
+  // Try to parse as degrees - arcmin - arcsec (e.g., "15d43m15.8s")
+  re = /^([-]?\d*[.]?\d*)(?:d\s*)(\d*[.]?\d*)(?:[m:]?\s*)(\d*[.]?\d*)(?:[s]?\s*)$/i;
+  var matches = s.match(re);
+  
+  console.log("dms matches:");
+  console.log(matches);
+  
+  if (matches !== null) {
+    var val = dms2deg(matches[1], matches[2], matches[3]);
+    return {"val": val, "format": "dms"};
+  }
+  
+  return {"val": null, "format": null};
+}
+
 
 /*
  * Equatorial - Galactic
