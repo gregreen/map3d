@@ -12,6 +12,8 @@ $(document).ready(function() {
       d3.select("#gal-b-symbol").text("b");
       d3.select("#submit-btn").classed("btn-success", true);
       d3.select("#submit-btn").classed("btn-primary", false);
+      d3.select("#enter-coords-alert").classed("alert-success", true);
+      d3.select("#enter-coords-alert").classed("alert-info", false);
     } else {
       useGalactic = false;
       d3.select("#gal-l-input").attr("placeholder", "R.A. (\u00B0)");
@@ -20,6 +22,11 @@ $(document).ready(function() {
       d3.select("#gal-b-symbol").text("\u03B4");
       d3.select("#submit-btn").classed("btn-success", false);
       d3.select("#submit-btn").classed("btn-primary", true);
+      d3.select("#enter-coords-alert").classed("alert-success", false);
+      d3.select("#enter-coords-alert").classed("alert-info", true);
+    }
+    if(d3.select("#line-plot-div").classed("collapse in")) {
+      drawPSOverlays();
     }
   });
   
@@ -127,7 +134,7 @@ $(document).ready(function() {
     labelsize = 14 * scaling;
     ticksize = 12 * scaling;
     
-    var margins = {left:70*scaling, right:20*scaling,
+    var margins = {left:73*scaling, right:18*scaling,
                    bottom:80*scaling, top:20*scaling};
     
     var width = fullwidth - margins.left - margins.right,
@@ -218,19 +225,21 @@ $(document).ready(function() {
       .append("text")
         .attr("id", "xlabel")
         .attr("x", width/2)
-        .attr("dy", (3*ticksize) + "pt")
+        .attr("dy", (5*ticksize) + "pt")
         .text("Distance Modulus (mags)")
         .style("text-anchor", "middle");
-    } else {
-      svg.selectAll(".x.axis")
-        .attr("transform", "translate(0," + height + ")")
-        .transition(dt).duration(dt)
-        .call(xAxis);
-      
-      d3.select("#xlabel")
-        .attr("x", width/2)
-        .attr("dy", (3*ticksize) + "pt");
     }
+    
+    svg.selectAll(".x.axis")
+      .attr("transform", "translate(0," + height + ")")
+      .transition(dt).duration(dt)
+      .call(xAxis);
+    
+    d3.select("#xlabel")
+      .transition().duration(dt)
+      .attr("x", width/2)
+      .attr("dy", (3*ticksize) + "pt");
+    
     
     // y-Axis
     if (svg.selectAll(".y.axis")[0].length < 1) {
@@ -242,18 +251,40 @@ $(document).ready(function() {
         .attr("transform", "rotate(-90)")
         .attr("y", 0)
         .attr("x", -height/2)
-        .attr("dy", (-3*ticksize) + "pt")
+        .attr("dy", (-5*ticksize) + "pt")
         .style("text-anchor", "middle")
         .text("E(B-V) (mags)");
-    } else {
-      svg.selectAll(".y.axis")
-        .transition().duration(dt)
-        .call(yAxis);
-      
-      d3.select("#ylabel")
-        .attr("x", -height/2)
-        .attr("dy", (-3*ticksize) + "pt");
     }
+    
+    d3.select("#ylabel")
+      .transition().duration(dt)
+      .attr("x", -height/2)
+      .attr("dy", (-3.4*ticksize) + "pt");
+    
+    svg.selectAll(".y.axis")
+      .transition().duration(dt)
+      .call(yAxis)
+      .call(endall, function() {  // Deal with label overlap on y-axis
+        d3.timer(function() {
+          var yTickDigits = d3.select(".y.axis").select("text").text().length-1;
+          
+          if (yTickDigits > 3) {
+            console.log(d3.select(".y.axis").selectAll(".tick > text"));
+            
+            d3.select(".y.axis").selectAll(".tick > text")
+              .style("font-size", 0.85*ticksize + "pt");
+            
+            d3.select(".y.axis").selectAll(".axis > text")
+              .style("font-size", 0.95*labelsize + "pt");
+            
+            d3.select("#ylabel")
+              .transition().duration(dt)
+              .attr("dy", (-3.6*ticksize) + "pt");
+          }
+          
+          return true;
+        }, 0.1*dt);
+      });
     
     // Fonts
     d3.selectAll(".tick > text")
@@ -435,9 +466,6 @@ $(document).ready(function() {
       .attr("dy", (0.25*0.8*ticksize) + "pt")
       .style("font-size", (0.8*ticksize) + "pt")
       .style("fill", lineColor);
-    
-    //d3.select("#legend-wrapper")
-    //  .style("display", null);
     
     xLegend = xLegend.map(function(a) {
       return a + x.invert(xOffsetLabel) - x.invert(0);
@@ -710,13 +738,6 @@ $(document).ready(function() {
       lon = parseAngle($('input[name="gal-l"]').val());
       lat = parseAngle($('input[name="gal-b"]').val());
       
-      console.log("lon:");
-      console.log(lon);
-      console.log("lat:");
-      console.log(lat);
-      
-      //if ((!$.isNumeric(lon)) || (!$.isNumeric(lat))) {
-      
       if ((lon.val === null) || (lat.val === null)) {
         showBadCoordsAlert();
         return;
@@ -956,8 +977,13 @@ $(document).ready(function() {
       
       lTxtTmp = lLabPS.text();
       
-      lLabPS.attr("x", 0.5*psFontSize + "pt")
-        .text("l = 359.9\u00B0"); // Set l-label to longest possible value
+      lLabPS.attr("x", 0.5*psFontSize + "pt");
+      
+      if (useGalactic) {
+        lLabPS.text("l = 359.9\u00B0"); // Set l-label to longest possible value
+      } else {
+        lLabPS.text("\u03B1 = 24:59:59");
+      }
       
       psTxt.select(".ps-b-label")
         .attr("x", 0.5*psFontSize + "pt")
@@ -987,7 +1013,14 @@ $(document).ready(function() {
       var sLat0 = Math.sin(deg2rad(bCur));
       var xMaxProj = GnomonicProj(deg2rad(rCur), 0, 0, 1, 0).x;
       
+      // Formatters for coordinate overlays
       var lb_formatter = d3.format(".1f");
+      
+      var alpha_formatter = function(theta) {
+        var hms = deg2hms(theta);
+        var retTxt = hms.h + ":" + hms.m + ":" + Math.round(hms.s);
+        return retTxt;
+      };
       
       var get_ps_lb = function(objOverlay) {
         var xDisp = d3.mouse(objOverlay)[0];
@@ -1005,16 +1038,6 @@ $(document).ready(function() {
         .attr("width", imgProp.width)
         .attr("height", imgProp.height)
         .on("mousemove", function() {
-          /*
-          var xDisp = d3.mouse(this)[0];
-          var yDisp = d3.mouse(this)[1];
-          
-          var xProj = -2 * (xDisp / imgProp.width - 0.5) * xMaxProj;
-          var yProj = -2 * (yDisp / imgProp.height - 0.5) * xMaxProj;
-          
-          var coords = GnomonicProjInv(xProj, yProj, lng0, cLat0, sLat0);
-          */
-          
           var coordsGal = get_ps_lb(this);
           
           var lTxt = "";
@@ -1025,7 +1048,7 @@ $(document).ready(function() {
             bTxt = "b = " + lb_formatter(coordsGal.b) + "\u00B0";
           } else {
             var coordsEqu = gal2equ_J2000(coordsGal.l, coordsGal.b);
-            lTxt = "\u03B1 = " + lb_formatter(coordsEqu.a) + "\u00B0";
+            lTxt = "\u03B1 = " + alpha_formatter(coordsEqu.a);// + "\u00B0";
             bTxt = "\u03B4 = " + lb_formatter(coordsEqu.d) + "\u00B0";
           }
           
@@ -1098,6 +1121,14 @@ $(document).ready(function() {
     }
     
     return {"lng": lng, "lat": lat};
+  }
+  
+  // Allow callbacks at end of transition
+  function endall(transition, callback) { 
+    var n = 0; 
+    transition 
+      .each(function() { ++n; }) 
+      .each("end", function() { if (!--n) callback.apply(this, arguments); }); 
   }
   
   // Handle window resizing

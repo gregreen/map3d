@@ -48,9 +48,6 @@ function dms2deg(dd, mm, ss) {
  */
 
 function parseAngle(s) {
-  console.log("parsing angle:")
-  console.log(s);
-  
   // Try to read the angle as a number
   if($.isNumeric(s)) {
     return {"val": s, "format": "deg"};
@@ -59,9 +56,6 @@ function parseAngle(s) {
   // Try to parse as an hour angle (e.g., "10h5m3.45s" or "10:5:3.45")
   var re = /^([-]?\d*[.]?\d*)(?:[h:]?\s*)(\d*[.]?\d*)(?:[m:]?\s*)(\d*[.]?\d*)(?:[s]?\s*)$/i;
   var matches = s.match(re);
-  
-  console.log("hms matches:");
-  console.log(matches);
   
   if (matches !== null) {
     var val = hms2deg(matches[1], matches[2], matches[3]);
@@ -72,15 +66,29 @@ function parseAngle(s) {
   re = /^([-]?\d*[.]?\d*)(?:d\s*)(\d*[.]?\d*)(?:[m:]?\s*)(\d*[.]?\d*)(?:[s]?\s*)$/i;
   var matches = s.match(re);
   
-  console.log("dms matches:");
-  console.log(matches);
-  
   if (matches !== null) {
     var val = dms2deg(matches[1], matches[2], matches[3]);
     return {"val": val, "format": "dms"};
   }
   
   return {"val": null, "format": null};
+}
+
+
+function deg2hms(theta) {
+  if (theta < 0) {
+    theta = theta + 360. * math.Ceil(-theta/360.);
+  }
+  
+  var hh = Math.floor(theta / 15.);
+  theta = theta - 15.*hh;
+  
+  var mm = Math.floor(theta * 4.);
+  theta = theta - mm/4.;
+  
+  var ss = theta * 240.;
+  
+  return {"h": parseInt(hh), "m": parseInt(mm), "s": ss};
 }
 
 
