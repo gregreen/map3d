@@ -832,12 +832,12 @@ $(document).ready(function() {
           $('input[name="gal-b"]').val(formatter_3f(lat));
         }
       },
-      error: function() {
+      error: function(xhr, status, error) {
         queryLock = false;
-        
         $("#submit-btn-icon").attr("class", "glyphicon glyphicon-ok");
-        
         toggleTableBtn(true);
+        
+        console.log('Message from server: ' + xhr.responseText);
       }
     });
     
