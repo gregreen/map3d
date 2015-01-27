@@ -48,12 +48,19 @@ def query(l, b):
                     summarizing the line-of-sight reddening information.
     '''
     
-    url = 'http://argonaut.rc.fas.harvard.edu/gal-lb-query-light'
+    #url = 'http://argonaut.rc.fas.harvard.edu/gal-lb-query-light'
+    url = 'http://127.0.0.1:5000/gal-lb-query-light'
     
     payload = {'l': l, 'b': b}
     headers = {'content-type': 'application/json'}
     
     r = requests.post(url, data=json.dumps(payload), headers=headers)
+    
+    print r.headers
+    
+    if r.status_code == 400:
+        print '400 (Bad Request) Response Received from Argonaut:'
+        print r.text
     
     return json.loads(r.text)
     
@@ -63,14 +70,16 @@ def main():
     import numpy as np
     import time
     
-    N = 20
+    N = 2000
     l = 360. * np.random.random(N)
     b = 180. * np.random.random(N) - 90.
     
     t_start = time.time()
     
-    for ll,bb in zip(l,b):
+    for i,(ll,bb) in enumerate(zip(l,b)):
         pixel_data = query(ll, bb)
+        print i+1
+        #time.sleep(0.5)
     
     t_end = time.time()
     
