@@ -59,3 +59,30 @@ def gal_lb_query():
                    mu=mu, best=best, samples=samples,
                    n_stars=n_stars, converged=converged,
                    table_data=table_data)
+
+
+@app.route('/gal-lb-query-light', methods=['POST'])
+def gal_lb_query_light():
+    l = float(request.json['l'])
+    b = float(request.json['b'])
+    ip = request.remote_addr
+    
+    assert((b <= 90.) and (b >= -90.))
+    
+    t_start = time.time()
+    
+    mu, best, samples, n_stars, converged, table_data = loscurves.get_encoded_los(mapdata.map_query, l, b)
+    
+    t_end = time.time()
+    
+    txt_request = 'l,b = (%.2f, %.2f) requested by %s ' % (l, b, str(ip))
+    txt_request += '(t: %.2fs)' % (t_end-t_start)
+    print txt_request
+    
+    success = int(int(n_stars) != 0)
+    
+    return jsonify(success=success,
+                   l=l, b=b, distmod=mu,
+                   best=best, samples=samples,
+                   n_stars=n_stars, converged=converged,
+                   table_data=table_data)
