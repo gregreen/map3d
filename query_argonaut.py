@@ -48,8 +48,8 @@ def query(l, b):
                     summarizing the line-of-sight reddening information.
     '''
     
-    #url = 'http://argonaut.rc.fas.harvard.edu/gal-lb-query-light'
-    url = 'http://127.0.0.1:5000/gal-lb-query-light'
+    url = 'http://argonaut.rc.fas.harvard.edu/gal-lb-query-light'
+    #url = 'http://127.0.0.1:5000/gal-lb-query-light'
     
     payload = {'l': l, 'b': b}
     headers = {'content-type': 'application/json'}
