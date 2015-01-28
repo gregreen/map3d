@@ -4,6 +4,12 @@ from flask import render_template, redirect, request, jsonify
 
 from rate_limit import ratelimit
 
+from redis_logger import Logger
+import os
+script_dir = os.path.dirname(os.path.realpath(__file__))
+log_path = os.path.join(script_dir, '..', 'log', 'argonaut_requests.log')
+logger = Logger('argonaut_request_log', log_path)
+
 import mapdata
 import postage_stamp
 import loscurves
@@ -54,7 +60,8 @@ def gal_lb_query():
     
     txt_request = 'l,b = (%.2f, %.2f) requested by %s ' % (l, b, str(ip))
     txt_request += '(t: %.2fs, ps: %.2fs, los: %.4fs)' % (t_los-t_start, t_ps-t_start, t_los-t_ps)
-    print txt_request
+    
+    logger.write(txt_request)
     
     success = int(int(n_stars) != 0)
     
@@ -95,7 +102,8 @@ def gal_lb_query_light():
     
     txt_request = 'l,b = (%.2f, %.2f) requested by %s ' % (l, b, str(ip))
     txt_request += '(t: %.2fs)' % (t_end-t_start)
-    print txt_request
+    
+    logger.write(txt_request)
     
     success = int(int(n_stars) != 0)
     

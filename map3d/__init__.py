@@ -4,4 +4,7 @@ from config import basedir
 
 app = Flask(__name__)
 
+from redis import Redis
+redis = Redis()
+
 from map3d import views

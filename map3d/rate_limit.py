@@ -7,14 +7,16 @@
 #  Originally by Armin Ronacher
 #
 
-from map3d import app
+from map3d import app, redis
 
 import time
-from redis import Redis
+
 from flask import request, g
 from functools import update_wrapper
 
-redis = Redis()
+#from redis import Redis
+#redis = Redis()
+
 
 class RateLimit(object):
     expiration_window = 10
