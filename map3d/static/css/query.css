@@ -130,7 +130,8 @@ h1 {
 }
 
 .ps-text {
-  font-family: "Ubuntu Mono"; /*"Cutive Mono";*/
+  font-family: "Cousine";
+  font-weight: 400;
   fill: #C2E3FF; /* #C2E3FF; */
   stroke: white;
   stroke-width: 0.05pt;

@@ -1,5 +1,8 @@
 $(document).ready(function() {
   
+  monoFont = "Cousine";
+  
+  $('#coord-toggle').bootstrapToggle('on');
   useGalactic = true;
   
   // Coordinate toggle
@@ -178,7 +181,7 @@ $(document).ready(function() {
         .append("text")
           .attr("id", "convergence-warning")
           .style("text-anchor", "end")
-          .style("font-family", "Cutive Mono")
+          .style("font-family", monoFont)
           .style("fill", "red")
           .text("non-converged!");
       
@@ -188,7 +191,7 @@ $(document).ready(function() {
         .append("text")
           .attr("id", "nodata-indicator")
           .style("text-anchor", "middle")
-          .style("font-family", "Cutive Mono")
+          .style("font-family", monoFont)
           .style("fill", "steelblue")
           .style("opacity", 0.5)
           .text("No Data");
@@ -415,7 +418,7 @@ $(document).ready(function() {
       legend.append("text")
         .attr("id", "legend-best-label")
         .style("text-anchor", "start")
-        .style("font-family", "Cutive Mono")
+        .style("font-family", monoFont)
         .style("fill", "steelblue")
         .style("opacity", 1)
         .text("best fit");
@@ -423,7 +426,7 @@ $(document).ready(function() {
       legend.append("text")
         .attr("id", "legend-sample-label")
           .style("text-anchor", "start")
-          .style("font-family", "Cutive Mono")
+          .style("font-family", monoFont)
           .style("fill", "steelblue")
           .style("opacity", 1)
           .text("samples");
@@ -569,7 +572,7 @@ $(document).ready(function() {
         .attr("y", 0)
         .style("text-anchor", "start")
         .style("font-size", ticksize + "pt")
-        .style("font-family", "Cutive Mono")
+        .style("font-family", monoFont)
         .style("fill", "steelblue")
         .style("opacity", 0.75);
       
@@ -585,10 +588,12 @@ $(document).ready(function() {
       txtEl.append("tspan")
         .attr("id", "EBV-plus")
         .attr("dx", 0.25*ticksize + "pt")
+        .attr("text-anchor", "start")
         .attr("dy", -pmScale*ticksize + "pt");
       
       txtEl.append("tspan")
         .attr("id", "EBV-minus")
+        .attr("text-anchor", "start")
         .attr("dy", pmScale*ticksize + "pt");
     } else {
       d3.select("#mouse-overlay")
@@ -624,7 +629,8 @@ $(document).ready(function() {
       .attr("dy", 0.5*ticksize + "pt");
     
     var bisect_x = d3.bisector(function(d) { return d; }).left;
-    var text_formatter = d3.format(".2f");
+    var pm_formatter = d3.format(".2r");
+    var maj_formatter = d3.format(".2f");
     
     function mouseMove() {
       d3.select("#focus")
@@ -681,16 +687,19 @@ $(document).ready(function() {
         .attr("height", yLow-yHigh);
       
       d3.select("#dist-label")
-        .text("d = " + text_formatter(DM) + " kpc");
+        .text("d = " + maj_formatter(DM) + " kpc");
       
       d3.select("#EBV-label")
-        .text("E(B-V) = " + text_formatter(EMed));
+        .text("E(B-V) = " + maj_formatter(EMed));
       
       d3.select("#EBV-plus")
-        .text("+" + text_formatter(EHigh-EMed));
+        .text("+" + pm_formatter(EHigh-EMed));
+      
+      var dxMinus = $("#EBV-plus")[0].getComputedTextLength();
       
       d3.select("#EBV-minus")
-        .text("-" + text_formatter(EMed-ELow));
+        .text("-" + pm_formatter(EMed-ELow))
+        .attr("dx", "-" + dxMinus);
     }
   };
   
@@ -1107,7 +1116,7 @@ $(document).ready(function() {
         setRALab(null);
       } else {
         lLabPS.text("");
-        setRALab(59.999);
+        setRALab(359.999);
       }
       
       var getPSTxtBounds = function() {
