@@ -74,32 +74,34 @@ class MapRasterizerFast:
         
         # Rotate back to original (l, b)-space
         if (l_cent != 0.) | (b_cent != 0.):
-            b, l = Euler_rotation_ang(self.b_0, self.l_0,
-                                      -l_cent, b_cent, 0.,
-                                      degrees=True, inverse=True)
+            rot = hp.rotator.Rotator(rot=(l_cent, b_cent, 0.),
+                                     eulertype='XYZ',
+                                     deg=True).get_inverse()
+            l, b = rot(l, b, lonlat=True)
         
         # Map (l,b) to HEALPix index
         return lb2pix(self.nside, l, b, nest=self.nest)
     
     def rasterize(self, map_list, l_cent, b_cent):
+        #import time
+        
+        #t0 = time.time()
         hp_idx = self._get_pix_index(l_cent, b_cent)
         
-        '''
-        np.set_printoptions(precision=2, linewidth=140)
-        print np.reshape(hp_idx, self.img_shape)
-        l, b = pix2lb(self.nside, hp_idx)
-        print np.reshape(l, self.img_shape).T
-        print np.reshape(b, self.img_shape).T
-        print np.reshape(map_list[0][hp_idx], self.img_shape).T
-        '''
-        
+        #t1 = time.time()
         shape = (len(map_list), self.img_shape[0] * self.img_shape[1])
         img_stack = np.zeros(shape, dtype=map_list[0].dtype)
+        #t2 = time.time()
         
         for k,m in enumerate(map_list):
             img_stack[k][:] = m[hp_idx]
         
+        #t3 = time.time()
+        
         img_stack.shape = (len(map_list), self.img_shape[0], self.img_shape[1])
+        
+        #t4 = time.time()
+        #print '%.4f  %.4f  %.4f  %.4f' % (t1-t0, t2-t1, t3-t2, t4-t3)
         
         return img_stack
 

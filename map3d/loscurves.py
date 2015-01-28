@@ -54,9 +54,13 @@ def los_to_ascii(l, b, mu, best, samples, n_stars, converged, colwidth=6):
     txt += '# corresponds to a different sample. The first sample is the best fit, while\n'
     txt += '# the following samples are drawn from the posterior distribution of\n'
     txt += '# distance-reddening profiles.\n'
-    txt += '#\n'
+    txt += '# \n'
     txt += '# See Green et al. (2014) & Green et al. (2015) for a detailed description\n'
-    txt += '# of how the line-of-sight reddening is computed.\n\n'
+    txt += '# of how the line-of-sight reddening is computed.\n'
+    txt += '# \n'
+    txt += '# Use the reddening vector in Schlafly & Finkbeiner (2011) to convert to\n'
+    txt += '# extinction in various bands (note that A_B - A_V != 1 for E(B-V) = 1; E(B-V)\n'
+    txt += '# is strictly a parameter name here).\n\n'
     
     n_rows = len(mu) + 1
     
