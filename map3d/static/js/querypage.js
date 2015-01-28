@@ -630,7 +630,7 @@ $(document).ready(function() {
     
     var bisect_x = d3.bisector(function(d) { return d; }).left;
     var pm_formatter = d3.format(".2r");
-    var maj_formatter = d3.format(".2f");
+    var maj_formatter = d3.format(".2r");
     
     function mouseMove() {
       d3.select("#focus")
@@ -661,9 +661,18 @@ $(document).ready(function() {
       var EHigh = d3.quantile(ESamp, 0.8413);
       var EMed = d3.median(ESamp);
       
+      // Add small uncertainty in quadrature
+      var sigma0 = 0.03;
+      var plusSigma = Math.sqrt((EHigh - EMed)*(EHigh - EMed) + sigma0*sigma0);
+      var minusSigma = Math.sqrt((EMed - ELow)*(EMed - ELow) + sigma0*sigma0);
+      
+      EHigh = EMed+plusSigma;
+      ELow = d3.max([0, EMed-minusSigma]);
+      
       var yLow = y(ELow);
       var yHigh = y(EHigh);
       var yMed = y(EMed);
+      
       var xDispLeft = x(xVals[0]);
       
       DM = Math.pow(10, xCoord/5 - 2);
@@ -693,12 +702,12 @@ $(document).ready(function() {
         .text("E(B-V) = " + maj_formatter(EMed));
       
       d3.select("#EBV-plus")
-        .text("+" + pm_formatter(EHigh-EMed));
+        .text("+" + pm_formatter(plusSigma));
       
       var dxMinus = $("#EBV-plus")[0].getComputedTextLength();
       
       d3.select("#EBV-minus")
-        .text("-" + pm_formatter(EMed-ELow))
+        .text("-" + pm_formatter(minusSigma))
         .attr("dx", "-" + dxMinus);
     }
   };
