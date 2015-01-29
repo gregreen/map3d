@@ -630,7 +630,18 @@ $(document).ready(function() {
     
     var bisect_x = d3.bisector(function(d) { return d; }).left;
     var pm_formatter = d3.format(".2r");
-    var maj_formatter = d3.format(".2r");
+    //var maj_formatter = d3.format(".2r");
+    
+    var format_2f = d3.format(".2f");
+    var format_3f = d3.format(".3f");
+    
+    var maj_formatter = function(val) {
+      if (val < 0.1) {
+        return format_3f(val);
+      } else {
+        return format_2f(val);
+      }
+    }
     
     function mouseMove() {
       d3.select("#focus")
