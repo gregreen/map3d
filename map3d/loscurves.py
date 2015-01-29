@@ -1,4 +1,6 @@
 
+from map3d import mapdata
+
 import numpy as np
 import healpy as hp
 
@@ -7,10 +9,10 @@ import urllib
 #from StringIO import StringIO
 
 
-def get_los(map_query, l, b):
+def get_los(l, b):
     mu = np.linspace(4., 19., 31).tolist()
     
-    los_data = map_query(l, b)
+    los_data = mapdata.map_query(l, b)
     
     if los_data == None:
         best = np.zeros(len(mu)).tolist()
@@ -32,8 +34,8 @@ def get_los(map_query, l, b):
     return mu, best, samples, n_stars, converged, table_enc
 
 
-def get_encoded_los(map_query, l, b):
-    return [json.dumps(d) for d in get_los(map_query, l, b)]
+def get_encoded_los(l, b):
+    return [json.dumps(d) for d in get_los(l, b)]
 
 
 def los_to_ascii(l, b, mu, best, samples, n_stars, converged, colwidth=6):

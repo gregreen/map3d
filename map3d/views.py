@@ -10,7 +10,6 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 log_path = os.path.join(script_dir, '..', 'log', 'argonaut_requests.log')
 logger = Logger('argonaut_request_log', log_path)
 
-import mapdata
 import postage_stamp
 import loscurves
 
@@ -46,15 +45,12 @@ def gal_lb_query():
     
     t_start = time.time()
     
-    img = postage_stamp.postage_stamps(mapdata.map_pixval,
-                                       mapdata.map_nside,
-                                       l, b, dists=dists,
-                                       radius=radius)
+    img = postage_stamp.postage_stamps(l, b, dists=dists)
     img = [postage_stamp.encode_image(img_d) for img_d in img]
     
     t_ps = time.time()
     
-    mu, best, samples, n_stars, converged, table_data = loscurves.get_encoded_los(mapdata.map_query, l, b)
+    mu, best, samples, n_stars, converged, table_data = loscurves.get_encoded_los(l, b)
     
     t_los = time.time()
     
@@ -96,7 +92,7 @@ def gal_lb_query_light():
     
     t_start = time.time()
     
-    mu, best, samples, n_stars, converged, table_data = loscurves.get_encoded_los(mapdata.map_query, l, b)
+    mu, best, samples, n_stars, converged, table_data = loscurves.get_encoded_los(l, b)
     
     t_end = time.time()
     

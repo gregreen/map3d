@@ -27,9 +27,6 @@ from map3d import redis
 import time, datetime
 from functools import wraps
 
-#from redis import Redis
-#redis = Redis()
-
 
 def timestamp(func):
     def append_timestamp(*args, **kwargs):
@@ -54,8 +51,8 @@ class Logger(object):
         self.flush_every = flush_every
         self.counter = 0
     
-    def __del__(self):
-        self.flush()
+    #def __del__(self):
+    #    self.flush()
     
     @timestamp
     def compose(self, message):
@@ -78,6 +75,7 @@ class Logger(object):
                 self.p.lpop(self.log_name)
             
             msg = self.p.execute()
+            filter(lambda x: x != None, msg)
             
             lines = '\n'.join(msg) + '\n'
             
