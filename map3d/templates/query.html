@@ -4,82 +4,90 @@
 {% block content %}
 
 <div class="container-fluid">
-  <div class="row brown">
+  <div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
+      
+      <div class="row blue">
+        <div class="col-xs-12 col-sm-12">
+          <div class="alert alert-success fade in" role="alert" id="enter-coords-alert">
+            <h3>Enter query coordinates.</h3>
+            <h4>Toggle Galactic/Equatorial at right.</h4>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row brown">
+        
+        <div class="col-xs-12 col-sm-6 padding-sm-right-5 green">
+          <div class="input-group">
+            <span class="input-group-addon"><i id="gal-l-symbol">&#x2113</i></span>
+            <input id="gal-l-input" name="gal-l" type="text" class="form-control" placeholder="lon. (&deg)">
+          </div>
+        </div>
+        
+        <div class="col-xs-12 col-sm-6 padding-sm-5 padding-sm-right-15 blue">
+          <div class="fixed-right">
+            <input id="coord-toggle" type="checkbox" checked data-toggle="toggle" data-on="Galactic" data-off="Equ. (J2000)" data-onstyle="success" data-offstyle="primary">
+          </div>
+          
+          <div class="expand-left padding-sm-right-5">
+            <div class="input-group">
+              <span class="input-group-addon"><i id="gal-b-symbol">b</i></span>
+              <input id="gal-b-input" name="gal-b" type="text" class="form-control" placeholder="lat. (&deg)">
+              <span class="input-group-btn">
+                <button class="btn btn-success" type="submit" id="submit-btn">
+                  <span class="glyphicon glyphicon-search" id="submit-btn-icon"></span>
+                </button>
+              </span>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      
+      <div class="row cyan collapse" id="bad-coords-div">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+          <div class="alert alert-warning" role="alert" id="bad-coords-alert">
+            <h3>Invalid coordinates. Please enter valid coordinates.</h3>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row cyan collapse" id="custom-alert-div">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+          <div class="alert alert-warning" role="alert">
+            <h4>Nothing here.</h4>
+          </div>
+        </div>
+      </div>
     
-    <div class="col-xs-12 col-sm-5 col-md-4 col-lg-3 padding-xs-5 green">
-      <div class="input-group">
-        <span class="input-group-addon"><i id="gal-l-symbol">&#x2113</i></span>
-        <input id="gal-l-input" name="gal-l" type="text" class="form-control" placeholder="lon. (&deg)">
-      </div>
-    </div>
-    
-    <div class="col-xs-12 col-sm-5 col-md-4 col-lg-3 padding-xs-5 blue">
-      <div class="input-group">
-        <span class="input-group-addon"><i id="gal-b-symbol">b</i></span>
-        <input id="gal-b-input" name="gal-b" type="text" class="form-control" placeholder="lat. (&deg)">
-        <span class="input-group-btn">
-          <button class="btn btn-success" type="submit" id="submit-btn">
-            <span class="glyphicon glyphicon-search" id="submit-btn-icon"></span>
-          </button>
-        </span>
-      </div>
-    </div>
-    
-    <div class="col-xs-12 col-sm-2 col-md-2 col-lg-1 padding-xs-5">
-      <input id="coord-toggle" type="checkbox" checked data-toggle="toggle" data-on="Galactic" data-off="Equ. (J2000)" data-onstyle="success" data-offstyle="primary">
-    </div>
-    
-  </div>
-  
-  <div class="row blue">
-    <div class="col-xs-12 col-sm-12 col-md-10 col-lg-7">
-      <div class="alert alert-success fade in" role="alert" id="enter-coords-alert">
-        <h3>Enter query coordinates.</h3>
-        <h4>Toggle Galactic/Equatorial at right.</h4>
-      </div>
-    </div>
-  </div>
-  
-  <div class="row cyan collapse" id="bad-coords-div">
-    <div class="col-xs-12 col-sm-12 col-md-10 col-lg-7">
-      <div class="alert alert-warning" role="alert" id="bad-coords-alert">
-        <h3>Invalid coordinates. Please enter valid coordinates.</h3>
-      </div>
-    </div>
-  </div>
-  
-  <div class="row cyan collapse" id="custom-alert-div">
-    <div class="col-xs-12 col-sm-12 col-md-10 col-lg-7">
-      <div class="alert alert-warning" role="alert">
-        <h4>Nothing here.</h4>
-      </div>
     </div>
   </div>
   
   <div class="row black">
     
-    <div class="col-xs-12 col-sm-12 padding-xs-5 collapse brown" id="line-plot-div">
+    <div class="col-xs-12 col-sm-12 padding-xs-5 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2 collapse brown" id="line-plot-div">
       <h1>Reddening vs. Distance</h1>
       <div class="box-aspect-2-1">
         <div class="line-plot-container"></div>
       </div>
     </div>
     
-    <div class="col-xs-12 col-sm-12 collapse cyan" id="postage-stamp-div">
+    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-10 col-lg-offset-1 collapse cyan" id="postage-stamp-div">
       <h1>Postage Stamps</h1>
       
       <div class="row">
-        <div class="thumbnail col-xs-12 col-sm-4 ps-container red">
+        <div class="thumbnail col-xs-12 col-sm-4 col-md-4 ps-container red">
           <!--<div class="ps-container">-->
             <img id="postage-stamp-1" src="" class="img-responsive ps-img" />
           <!--</div>-->
           <h4 id="ps-label-1" class="ps-label"></h4>
         </div>
-        <div class="thumbnail col-xs-12 col-sm-4 ps-container red">
+        <div class="thumbnail col-xs-12 col-sm-4 col-md-4 ps-container red">
           <img id="postage-stamp-2" src="" class="img-responsive ps-img" />
           <h4 id="ps-label-2" class="ps-label"></h4>
         </div>
-        <div class="thumbnail col-xs-12 col-sm-4 ps-container red">
+        <div class="thumbnail col-xs-12 col-sm-4 col-md-4 ps-container red">
           <img id="postage-stamp-3" src="" class="img-responsive ps-img" />
           <h4 id="ps-label-3" class="ps-label"></h4>
         </div>
