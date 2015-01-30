@@ -44,8 +44,6 @@ def query(l, b):
       'converged':  1 if the line-of-sight reddening fit converged, and
                     0 otherwise.
       'n_stars':    # of stars used to fit the line-of-sight reddening.
-      'table_data': An ASCII string with a table and comments
-                    summarizing the line-of-sight reddening information.
     '''
     
     url = 'http://argonaut.rc.fas.harvard.edu/gal-lb-query-light'
@@ -61,14 +59,14 @@ def query(l, b):
         print r.text
     
     return json.loads(r.text)
-    
+
 
 
 def main():
     import numpy as np
     import time
     
-    N = 2000
+    N = 100
     l = 360. * np.random.random(N)
     b = 180. * np.random.random(N) - 90.
     

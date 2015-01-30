@@ -92,7 +92,7 @@ def gal_lb_query_light():
     
     t_start = time.time()
     
-    mu, best, samples, n_stars, converged, table_data = loscurves.get_encoded_los(l, b)
+    mu, best, samples, n_stars, converged, table_data = loscurves.get_los(l, b)
     
     t_end = time.time()
     
@@ -106,5 +106,4 @@ def gal_lb_query_light():
     return jsonify(success=success,
                    l=l, b=b, distmod=mu,
                    best=best, samples=samples,
-                   n_stars=n_stars, converged=converged,
-                   table_data=table_data)
+                   n_stars=n_stars, converged=converged)
