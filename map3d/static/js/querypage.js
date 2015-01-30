@@ -152,9 +152,10 @@ $(document).ready(function() {
       .range([0, width]);
     
     yMax = d3.max(ySamples, function(a) { return d3.max(a); });
+    yMax = d3.max([yMax, yBest[yBest.length-1]]);
     
     y = d3.scale.linear()
-      .domain([0, 1.1*yMax])
+      .domain([0, 1.2*yMax])
       .range([height, 0]);
     
     var line = d3.svg.line()
