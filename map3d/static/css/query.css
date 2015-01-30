@@ -190,6 +190,16 @@ h1 {
   .padding-xs-right-5 {
     padding-right: 5px;
   }
+  
+  .popover-title {
+    font-family: "Lora", serif;
+    font-size: 14pt;
+  }
+  
+  .popover-content {
+    font-family: "Lora", serif;
+    font-size: 10pt;
+  }
 }
 
 /* sm */
@@ -221,6 +231,20 @@ h1 {
   .padding-sm-right-15 {
     padding-right: 15px;
   }
+  
+  .popover-title {
+    font-family: "Lora", serif;
+    font-size: 16pt;
+  }
+  
+  .popover-content {
+    font-family: "Lora", serif;
+    font-size: 12pt;
+  }
+  
+  .popover {
+    max-width: 300px;
+  }
 }
 
 /* md */
@@ -243,6 +267,20 @@ h1 {
   .padding-md-0 {
     padding-left: 0px;
     padding-right: 0px;
+  }
+  
+  .popover-title {
+    font-family: "Lora", serif;
+    font-size: 18pt;
+  }
+  
+  .popover-content {
+    font-family: "Lora", serif;
+    font-size: 14pt;
+  }
+  
+  .popover {
+    max-width: 450px;
   }
 }
 
@@ -267,5 +305,19 @@ h1 {
   .padding-lg-0 {
     padding-left: 0px;
     padding-right: 0px;
+  }
+  
+  .popover-title {
+    font-family: "Lora", serif;
+    font-size: 20pt;
+  }
+  
+  .popover-content {
+    font-family: "Lora", serif;
+    font-size: 15pt;
+  }
+  
+  .popover {
+    max-width: 500px;
   }
 }

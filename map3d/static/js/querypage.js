@@ -33,6 +33,10 @@ $(document).ready(function() {
     }
   });
   
+  $(function () {
+    $('[data-toggle="popover"]').popover()
+  })
+
   // Alerts
   function showBadCoordsAlert() {
     if (d3.select("#bad-coords-div").classed("collapse in")) {
@@ -257,6 +261,13 @@ $(document).ready(function() {
         .attr("dy", (-5*ticksize) + "pt")
         .style("text-anchor", "middle")
         .text("E(B-V) (mags)");
+      
+      $("#ylabel").popover({
+        title: "Usage",
+        content: "Consult Table 6 of Schlafly & Finkbeiner (2011) to convert to extinction.",
+        container: "body",
+        trigger: "hover"
+      })
     }
     
     d3.select("#ylabel")
@@ -1283,6 +1294,21 @@ $(document).ready(function() {
     return {"lng": lng, "lat": lat};
   }
   
+  // Set toggle text based on screen size
+  function setCoordToggleText() {
+    var coordToggle = d3.select("#coord-toggle");
+    var galLab = d3.select(".toggle-group").select(".toggle-on");
+    var equLab = d3.select(".toggle-group").select(".toggle-off");
+    if ($(window).width() < 450) {
+      galLab.text("Gal.");
+      equLab.text("Equ.");
+    } else {
+      galLab.text("Galactic");
+      equLab.text("Equ. (J2000)");
+    }
+  }
+  
+  
   // Allow callbacks at end of transition
   function endall(transition, callback) { 
     var n = 0; 
@@ -1327,8 +1353,13 @@ $(document).ready(function() {
     drawPSOverlays();
   }, 250);
   
-  $(window).resize(debouncedDrawPlot);
+  $(window).resize(function() {
+    //setCoordToggleText();
+    debouncedDrawPlot();
+  });
   
   listenResize(d3.select(".ps-container")[0][0], drawPSOverlays, 500);
+  
+  //setCoordToggleText();
   
 });
