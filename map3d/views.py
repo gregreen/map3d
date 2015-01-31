@@ -10,10 +10,16 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 log_path = os.path.join(script_dir, '..', 'log', 'argonaut_requests.log')
 logger = Logger('argonaut_request_log', log_path)
 
+import numpy as np
+
 import postage_stamp
 import loscurves
 
+from utils import array_like
+
 import time
+
+max_request_size = 1000
 
 
 @app.route('/')
@@ -33,12 +39,12 @@ def gal_lb_query():
         l = float(request.json['l'])
         b = float(request.json['b'])
     except:
-        return 400, 'Invalid Galactic coordinates: (' + str(l) + ', ' + str(b) + ')'
+        return 'Invalid Galactic coordinates: (' + str(l) + ', ' + str(b) + ')', 400
     
     ip = request.remote_addr
     
     if (b > 90.) or (b < -90.):
-        return 400, 'Invalid Galactic coordinates: (' + str(l) + ', ' + str(b) + ')'
+        return 'Invalid Galactic coordinates: (' + str(l) + ', ' + str(b) + ')', 400
     
     dists = [300., 1000., 5000.]
     radius = 7.5
@@ -77,32 +83,61 @@ def gal_lb_query():
 @app.route('/gal-lb-query-light', methods=['POST'])
 @ratelimit(limit=1000, per=5*60, send_x_headers=True)
 def gal_lb_query_light():
-    l, b = None, None
+    # Validate input
+    l = request.json['l']
+    b = request.json['b']
+    
+    if array_like(l) != array_like(b):
+        return 'l and b must have the same number of entries.', 400
     
     try:
-        l = float(request.json['l'])
-        b = float(request.json['b'])
+        if array_like(l):
+            if len(l) > max_request_size:
+                return 'Requests limited to %d coordinates at a time.' % max_request_size, 400
+            
+            l = np.array(l).astype('f4')
+            b = np.array(b).astype('f4')
+        else:
+            l = float(l)
+            b = float(b)
     except:
-        return 400, 'Invalid Galactic coordinates: (' + str(l) + ', ' + str(b) + ')'
+        return 'Non-numeric coordinates detected.', 400
     
-    ip = request.remote_addr
+    if np.any((b > 90.) | (b < -90.)):
+        return 'Latitude greater than 90 degrees (or less than -90 degrees) detected.', 400
     
-    if (b > 90.) or (b < -90.):
-        return 400, 'Invalid Galactic coordinates: (' + str(l) + ', ' + str(b) + ')'
-    
+    # Retrieve the data
     t_start = time.time()
     
     mu, best, samples, n_stars, converged, table_data = loscurves.get_los(l, b)
     
+    success = None
+    if array_like(n_stars):
+        success = (np.array(n_stars) != 0).astype('u1').tolist()
+    else:
+        success = int(n_stars != 0)
+    
+    if array_like(l):
+        l = l.tolist()
+        b = b.tolist()
+    
     t_end = time.time()
     
-    txt_request = 'l,b = (%.2f, %.2f) requested by %s ' % (l, b, str(ip))
-    txt_request += '(t: %.2fs)' % (t_end-t_start)
+    # Write to log
+    ip = request.remote_addr
+    txt_request = None
+    if array_like(l):
+        txt_request = '%d coordinates ' % (len(l))
+        txt_request += 'requested by %s ' % (str(ip))
+        txt_request += '(t: %.2fs, t/request: %.2gs)' % (t_end-t_start, (t_end-t_start)/len(l))
+    else:
+        txt_request = 'l,b = (%.2f, %.2f) ' % (l, b)
+        txt_request += 'requested by %s ' % (str(ip))
+        txt_request += '(t: %.2fs)' % (t_end-t_start)
     
     logger.write(txt_request)
     
-    success = int(int(n_stars) != 0)
-    
+    # Return JSON
     return jsonify(success=success,
                    l=l, b=b, distmod=mu,
                    best=best, samples=samples,

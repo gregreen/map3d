@@ -5,6 +5,7 @@ import numpy as np
 
 import hputils
 
+from utils import array_like
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 data_path = os.path.join(script_dir, 'static', 'data')
@@ -57,36 +58,76 @@ class MapQuery:
             start_idx = end_idx
     
     def _find_data_idx(self, l, b):
+        pix_idx = np.empty(l.shape, dtype='i8')
+        pix_idx[:] = -1
+        
         # Search at each nside
         for k,nside in enumerate(self.nside_levels):
             ipix = hputils.lb2pix(nside, l, b, nest=True)
             
+            # Find the insertion points of the query pixels in the large, ordered pixel list
             idx = np.searchsorted(self.hp_idx_sorted[k], ipix, side='left')
             
-            if idx >= self.hp_idx_sorted[k].size:
+            # Determine which insertion points are beyond the edge of the pixel list
+            in_bounds = (idx < self.hp_idx_sorted[k].size)
+            
+            if not np.any(in_bounds):
                 continue
             
-            if self.hp_idx_sorted[k][idx] == ipix:
+            # Determine which query pixels are correctly placed
+            idx[~in_bounds] = -1
+            match_idx = (self.hp_idx_sorted[k][idx] == ipix)
+            match_idx[~in_bounds] = False
+            idx = idx[match_idx]
+            
+            if np.any(match_idx):
+                pix_idx[match_idx] = self.data_idx[k][idx]
+            
+            #if idx >= self.hp_idx_sorted[k].size:
+            #    continue
+            
+            #if self.hp_idx_sorted[k][idx] == ipix:
                 #print 'nside:', nside
                 #print 'ipix:', ipix
                 #print 'Found at:', self.data_idx[k][idx]
                 #print self.locs[self.data_idx[k][idx]]
-                
-                return self.data_idx[k][idx]
+                #return self.data_idx[k][idx]
         
-        return -1
+        #return -1
+        return pix_idx
     
     def query(self, l, b):
+        # Ensure that l and b are arrays
+        is_scalar = False
+        
+        if not array_like(l):
+            is_scalar = True
+            l = np.array([l])
+            b = np.array([b])
+        
         idx = self._find_data_idx(l, b)
         
-        if idx == -1:
-            return None
+        #if idx == -1:
+        #    return None
         
         ret = {}
         ret['samples'] = self.sample_data[idx, 2:, 1:]
         ret['best'] = self.sample_data[idx, 1, 1:]
         ret['GR'] = self.sample_data[idx, 0, 1:]
         ret['n_stars'] = self.locs['n_stars'][idx]
+        
+        idx_null = (idx == -1)
+        
+        if np.any(idx_null):
+            ret['samples'][idx_null,:,:] = 0
+            ret['best'][idx_null,:] = 0
+            ret['GR'][idx_null,:] = 0
+            ret['n_stars'][idx_null] = 0
+        
+        # Transform back to scalar response if user supplied scalar l, b
+        if is_scalar:
+            for key in ret.keys():
+                ret[key] = ret[key][0]
         
         return ret
     

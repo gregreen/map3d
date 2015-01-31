@@ -29,7 +29,7 @@ def query(l, b):
     Send a line-of-sight reddening query to the Argonaut web server.
     
     Inputs:
-      l, b (scalars): Galactic coordinates, in degrees.
+      l, b: Galactic coordinates, in degrees.
     
     Outputs a dictionary containing, among other things:
       'distmod':    The distance moduli that define the distance bins.
@@ -67,14 +67,18 @@ def main():
     import time
     
     N = 100
-    l = 360. * np.random.random(N)
-    b = 180. * np.random.random(N) - 90.
+    l = 180. + 10. * (np.random.random(N) - 0.5)
+    b = 5. * (np.random.random(N) - 0.5)
     
     t_start = time.time()
     
-    for i,(ll,bb) in enumerate(zip(l,b)):
+    for i,(ll,bb) in enumerate(zip(l[:10],b[:10])):
         pixel_data = query(ll, bb)
+        
+        print ''
         print i+1
+        print pixel_data['samples']
+        
         #time.sleep(0.5)
     
     t_end = time.time()
@@ -83,6 +87,10 @@ def main():
     print 't   = %.4fs' % (t_end - t_start)
     print 't/N = %.4f s/request' % ((t_end - t_start) / N)
     print ''
+    
+    pixel_data = query(l.tolist(), b.tolist())
+    print ''
+    print pixel_data['converged']
     
     return 0
 

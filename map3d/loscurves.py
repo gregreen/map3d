@@ -6,30 +6,42 @@ import healpy as hp
 
 import json
 import urllib
-#from StringIO import StringIO
+
+from utils import array_like
 
 
-def get_los(l, b):
+def get_los(l, b, decimals=5):
     mu = np.linspace(4., 19., 31).tolist()
     
     los_data = mapdata.map_query(l, b)
     
-    if los_data == None:
-        best = np.zeros(len(mu)).tolist()
-        samples = [best]
-        n_stars = 0
-        converged = 1
-        table_enc = encode_ascii('')
+    #if los_data['best'] == 0:
+    #    best = np.zeros(len(mu)).tolist()
+    #    samples = [best]
+    #    n_stars = 0
+    #    converged = 1
+    #    table_enc = encode_ascii('')
+    #    
+    #    return mu, best, samples, n_stars, converged, table_enc
+    
+    best = los_data['best']
+    samples = los_data['samples']
+    n_stars = los_data['n_stars']
+    
+    axis = len(los_data['GR'].shape) - 1
+    converged = np.array(np.all(los_data['GR'] < 1.2, axis=axis)).astype('u1').tolist()
+    
+    table_enc = u''
+    
+    if not mapdata.array_like(l):
+        table_txt = los_to_ascii(l, b, mu, best, samples, n_stars, converged)
+        table_enc = encode_ascii(table_txt)
         
-        return mu, best, samples, n_stars, converged, table_enc
+        converged = int(converged)
     
-    best = los_data['best'].tolist()
-    samples = los_data['samples'].tolist()
-    n_stars = los_data['n_stars'].tolist()
-    converged = int(np.all(los_data['GR'] < 1.2))
-    
-    table_txt = los_to_ascii(l, b, mu, best, samples, n_stars, converged)
-    table_enc = encode_ascii(table_txt)
+    best = np.around(best.tolist(), decimals=decimals).tolist()
+    samples = np.around(samples.tolist(), decimals=decimals).tolist()
+    n_stars = np.around(n_stars.tolist(), decimals=decimals).tolist()
     
     return mu, best, samples, n_stars, converged, table_enc
 
