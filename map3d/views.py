@@ -1,23 +1,23 @@
 from map3d import app
 
 from flask import render_template, redirect, request, jsonify
+import numpy as np
+import time
+import os
+
+script_dir = os.path.dirname(os.path.realpath(__file__))
+log_path = os.path.join(script_dir, '..', 'log', 'argonaut_requests.log')
 
 from rate_limit import ratelimit
 
 from redis_logger import Logger
-import os
-script_dir = os.path.dirname(os.path.realpath(__file__))
-log_path = os.path.join(script_dir, '..', 'log', 'argonaut_requests.log')
 logger = Logger('argonaut_request_log', log_path)
-
-import numpy as np
 
 import postage_stamp
 import loscurves
+import snippets
 
 from utils import array_like
-
-import time
 
 max_request_size = 1000
 
@@ -25,6 +25,10 @@ max_request_size = 1000
 @app.route('/')
 def cover():
     return render_template('cover.html')
+
+@app.route('/usage')
+def usage():
+    return render_template('usage.html', snippets=snippets)
 
 @app.route('/query')
 def query():

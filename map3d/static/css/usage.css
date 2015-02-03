@@ -1,0 +1,215 @@
+
+body {
+  padding-bottom: 0px;
+  font-family: "Lora", serif;
+}
+
+p, li {
+  font-size: 14pt;
+}
+
+.highlight pre {
+  font-size: 12pt;
+}
+
+.jumbotron h1 {
+  text-align: center;
+}
+
+.jumbotron {
+  margin-bottom: 20px;
+}
+
+.row {
+  margin-bottom: 20px;
+}
+
+div[class^="col-"] {
+  background-color: #FAFAFA;
+}
+
+
+
+/*
+html {
+  background-color:#EDF2F7;
+}
+
+div {
+  background:#EDF2F7;
+}
+*/
+
+
+/*
+ * Media queries
+ */
+
+/* xs */
+@media (max-width: 767px) {
+  .padding-xs-15 {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  
+  .padding-xs-10 {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  
+  .padding-xs-5 {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+  
+  .padding-xs-0 {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+  
+  .padding-xs-left-0 {
+    padding-left: 0px;
+  }
+  
+  .padding-xs-right-0 {
+    padding-right: 0px;
+  }
+  
+  .padding-xs-left-5 {
+    padding-left: 5px;
+  }
+  
+  .padding-xs-right-5 {
+    padding-right: 5px;
+  }
+  
+  .popover-title {
+    font-family: "Lora", serif;
+    font-size: 14pt;
+  }
+  
+  .popover-content {
+    font-family: "Lora", serif;
+    font-size: 10pt;
+  }
+}
+
+/* sm */
+@media (min-width: 768px) {
+  .padding-sm-15 {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  
+  .padding-sm-10 {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  
+  .padding-sm-5 {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+  
+  .padding-sm-0 {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+  
+  .padding-sm-right-5 {
+    padding-right: 5px;
+  }
+  
+  .padding-sm-right-15 {
+    padding-right: 15px;
+  }
+  
+  .popover-title {
+    font-family: "Lora", serif;
+    font-size: 16pt;
+  }
+  
+  .popover-content {
+    font-family: "Lora", serif;
+    font-size: 12pt;
+  }
+  
+  .popover {
+    max-width: 300px;
+  }
+}
+
+/* md */
+@media (min-width: 992px) {
+  .padding-md-15 {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  
+  .padding-md-10 {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  
+  .padding-md-5 {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+  
+  .padding-md-0 {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+  
+  .popover-title {
+    font-family: "Lora", serif;
+    font-size: 18pt;
+  }
+  
+  .popover-content {
+    font-family: "Lora", serif;
+    font-size: 14pt;
+  }
+  
+  .popover {
+    max-width: 450px;
+  }
+}
+
+
+/* lg */
+@media (min-width: 1200px) {
+  .padding-lg-15 {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  
+  .padding-lg-10 {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  
+  .padding-lg-5 {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+  
+  .padding-lg-0 {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+  
+  .popover-title {
+    font-family: "Lora", serif;
+    font-size: 20pt;
+  }
+  
+  .popover-content {
+    font-family: "Lora", serif;
+    font-size: 15pt;
+  }
+  
+  .popover {
+    max-width: 500px;
+  }
+}

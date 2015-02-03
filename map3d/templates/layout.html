@@ -43,6 +43,9 @@
     <link href="{{ url_for('static', filename='css/cover.css') }}" rel="stylesheet">
     {% elif active_page == "query" %}
     <link href="{{ url_for('static', filename='css/query.css') }}" rel="stylesheet">
+    {% elif active_page == "usage" %}
+    <link href="{{ url_for('static', filename='css/usage.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/pygment-highlight.css') }}" rel="stylesheet">
     {% endif %}
     
   </head>
