@@ -10,6 +10,16 @@ p, li {
 
 .highlight pre {
   font-size: 12pt;
+  overflow: auto;
+  overflow-y: hidden;
+  white-space: pre;
+  word-wrap: normal;
+}
+
+.small-space {
+  /*word-spacing: -0.25em;*/
+  white-space: nowrap;
+  font-kerning: normal;
 }
 
 .jumbotron h1 {

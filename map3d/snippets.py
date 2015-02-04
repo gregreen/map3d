@@ -77,15 +77,20 @@ map_query_API_example_single = highlight(
 """
 >>> qresult = query(90, 10)
 >>> 
->>> print qresult.keys()  # See what information is returned for each pixel
-[u'b', u'success', u'l', u'samples', u'n_stars', u'converged', u'distmod', u'best']
+>>> # See what information is returned for each pixel:
+>>> print qresult.keys()
+[u'b', u'success', u'l', u'samples', u'n_stars', u'converged',
+u'distmod', u'best']
 >>> 
 >>> print qresult['n_stars']
 750
 >>> print qresult['converged']
 1
 >>> print qresult['best']
-[0.00426, 0.00678, 0.0074, 0.00948, 0.01202, 0.01623, 0.01815, 0.0245, 0.0887, 0.09576, 0.10139, 0.12954, 0.1328, 0.21297, 0.23867, 0.24461, 0.37452, 0.37671, 0.37684, 0.37693, 0.37695, 0.37695, 0.37696, 0.37698, 0.37698, 0.37699, 0.37699, 0.377, 0.37705, 0.37708, 0.37711]
+[0.00426, 0.00678, 0.0074, 0.00948, 0.01202, 0.01623, 0.01815, 0.0245,
+0.0887, 0.09576, 0.10139, 0.12954, 0.1328, 0.21297, 0.23867, 0.24461,
+0.37452, 0.37671, 0.37684, 0.37693, 0.37695, 0.37695, 0.37696, 0.37698,
+0.37698, 0.37699, 0.37699, 0.377, 0.37705, 0.37708, 0.37711]
 """,
 PythonConsoleLexer(),
 formatter)
@@ -99,8 +104,12 @@ map_query_API_example_multiple = highlight(
 [352, 162, 254]
 >>> print qresult['converged']
 [1, 1, 1]
->>> print qresult['best'][0]  # Look at the best fit for the first pixel
-[0.00545, 0.00742, 0.00805, 0.01069, 0.02103, 0.02718, 0.02955, 0.03305, 0.36131, 0.37278, 0.38425, 0.41758, 1.53727, 1.55566, 1.65976, 1.67286, 1.78662, 1.79262, 1.88519, 1.94605, 1.95938, 2.0443, 2.39438, 2.43858, 2.49927, 2.54787, 2.58704, 2.58738, 2.58754, 2.58754, 2.58755]
+>>> # Look at the best fit for the first pixel:
+>>> print qresult['best'][0]
+[0.00545, 0.00742, 0.00805, 0.01069, 0.02103, 0.02718, 0.02955, 0.03305,
+0.36131, 0.37278, 0.38425, 0.41758, 1.53727, 1.55566, 1.65976, 1.67286,
+1.78662, 1.79262, 1.88519, 1.94605, 1.95938, 2.0443, 2.39438, 2.43858,
+2.49927, 2.54787, 2.58704, 2.58738, 2.58754, 2.58754, 2.58755]
 """,
 PythonConsoleLexer(),
 formatter)
@@ -128,7 +137,8 @@ h5_open_example = highlight(
 >>> 
 >>> best = sample_data[:,1,1:]  # The best-fit E(B-V)
 >>> 
->>> best[0]  # Get the best-fit E(B-V) in each distance bin for the first pixel
+>>> # Get the best-fit E(B-V) in each distance bin for the first pixel
+>>> best[0]
 array([ 0.00870818,  0.01387209,  0.01712639,  0.0259521 ,  0.03068264,
         0.04779445,  0.41486135,  0.42843446,  0.50651842,  0.54525876,
         0.55168515,  0.6681751 ,  0.68385363,  0.7205106 ,  0.72992986,
@@ -137,14 +147,18 @@ array([ 0.00870818,  0.01387209,  0.01712639,  0.0259521 ,  0.03068264,
         1.12609482,  1.12610161,  1.12611556,  1.1261183 ,  1.12612486,
         1.12613201], dtype=float32)
 >>> 
->>> samples = sample_data[:, 2:, 1:]  # Samples of E(B-V) from the Markov Chain
+>>> # Samples of E(B-V) from the Markov Chain
+>>> samples = sample_data[:, 2:, 1:]
 >>> 
 >>> samples.shape  # (# of pixels, # of samples, # of distance bins)
 (7581, 9, 31)
 >>> 
->>> GR = sample_data[:, 0, 1:]  # The Gelman-Rubin (GR) convergence diagnostic
+>>> # The Gelman-Rubin (GR) convergence diagnostic
+>>> GR = sample_data[:, 0, 1:]
 >>> 
->>> GR[0]  # The GR diagnostic in the first pixel. Each distance bin has a separate value. Typically, GR > 1.1 indicates non-convergence.
+>>> # The GR diagnostic in the first pixel. Each distance bin has
+>>> # a separate value. Typically, GR > 1.1 indicates non-convergence.
+>>> GR[0]
 array([ 1.00627136,  1.0167731 ,  1.02478695,  1.02237451,  1.02512574,
         1.0170598 ,  1.00679624,  1.00653064,  1.01060462,  1.00396991,
         1.00202465,  1.00423181,  1.00346017,  1.01117611,  1.01044476,

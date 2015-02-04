@@ -10,6 +10,28 @@
 <div class="container-fluid">
   <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-10 -col-md-offset-1 col-lg-8 col-lg-offset-2">
+      <div class="page-header" id="intro">
+        <h1>Introductory Notes</h1>
+      </div>
+      
+      <p>Before diving into how you can access the 3D dust map, we'd like to make you aware of a few important points about the dataset.</p>
+      
+      <div class="page-header" id="units">
+        <h2>Units</h2>
+      </div>
+      
+      <p>We use the same definition of <b class="small-space">E(<i>B-V</i> )</b> as the <a href="http://adsabs.harvard.edu/abs/1998ApJ...500..525S">Schlegel, Finkbeiner &#38 Davis (1998)</a>. Although this was originally supposed to the excess <b class="small-space"><i>B-V</i></b> in the Landolt filter system, <a href="http://adsabs.harvard.edu/abs/2011ApJ...737..103S">Schlafly &#38 Finkbeiner (2011)</a> found that it differs somewhat from the true stellar <b class="small-space"><i>B-V</i></b> excess. Therefore, in order to convert our values of <b class="small-space">E(<i>B-V</i> )</b> to extinction in various filter systems, consult Table 6 of Schlafly &#38 Finkbeiner (2011).</p>
+      
+      <div class="page-header" id="units">
+        <h2>Samples</h2>
+      </div>
+      
+      <p>For each sightline, we provide multiple more than one estimate of the distance vs. reddening relationship. First, we provide the maximum-probability density estimate (essentially, the best-fit) distance-reddening curve. We also provide samples of the distance-reddening curve, which are representative of the formal uncertainty in the relation. Most statistics you may wish to derive, like the median reddening to a given distance, are best determined by using the representative samples, rather than the best-fit relation.</p>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-10 -col-md-offset-1 col-lg-8 col-lg-offset-2">
       
       <div class="page-header" id="API">
         <h1>Query Server Directly from Your Code</h1>
@@ -34,7 +56,7 @@
       
       {{snippets.map_query_API_example_multiple|safe}}
       
-      <p>If you are going to be querying large numbers of sightlines at once, we kindly request that you use this syntax. It will be faster, because you only have to contact the server once, and it will reduce the load on the Agonaut server.</p>
+      <p>If you are going to be querying large numbers of sightlines at once, we kindly request that you use this batch syntax, rather than calling <code>query()</code> in a loop. It will be faster, because you only have to contact the server once, and it will reduce the load on the Argonaut server.</p>
     </div>
   </div>
   
