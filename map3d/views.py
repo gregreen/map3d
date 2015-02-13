@@ -2,6 +2,7 @@ from map3d import app
 
 from flask import render_template, redirect, request, jsonify
 import numpy as np
+import json
 import time
 import os
 
@@ -37,112 +38,98 @@ def query():
 @app.route('/gal-lb-query', methods=['POST'])
 @ratelimit(limit=30, per=60, send_x_headers=False)
 def gal_lb_query():
-    l, b = None, None
+    coords, valid, msg = loscurves.get_coords(request.json, 0)
     
-    try:
-        l = float(request.json['l'])
-        b = float(request.json['b'])
-    except:
-        return 'Invalid Galactic coordinates: (' + str(l) + ', ' + str(b) + ')', 400
+    if not valid:
+        return msg, 400
     
     ip = request.remote_addr
-    
-    if (b > 90.) or (b < -90.):
-        return 'Invalid Galactic coordinates: (' + str(l) + ', ' + str(b) + ')', 400
     
     dists = [300., 1000., 5000.]
     radius = 7.5
     
     t_start = time.time()
     
-    img = postage_stamp.postage_stamps(l, b, dists=dists)
+    img = postage_stamp.postage_stamps(coords['l'], coords['b'], dists=dists)
     img = [postage_stamp.encode_image(img_d) for img_d in img]
     
     t_ps = time.time()
     
-    mu, best, samples, n_stars, converged, table_data = loscurves.get_encoded_los(l, b)
+    los_info, table_data = loscurves.get_los(coords)
     
     t_los = time.time()
     
-    txt_request = 'l,b = (%.2f, %.2f) requested by %s ' % (l, b, str(ip))
+    txt_request = 'l,b = (%.2f, %.2f) requested by %s ' % (coords['l'], coords['b'], str(ip))
     txt_request += '(t: %.2fs, ps: %.2fs, los: %.4fs)' % (t_los-t_start, t_ps-t_start, t_los-t_ps)
     
     logger.write(txt_request)
     
-    success = int(int(n_stars) != 0)
+    success = int(int(los_info['n_stars']) != 0)
     
     label = ['%d pc' % d for d in dists]
     
+    los_info.update(**coords)
+    
+    for key in los_info.keys():
+        los_info[key] = json.dumps(los_info[key])
+    
+    #for key in los_info.keys():
+    #    print key, type(los_info[key])
+    #    print los_info[key]
+    #    print ''
+    
     return jsonify(success=success,
-                   l=l, b=b,
                    radius=radius,
                    label1=label[0], image1=img[0],
                    label2=label[1], image2=img[1],
                    label3=label[2], image3=img[2],
-                   mu=mu, best=best, samples=samples,
-                   n_stars=n_stars, converged=converged,
-                   table_data=table_data)
+                   table_data=table_data,
+                   **los_info)
 
 
 @app.route('/gal-lb-query-light', methods=['POST'])
-@ratelimit(limit=1000, per=5*60, send_x_headers=True)
+@ratelimit(limit=10000, per=5*60, send_x_headers=True)
 def gal_lb_query_light():
     # Validate input
-    l = request.json['l']
-    b = request.json['b']
+    coords, valid, msg = loscurves.get_coords(request.json, max_request_size)
     
-    if array_like(l) != array_like(b):
-        return 'l and b must have the same number of entries.', 400
-    
-    try:
-        if array_like(l):
-            if len(l) > max_request_size:
-                return 'Requests limited to %d coordinates at a time.' % max_request_size, 400
-            
-            l = np.array(l).astype('f4')
-            b = np.array(b).astype('f4')
-        else:
-            l = float(l)
-            b = float(b)
-    except:
-        return 'Non-numeric coordinates detected.', 400
-    
-    if np.any((b > 90.) | (b < -90.)):
-        return 'Latitude greater than 90 degrees (or less than -90 degrees) detected.', 400
+    if not valid:
+        return msg, 400
     
     # Retrieve the data
     t_start = time.time()
     
-    mu, best, samples, n_stars, converged, table_data = loscurves.get_los(l, b)
+    los_info, table_data = loscurves.get_los(coords)
     
     success = None
-    if array_like(n_stars):
-        success = (np.array(n_stars) != 0).astype('u1').tolist()
+    if array_like(los_info['n_stars']):
+        success = (np.array(los_info['n_stars']) != 0).astype('u1').tolist()
     else:
-        success = int(n_stars != 0)
+        success = int(los_info['n_stars'] != 0)
     
-    if array_like(l):
-        l = l.tolist()
-        b = b.tolist()
+    if array_like(coords['l']):
+        coords['l'] = coords['l'].tolist()
+        coords['b'] = coords['b'].tolist()
+        coords['ra'] = coords['ra'].tolist()
+        coords['dec'] = coords['dec'].tolist()
     
     t_end = time.time()
     
     # Write to log
     ip = request.remote_addr
     txt_request = None
-    if array_like(l):
-        txt_request = '%d coordinates ' % (len(l))
+    if array_like(coords['l']):
+        txt_request = '%d coordinates ' % (len(coords['l']))
         txt_request += 'requested by %s ' % (str(ip))
-        txt_request += '(t: %.2fs, t/request: %.2gs)' % (t_end-t_start, (t_end-t_start)/len(l))
+        txt_request += '(t: %.2fs, t/request: %.2gs)' % (t_end-t_start, (t_end-t_start)/len(coords['l']))
     else:
-        txt_request = 'l,b = (%.2f, %.2f) ' % (l, b)
+        txt_request = 'l,b = (%.2f, %.2f) ' % (coords['l'], coords['b'])
         txt_request += 'requested by %s ' % (str(ip))
         txt_request += '(t: %.2fs)' % (t_end-t_start)
     
     logger.write(txt_request)
     
     # Return JSON
-    return jsonify(success=success,
-                   l=l, b=b, distmod=mu,
-                   best=best, samples=samples,
-                   n_stars=n_stars, converged=converged)
+    los_info.update(**coords)
+    
+    return jsonify(success=success, **los_info)

@@ -26,6 +26,30 @@ import numpy as np
 import healpy as hp
 
 
+def transform_coords(lon, lat, coord_in, coord_out):
+    '''
+    Convert between astronomical coordinate systems.
+    
+    All inputs and outputs are in degrees.
+    
+    Valid values for coord_in and coord_out are
+      'G' for 'Galactic'                (l, b)
+      'C' for 'Celestial'/'Equatorial'  (ra, dec)
+      'E' for 'Ecliptic'                (lon, lat)
+    '''
+    
+    rot = hp.rotator.Rotator(coord=[coord_in, coord_out])
+    
+    t_in = np.radians(90. - lat)
+    p_in = np.radians(lon)
+    
+    t_out, p_out = rot(t_in, p_in)
+    lon_out = np.degrees(p_out)
+    lat_out = 90. - np.degrees(t_out)
+    
+    return lon_out, lat_out
+
+
 def lb2pix(nside, l, b, nest=True):
     '''
     Convert (l, b) to pixel index.

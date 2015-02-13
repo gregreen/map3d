@@ -24,4 +24,4 @@
 
 
 def array_like(x):
-    return hasattr(x, '__len__')
+    return hasattr(x, '__len__') and not isinstance(x, basestring)

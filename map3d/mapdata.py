@@ -30,29 +30,31 @@ class MapQuery:
         f = h5py.File(fname, 'r')
         
         # Load pixel information
-        self.locs = f['/locations'][:]
+        self.pixel_info = f['/pixel_info'][:]
         
-        # Load samples by nside
-        self.sample_data = f['/piecewise'][:]
+        # Load reddening, GR diagnostic
+        self.samples = f['/samples'][:]
+        self.best_fit = f['/best_fit'][:]
+        self.GR = f['/GRDiagnostic'][:]
         
         f.close()
         
         # Get healpix indices at each nside level
-        sort_idx = np.argsort(self.locs, order=['nside', 'healpix_index'])
+        sort_idx = np.argsort(self.pixel_info, order=['nside', 'healpix_index'])
         
-        self.nside_levels = np.unique(self.locs['nside'])
+        self.nside_levels = np.unique(self.pixel_info['nside'])
         self.hp_idx_sorted = []
         self.data_idx = []
         
         start_idx = 0
         
         for nside in self.nside_levels:
-            end_idx = np.searchsorted(self.locs['nside'], nside,
+            end_idx = np.searchsorted(self.pixel_info['nside'], nside,
                                       side='right', sorter=sort_idx)
             
             idx = sort_idx[start_idx:end_idx]
             
-            self.hp_idx_sorted.append(self.locs['healpix_index'][idx])
+            self.hp_idx_sorted.append(self.pixel_info['healpix_index'][idx])
             self.data_idx.append(idx)
             
             start_idx = end_idx
@@ -82,18 +84,7 @@ class MapQuery:
             
             if np.any(match_idx):
                 pix_idx[match_idx] = self.data_idx[k][idx]
-            
-            #if idx >= self.hp_idx_sorted[k].size:
-            #    continue
-            
-            #if self.hp_idx_sorted[k][idx] == ipix:
-                #print 'nside:', nside
-                #print 'ipix:', ipix
-                #print 'Found at:', self.data_idx[k][idx]
-                #print self.locs[self.data_idx[k][idx]]
-                #return self.data_idx[k][idx]
         
-        #return -1
         return pix_idx
     
     def query(self, l, b):
@@ -107,22 +98,27 @@ class MapQuery:
         
         idx = self._find_data_idx(l, b)
         
-        #if idx == -1:
-        #    return None
+        pix_info = self.pixel_info[idx]
         
         ret = {}
-        ret['samples'] = self.sample_data[idx, 2:, 1:]
-        ret['best'] = self.sample_data[idx, 1, 1:]
-        ret['GR'] = self.sample_data[idx, 0, 1:]
-        ret['n_stars'] = self.locs['n_stars'][idx]
+        ret['samples'] = self.samples[idx]
+        ret['best'] = self.best_fit[idx]
+        ret['GR'] = self.GR[idx]
+        ret['n_stars'] = pix_info['n_stars']
+        ret['DM_reliable_min'] = pix_info['DM_reliable_min']
+        ret['DM_reliable_max'] = pix_info['DM_reliable_max']
+        ret['converged'] = pix_info['converged']
         
         idx_null = (idx == -1)
         
         if np.any(idx_null):
-            ret['samples'][idx_null,:,:] = 0
-            ret['best'][idx_null,:] = 0
-            ret['GR'][idx_null,:] = 0
-            ret['n_stars'][idx_null] = 0
+            for key in ret.keys():
+                ret[key][idx_null] = 0
+            
+            #ret['samples'][idx_null,:,:] = 0
+            #ret['best'][idx_null,:] = 0
+            #ret['GR'][idx_null,:] = 0
+            #ret['n_stars'][idx_null] = 0
         
         # Transform back to scalar response if user supplied scalar l, b
         if is_scalar:
@@ -136,7 +132,7 @@ class MapQuery:
 
 
 print 'Loading map query object ...'
-map_query = MapQuery(os.path.join(data_path, 'compact_10samp.h5'))
+map_query = MapQuery(os.path.join(data_path, 'dust-map-3d.h5'))
 print 'Loading map images ...'
 map_nside, map_pixval = load_images()
 print 'Done loading data.'

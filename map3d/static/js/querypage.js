@@ -311,7 +311,7 @@ $(document).ready(function() {
       .style("font-family", "Lora");
     
     // Change plot appearance based on (non-)convergence
-    if (conv == 0) {
+    if ((conv == 0) && (noData == 0)) {
       lineColor = "red";
       
       d3.selectAll(".toggle-converged")
@@ -661,9 +661,9 @@ $(document).ready(function() {
       
       var xDisp = d3.mouse(this)[0];
       var xCoord = x.invert(xDisp);
-      var i = bisect_x(mu, xCoord, 1);
-      x0 = mu[i-1];
-      x1 = mu[i];
+      var i = bisect_x(distmod, xCoord, 1);
+      x0 = distmod[i-1];
+      x1 = distmod[i];
       
       // Best-fit E(B-V)
       var y0 = best[i-1];
@@ -738,8 +738,8 @@ $(document).ready(function() {
   linePlotContainer = ".line-plot-container";
   
   // Initial data
-  mu = d3.range(4, 19.01, 0.5);
-  best = Array.apply(null, new Array(mu.length)).map(Number.prototype.valueOf,0);
+  distmod = d3.range(4, 19.01, 0.5);
+  best = Array.apply(null, new Array(distmod.length)).map(Number.prototype.valueOf,0);
   samples = [best];
   converged = 1;
   tableData = "";
@@ -751,7 +751,7 @@ $(document).ready(function() {
   rCur = 0;
   
   // Draw initial plot
-  //drawPlot(linePlotContainer, 0, mu, best, samples, converged, noData);
+  //drawPlot(linePlotContainer, 0, distmod, best, samples, converged, noData);
   
   // Execute the query
   submitTimeLast = 0;
@@ -836,7 +836,7 @@ $(document).ready(function() {
         queryLock = false;
         
         querySuccess = $.parseJSON(data.success);
-        mu = $.parseJSON(data.mu);
+        distmod = $.parseJSON(data.distmod);
         best = $.parseJSON(data.best);
         samples = $.parseJSON(data.samples);
         converged = $.parseJSON(data.converged);
@@ -848,7 +848,7 @@ $(document).ready(function() {
         
         noData = 1 - querySuccess;
         
-        drawPlotSafe(true, linePlotContainer, 500, mu, best, samples, converged, noData);
+        drawPlotSafe(true, linePlotContainer, 500, distmod, best, samples, converged, noData);
         
         $("#postage-stamp-1").attr("src", data.image1);
         $("#postage-stamp-2").attr("src", data.image2);
@@ -1347,7 +1347,7 @@ $(document).ready(function() {
   }
   
   var debouncedDrawPlot = debounce(function() {
-    drawPlotSafe(false, linePlotContainer, 200, mu, best, samples, converged, noData);
+    drawPlotSafe(false, linePlotContainer, 200, distmod, best, samples, converged, noData);
   }, 125);
   
   var debouncedDrawPSOverlays = debounce(function() {
