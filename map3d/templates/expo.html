@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+{% set active_page = "expo" %}
+
+{% block content %}
+
+<div class="jumbotron banner-image">
+  <h1>3D Dust Mapping</h1>
+  <h2>with Pan-STARRS 1</h2>
+  
+  <div class="container-fluid">
+    <div class="row v-margins-extra">
+      <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
+        
+        <div class="row">
+          <div class="col-xs-12 col-sm-4 col-md-4">
+            <h2>Query Map</h2>
+          </div>
+          <div class="col-xs-12 col-sm-4 col-md-4">
+            <h2>Download Data</h2>
+          </div>
+          <div class="col-xs-12 col-sm-4 col-md-4">
+            <h2>Read Paper</h2>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid block-color">
+  <div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+      
+      <div class="page-header">
+        <h1>Volume Renderings</h1>
+        <p>Milky Way dust, inferred from stellar photometry of 800 million stars, with famous clouds in the interstellar medium labeled.</p>
+      </div>
+      
+      <div class="row" id="videos">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
+          <h2>Local Dust</h2>
+          <p>Looking towards the Galactic anticenter.</p>
+          
+            <video preload="none" loop controls poster="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/local_dust/local_dust_rand2_avg10.jpg">
+              <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/local_dust/local_dust_rand2_avg10.webm" type="video/webm; codecs=vp8">
+              <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/local_dust/local_dust_rand2_avg10.ogv" type="video/ogg; codecs=theora">
+              <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/local_dust/local_dust_rand2_avg10.mp4" type="video/mp4; codecs=avc1.42E01E">
+              Upgrade to a modern browser to see video.
+            </video>
+        </div>
+        
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
+          <h2>Orbiting the Sun</h2>
+          <p>A 150-pc loop around the Sun.</p>
+          
+          <video preload="none" loop controls poster="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/circle_local_wide_v2/circle_local_wide_v2.jpg">
+            <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/circle_local_wide_v2/circle_local_wide_v2.webm" type="video/webm; codecs=vp8">
+            <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/circle_local_wide_v2/circle_local_wide_v2.ogv" type="video/ogg; codecs=theora">
+            <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/circle_local_wide_v2/circle_local_wide_v2.mp4" type="video/mp4; codecs=avc1.42E01E">
+            Upgrade to a modern browser to see video.
+          </video>
+        </div>
+        
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
+          <h2>A Tour of the Galaxy</h2>
+          <p>A several kpc loop through and out of the Galactic plane.</p>
+          
+          <video preload="none" loop controls poster="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/simple_loop/simple-loop-att-v2.jpg">
+            <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/simple_loop/simple-loop-att-v2.webm" type="video/webm; codecs=vp8">
+            <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/simple_loop/simple-loop-att-v2.ogv" type="video/ogg; codecs=theora">
+            <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/simple_loop/simple-loop-att-v2.mp4" type="video/mp4; codecs=avc1.42E01E">
+            Upgrade to a modern browser to see video.
+          </video>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+{% endblock %}
