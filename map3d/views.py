@@ -27,6 +27,10 @@ max_request_size = 1000
 def cover():
     return render_template('cover.html')
 
+@app.route('/expo')
+def expo():
+    return render_template('expo.html')
+
 @app.route('/usage')
 def usage():
     return render_template('usage.html', snippets=snippets)
