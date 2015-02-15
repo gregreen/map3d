@@ -22,17 +22,17 @@
       
       <p>We use the same definition of <b class="small-space">E(<i>B-V</i> )</b> as the <a href="http://adsabs.harvard.edu/abs/1998ApJ...500..525S">Schlegel, Finkbeiner &#38 Davis (1998)</a> dust map. Although this was originally supposed to be the excess <b class="small-space"><i>B-V</i></b> in the Landolt filter system, <a href="http://adsabs.harvard.edu/abs/2011ApJ...737..103S">Schlafly &#38 Finkbeiner (2011)</a> found that it differs somewhat from the true stellar <b class="small-space"><i>B-V</i></b> excess. Therefore, in order to convert our values of <b class="small-space">E(<i>B-V</i> )</b> to extinction in various filter systems, consult <a href="http://iopscience.iop.org/0004-637X/737/2/103/article#apj398709t6">Table 6 of Schlafly &#38 Finkbeiner (2011)</a>.</p>
       
-      <div class="page-header" id="units">
+      <div class="page-header" id="samples">
         <h2>Samples</h2>
       </div>
       
       <p>For each sightline, we provide multiple estimates of the distance vs. reddening relationship. Alongside the maximum-probability density estimate (essentially, the best-fit) distance-reddening curve, we also provide samples of the distance-reddening curve, which are representative of the formal uncertainty in the relation. Most statistics you may wish to derive, like the median reddening to a given distance, are best determined by using the representative samples, rather than the best-fit relation.</p>
       
-      <div class="page-header" id="units">
+      <div class="page-header" id="QA">
         <h2>Quality Assurance</h2>
       </div>
       
-      <p>We include a number of pieces of inforamtion on the reliability of each pixel. A <b>convergence flag</b> marks whether our fit to the line-of-sight reddening curve converged. This is a formal indicator, meaning that we correctly sampled the spread of possible distance-reddening relations, given our model assumptions. It does not, however, indicate that our model assumptions were correct for that pixel. This convergence flag is based on the <a href="http://projecteuclid.org/euclid.ss/1177011136">Gelman-Rubin diagnostic</a>, a method of flagging Markov Chain Monte Carlo non-convergence.</p>
+      <p>We include a number of pieces of inforamtion on the reliability of each pixel. A <b>convergence flag</b> marks whether our fit to the line-of-sight reddening curve converged. This is a formal indicator, meaning that we correctly sampled the spread of possible distance-reddening relations, given our model assumptions. It does not, however, indicate that our model assumptions were correct for that pixel. This convergence flag is based on the <a href="http://dx.doi.org/10.1214/ss/1177011136">Gelman-Rubin diagnostic</a>, a method of flagging Markov Chain Monte Carlo non-convergence.</p>
       
       <p>Additionally, <b>minimum and maximum reliable distances</b> are provided for each pixel, based on the distribution of stars along the sightline. Because we determine the presence of dust by observing differential reddening of foreground and background stars, we cannot trace dust beyond the farthest stars in a given pixel. Our estimates of dust reddening closer than the nearest observed stars in a pixel are similarly uncertain. We therefore urge caution in using our maps outside of the distance range indicated for each pixel.</p>
     </div>
@@ -49,6 +49,8 @@
       <p>In Python, the following function will call the Argonaut server and return the line-of-sight reddening for any coordinates, or set of coordinates, on the sky:</p>
       
       {{snippets.map_query_API|safe}}
+      
+      <!--<p>The code simply sends a POST request containing JSON-encoded "l" and "b" or "ra" and "dec" to the Argonaut server, and receives JSON data back containing information about the coordinates reqested. The server accepts both single coordinates and lists of coordinates.</p>-->
       
       <p>This code can be adapted for any programming language that can issue HTTP POST requests.</p>
       
@@ -71,7 +73,7 @@
   <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-10 -col-md-offset-1 col-lg-8 col-lg-offset-2">
       
-      <div class="page-header" id="Download">
+      <div class="page-header" id="download">
         <h1>Download Data Cube</h1>
       </div>
       
@@ -80,19 +82,40 @@
         <li><a href="#">HDF5</a></li>
         <li><a href="#">FITS</a></li>
       </ul>
-      <p>The full map comes to over 3 GB in compressed HDF5 format, so if you're only interested in individual sightlines, we strongly recommend you use <a href="#API">our web API</a>, which you can include directly as a function call in a number of programming languages.</p>
+      <p>The full map comes to over 4.5 GB in compressed HDF5 format, so if you're only interested in individual sightlines, we strongly recommend you use <a href="#API">our web API</a>, which you can include directly as a function call in a number of programming languages.</p>
       
       <div class="page-header">
         <h2>Reading HDF5 Data Cube</h2>
       </div>
       
       <p>The <a href="https://en.wikipedia.org/wiki/Hierarchical_Data_Format">HDF5 format</a> is a self-documenting, highly flexible format for scientific data. It has a number of powerful features, such as internal compression and compound datatypes (similar to <a href="http://docs.scipy.org/doc/numpy/user/basics.rec.html">numpy structured arrays</a>), and has bindings in many different programming languages, including C, Python, Fortran and IDL.</p>
-      <p>The HDF5 file we provide has two datasets, <b>&#47locations</b> and <b>&#47piecewise</b>, which contain, respectively, information on the pixel locations and the line-of-sight reddening in each pixel.</p>
-      <p>As our 3D dust map contains pixels of different sizes, we specify each pixel by a HEALPix <code>nside</code> and nested pixel index. Each entry along the first axis in the <b>&#47piecewise</b> dataset contains data about a different pixel, with the pixels arranged in the same order as in <b>&#47locations</b>.</p>
-      <p>An example in Python will help illustrate the structure of the file.</p>
+      
+      <p>The HDF5 file we provide has four datasets:</p>
+      <ul>
+        <li><b>&#47pixel_info</b> : pixel locations and metadata.</li>
+        <li><b>&#47samples</b> : samples of distance vs. reddening profile in each pixel.</li>
+        <li><b>&#47best_fit</b> : best-fit distance vs. reddening profile in each pixel.</li>
+        <li><b>&#47GRDiagnostic</b> : Gelman-Rubin convergence diagnostic in each pixel.</li>
+      </ul>
+      
+      <p>All four datasets are ordered in the same way, so that the n<sup>th</sup> element of the <b>&#47samples</b> dataset corresponds to the same pixel as described by the n<sup>th</sup> entry in <b>&#47pixel_info</b>. As our 3D dust map contains pixels of different sizes, <b>&#47pixel_info</b> specified each pixel by a HEALPix <code>nside</code> and nested pixel index.
+      
+      <p>An example in Python will help illustrate the structure of the file:</p>
       
       {{snippets.h5_open_example|safe}}
       
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-10 -col-md-offset-1 col-lg-8 col-lg-offset-2">
+      
+      <div class="page-header" id="license">
+        <h1>License</h1>
+      </div>
+      
+      <p>All code snippets included on this page are covered by the <a href="{{ url_for('static', filename='snippet-license.txt') }}">MIT License</a>. In other words, feel free to use the code provided here in your own work.</p>
+    </div>
   </div>
 </div>
 

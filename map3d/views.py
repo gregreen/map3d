@@ -88,7 +88,7 @@ def gal_lb_query():
 
 
 @app.route('/gal-lb-query-light', methods=['POST'])
-@ratelimit(limit=10000, per=5*60, send_x_headers=True)
+@ratelimit(limit=1000, per=5*60, send_x_headers=True)
 def gal_lb_query_light():
     # Validate input
     coords, valid, msg = loscurves.get_coords(request.json, max_request_size)

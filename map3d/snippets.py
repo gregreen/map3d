@@ -34,12 +34,13 @@ map_query_API = highlight(
 """
 import json, requests
 
-def query(l, b):
+def query(lon, lat, coordsys='gal'):
     '''
     Send a line-of-sight reddening query to the Argonaut web server.
     
     Inputs:
-      l, b: Galactic coordinates, in degrees.
+      lon, lat: longitude and latitude, in degrees.
+      coordsys: 'gal' for Galactic, 'equ' for Equatorial (J2000).
     
     Outputs a dictionary containing, among other things:
       'distmod':    The distance moduli that define the distance bins.
@@ -54,11 +55,23 @@ def query(l, b):
       'converged':  1 if the line-of-sight reddening fit converged, and
                     0 otherwise.
       'n_stars':    # of stars used to fit the line-of-sight reddening.
+      'DM_reliable_min':  Minimum reliable distance modulus in pixel.
+      'DM_reliable_max':  Maximum reliable distance modulus in pixel.
     '''
     
     url = 'http://argonaut.rc.fas.harvard.edu/gal-lb-query-light'
     
-    payload = {'l': l, 'b': b}
+    payload = {}
+    
+    if coordsys.lower() in ['gal', 'g']:
+        payload['l'] = lon
+        payload['b'] = lat
+    elif coordsys.lower() in ['equ', 'e']:
+        payload['ra'] = lon
+        payload['dec'] = lat
+    else:
+        raise ValueError("coordsys '{0}' not understood.".format(coordsys))
+    
     headers = {'content-type': 'application/json'}
     
     r = requests.post(url, data=json.dumps(payload), headers=headers)
@@ -79,8 +92,8 @@ map_query_API_example_single = highlight(
 >>> 
 >>> # See what information is returned for each pixel:
 >>> print qresult.keys()
-[u'b', u'success', u'l', u'samples', u'n_stars', u'converged',
-u'distmod', u'best']
+[u'b', u'GR', u'distmod', u'l', u'DM_reliable_max', u'ra', u'samples',
+u'n_stars', u'converged', u'success', u'dec', u'DM_reliable_min', u'best']
 >>> 
 >>> print qresult['n_stars']
 750
@@ -121,51 +134,51 @@ h5_open_example = highlight(
 >>> import numpy as np
 >>> import h5py
 >>> 
->>> f = h5py.File('compact_10samp.h5', 'r')
->>> locs = f['/locations'][:]
->>> sample_data = f['/piecewise'][:]
+>>> f = h5py.File('dust-map-3d.h5', 'r')
+>>> pix_info = f['/pixel_info'][:]
+>>> samples = f['/samples'][:]
+>>> best_fit = f['/best_fit'][:]
+>>> GR = f['/GRDiagnostic'][:]
 >>> f.close()
 >>> 
->>> print locs['nside']
-[512 512 512 ..., 512 512 512]
+>>> print pix_info['nside']
+[512 512 512 ..., 1024 1024 1024]
 >>> 
->>> print locs['healpix_index']
-[1638079 1638107 1638108 ..., 1726393 1726441 1726442]
+>>> print pix_info['healpix_index']
+[1461557 1461559 1461602 ..., 6062092 6062096 6062112]
 >>> 
->>> print locs['n_stars']
-[583 514 483 ..., 614 597 603]
+>>> print pix_info['n_stars']
+[628 622 688 ..., 322 370 272]
 >>> 
->>> best = sample_data[:,1,1:]  # The best-fit E(B-V)
+>>> # Best-fit E(B-V) in each pixel
+>>> best_fit.shape  # (# of pixels, # of distance bins)
+(2437292, 31)
 >>> 
 >>> # Get the best-fit E(B-V) in each distance bin for the first pixel
->>> best[0]
-array([ 0.00870818,  0.01387209,  0.01712639,  0.0259521 ,  0.03068264,
-        0.04779445,  0.41486135,  0.42843446,  0.50651842,  0.54525876,
-        0.55168515,  0.6681751 ,  0.68385363,  0.7205106 ,  0.72992986,
-        0.73316681,  0.85566115,  0.88557971,  0.93445128,  0.93879509,
-        1.101686  ,  1.11637986,  1.12184167,  1.12560546,  1.12607443,
-        1.12609482,  1.12610161,  1.12611556,  1.1261183 ,  1.12612486,
-        1.12613201], dtype=float32)
+>>> best_fit[0]
+array([ 0.00401   ,  0.00554   ,  0.012     ,  0.01245   ,  0.01769   ,
+        0.02089   ,  0.02355   ,  0.03183   ,  0.04297   ,  0.08127   ,
+        0.11928   ,  0.1384    ,  0.95464998,  0.9813    ,  1.50296998,
+        1.55045998,  1.81668997,  1.86567998,  1.9109    ,  2.00281   ,
+        2.01739001,  2.02519011,  2.02575994,  2.03046989,  2.03072   ,
+        2.03102994,  2.03109002,  2.03109002,  2.03110003,  2.03110003,
+        2.03111005], dtype=float32)
 >>> 
 >>> # Samples of E(B-V) from the Markov Chain
->>> samples = sample_data[:, 2:, 1:]
->>> 
 >>> samples.shape  # (# of pixels, # of samples, # of distance bins)
-(7581, 9, 31)
+(2437292, 20, 31)
 >>> 
->>> # The Gelman-Rubin (GR) convergence diagnostic
->>> GR = sample_data[:, 0, 1:]
->>> 
->>> # The GR diagnostic in the first pixel. Each distance bin has
->>> # a separate value. Typically, GR > 1.1 indicates non-convergence.
+>>> # The Gelman-Rubin convergence diagnostic in the first pixel.
+>>> # Each distance bin has a separate value.
+>>> # Typically, GR > 1.1 indicates non-convergence.
 >>> GR[0]
-array([ 1.00627136,  1.0167731 ,  1.02478695,  1.02237451,  1.02512574,
-        1.0170598 ,  1.00679624,  1.00653064,  1.01060462,  1.00396991,
-        1.00202465,  1.00423181,  1.00346017,  1.01117611,  1.01044476,
-        1.00302243,  1.00246012,  1.00939417,  1.00406373,  1.01277184,
-        1.00545788,  1.01066709,  1.01512182,  1.0160321 ,  1.01495719,
-        1.01469755,  1.01468885,  1.01468158,  1.01467431,  1.01465094,
-        1.01465344], dtype=float32)
+array([ 1.01499999,  1.01999998,  1.01900005,  1.01699996,  1.01999998,
+        1.01999998,  1.02400005,  1.01600003,  1.00800002,  1.00600004,
+        1.00100005,  1.00199997,  1.00300002,  1.02499998,  1.01699996,
+        1.00300002,  1.01300001,  1.00300002,  1.00199997,  1.00199997,
+        1.00199997,  1.00199997,  1.00100005,  1.00100005,  1.00100005,
+        1.00100005,  1.00100005,  1.00100005,  1.00100005,  1.00100005,
+        1.00100005], dtype=float32)
 """,
 PythonConsoleLexer(),
 formatter)

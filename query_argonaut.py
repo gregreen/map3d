@@ -24,12 +24,13 @@
 
 import json, requests
 
-def query(l, b):
+def query(lon, lat, coordsys='gal'):
     '''
     Send a line-of-sight reddening query to the Argonaut web server.
     
     Inputs:
-      l, b: Galactic coordinates, in degrees.
+      lon, lat: longitude and latitude, in degrees.
+      coordsys: 'gal' for Galactic, 'equ' for Equatorial (J2000).
     
     Outputs a dictionary containing, among other things:
       'distmod':    The distance moduli that define the distance bins.
@@ -44,12 +45,24 @@ def query(l, b):
       'converged':  1 if the line-of-sight reddening fit converged, and
                     0 otherwise.
       'n_stars':    # of stars used to fit the line-of-sight reddening.
+      'DM_reliable_min':  Minimum reliable distance modulus in pixel.
+      'DM_reliable_max':  Maximum reliable distance modulus in pixel.
     '''
     
     url = 'http://argonaut.rc.fas.harvard.edu/gal-lb-query-light'
     #url = 'http://127.0.0.1:5000/gal-lb-query-light'
     
-    payload = {'l': l, 'b': b}
+    payload = {}
+    
+    if coordsys.lower() in ['gal', 'g']:
+        payload['l'] = lon
+        payload['b'] = lat
+    elif coordsys.lower() in ['equ', 'e']:
+        payload['ra'] = lon
+        payload['dec'] = lat
+    else:
+        raise ValueError("coordsys '{0}' not understood.".format(coordsys))
+    
     headers = {'content-type': 'application/json'}
     
     r = requests.post(url, data=json.dumps(payload), headers=headers)
@@ -67,17 +80,19 @@ def main():
     import time
     
     N = 100
-    l = 180. + 10. * (np.random.random(N) - 0.5)
-    b = 5. * (np.random.random(N) - 0.5)
+    l = 360. * (np.random.random(N) - 0.5)
+    b = 180. * (np.random.random(N) - 0.5)
     
     t_start = time.time()
     
     for i,(ll,bb) in enumerate(zip(l[:10],b[:10])):
-        pixel_data = query(ll, bb)
+        pixel_data = query(ll, bb, coordsys='equ')
         
         print ''
         print i+1
-        print pixel_data['samples']
+        print pixel_data['l']
+        print pixel_data['b']
+        print pixel_data['converged']
         
         #time.sleep(0.5)
     
@@ -88,9 +103,12 @@ def main():
     print 't/N = %.4f s/request' % ((t_end - t_start) / N)
     print ''
     
-    pixel_data = query(l.tolist(), b.tolist())
+    pixel_data = query(l.tolist(), b.tolist(), coordsys='e')
     print ''
-    print pixel_data['converged']
+    print np.array(pixel_data['ra']) - l
+    print np.array(pixel_data['dec']) - b
+    
+    print query(180, 0).keys()
     
     return 0
 
