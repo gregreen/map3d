@@ -8,26 +8,15 @@
   <h2>with Pan-STARRS 1</h2>
   
   <div class="container-fluid padding-xs-0">
-    <div class="row v-margins-extra padding-xs-5">
+    <div class="row v-margins-extra padding-xs-15">
       <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
         
         <div class="row">
-          <div class="col-xs-4 padding-xs-15 col-sm-4 col-md-4 h-center">
+          <div class="col-xs-4 padding-xs-5 col-sm-4 col-md-4 h-center">
             <a href="/query" class="top-link">
               <h2>Query Map</h2>
               <i class="fa fa-search fa-3x"></i>
             </a>
-            
-            <!--
-            <a href="/query">
-              <span class="fa-stack fa-3x">
-                <i class="fa fa-square fa-stack-2x"></i>
-                <i class="fa fa-search fa-stack-1x"></i>
-                <span class="fa-stack-1x icon-text">Query</span>
-              </span>
-            </a>
-            -->
-            
           </div>
           
           <div class="col-xs-4 padding-xs-5 col-sm-4 col-md-4 h-center">
@@ -52,53 +41,71 @@
 
 <div class="container-fluid block-color">
   <div class="row">
-    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+    <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2 bottom-line">
+      <div class="page-header">
+        <h1>The Map</h1>
+      </div>
+      
+      <p>We present a 3D map of interstellar dust reddening. Using 800 million stars with Pan-STARRS 1 photometry, and matched 2MASS photometry for 200 million stars, the map traces dust reddening in three dimensions across three-quarters of the sky.</p>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-xs-12 col-sm-12 col-lg-12">
       
       <div class="page-header">
         <h1>Volume Renderings</h1>
-        <p>Milky Way dust, inferred from stellar photometry of 800 million stars, with famous clouds in the interstellar medium labeled.</p>
+      </div>
+      
+      <div class="row hidden-xs hidden-sm hidden-md">
+        <div class="col-lg-4 h-center">
+          <h2>Local Dust</h2>
+          <p>Looking towards the Galactic anticenter.</p>
+        </div>
+        
+        <div class="col-lg-4 h-center">
+          <h2>Orbiting the Sun</h2>
+          <p>A 150-pc loop around the Sun.</p>
+        </div>
+        
+        <div class="col-lg-4 h-center">
+          <h2>A Tour of the Galaxy</h2>
+          <p>A several-kpc loop through and out of the Galactic plane.</p>
+        </div>
       </div>
       
       <div class="row" id="videos">
-        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
+        <div class="col-xs-12 col-sm-12 col-md-12 hidden-lg h-center">
           <h2>Local Dust</h2>
           <p>Looking towards the Galactic anticenter.</p>
-          
-            <video preload="" loop controls poster="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/local_dust/local_dust_rand2_avg10.jpg">
-              <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/local_dust/local_dust_rand2_avg10.webm" type="video/webm; codecs=vp8">
-              <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/local_dust/local_dust_rand2_avg10.ogv" type="video/ogg; codecs=theora">
-              <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/local_dust/local_dust_rand2_avg10.mp4" type="video/mp4; codecs=avc1.42E01E">
-              Upgrade to a modern browser to see video.
-            </video>
         </div>
         
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
+          <div class="video-placeholder" data-src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/local_dust/local_dust_rand2_avg10"></div>
+        </div>
+        
+        <div class="col-xs-12 col-sm-12 col-md-12 hidden-lg h-center">
           <h2>Orbiting the Sun</h2>
           <p>A 150-pc loop around the Sun.</p>
-          
-          <video preload="" loop controls poster="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/circle_local_wide_v2/circle_local_wide_v2.jpg">
-            <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/circle_local_wide_v2/circle_local_wide_v2.webm" type="video/webm; codecs=vp8">
-            <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/circle_local_wide_v2/circle_local_wide_v2.ogv" type="video/ogg; codecs=theora">
-            <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/circle_local_wide_v2/circle_local_wide_v2.mp4" type="video/mp4; codecs=avc1.42E01E">
-            Upgrade to a modern browser to see video.
-          </video>
         </div>
         
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
+          <div class="video-placeholder" data-src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/circle_local_wide_v2/circle_local_wide_v2"></div>
+        </div>
+        
+        <div class="col-xs-12 col-sm-12 col-md-12 hidden-lg h-center">
           <h2>A Tour of the Galaxy</h2>
           <p>A several-kpc loop through and out of the Galactic plane.</p>
-          
-          <video preload="" loop controls poster="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/simple_loop/simple-loop-att-v2.jpg">
-            <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/simple_loop/simple-loop-att-v2.webm" type="video/webm; codecs=vp8">
-            <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/simple_loop/simple-loop-att-v2.ogv" type="video/ogg; codecs=theora">
-            <source src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/simple_loop/simple-loop-att-v2.mp4" type="video/mp4; codecs=avc1.42E01E">
-            Upgrade to a modern browser to see video.
-          </video>
+        </div>
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
+          <div class="video-placeholder" data-src="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/videos/simple_loop/simple-loop-att-v2"></div>
         </div>
       </div>
       
     </div>
   </div>
 </div>
+
+<script src="{{ url_for('static', filename='js/expopage.js')  }}"></script>
 
 {% endblock %}

@@ -11,8 +11,8 @@ p, li {
 .jumbotron h1 {
   text-align: center;
   color: #FBFBFB;
-  -webkit-text-stroke-width: 0.5px;
-  -webkit-text-stroke-color: #999999;
+  /*-webkit-text-stroke-width: 0.5px;
+  -webkit-text-stroke-color: #999999;*/
 }
 
 .jumbotron h2 {
@@ -27,12 +27,32 @@ p, li {
 }
 
 .row {
-  margin-bottom: 20px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
-.block-color div[class^="col-"] {
+.block-color .row {/*div[class^="col-"] {*/
+  background-color: #F5F5F5;
+}
+
+.bottom-line {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-color: #DADADA;
+}
+
+.page-header {
+  border-bottom-color: #DADADA;
+}
+
+
+/*
+.block-color {
   background-color: #FAFAFA;
 }
+*/
 
 .banner-image {
   background: url("../media/banner-clipped-q50.jpg");
@@ -73,8 +93,8 @@ a.top-link:hover {
 
 .top-link h2 {
   color: #FAFAFA;
-  -webkit-text-stroke-width: 0.5px;
-  -webkit-text-stroke-color: #888;
+  /*-webkit-text-stroke-width: 0.5px;
+  -webkit-text-stroke-color: #888;*/
   -webkit-transition: color 0.5s;
   transition: color 0.5s;
 }
@@ -110,44 +130,6 @@ a.top-link:hover .fa {
 }
 
 
-
-
-/*
- * Button transition
- */
-
-/*
-a .fa {
-  color: #888;
-  -webkit-transition: color 0.5s;
-}
-
-a:hover .fa {
-  color: #222;
-}
-
-a .fa-stack-2x {
-  -webkit-text-stroke-width: 1px;
-  -webkit-text-stroke-color: #666;
-}
-
-a .fa-stack-1x {
-  color: #222;
-  -webkit-transition: color 0.5s;
-}
-
-a:hover .fa-stack-1x {
-  color: #eee;
-}
-
-.icon-text {
-  font-family: "Lora", serif;
-  text-align: center;
-  font-size: 16pt;
-}
-*/
-
-
 /*
  * Videos
  */
@@ -161,8 +143,10 @@ video {
    max-width: 640px; 
    height: auto;
    text-align: center;
+   border-width: thin;
+   border-style: solid;
+   border-color: rgba(0,0,0,0.2);
 }
-
 
 
 /*
@@ -182,6 +166,10 @@ div {
 
 /* xs */
 @media (max-width: 767px) {
+  .padding-xs-20 {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
   
   .padding-xs-15 {
     padding-left: 15px;
