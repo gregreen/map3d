@@ -23,11 +23,11 @@ from utils import array_like
 max_request_size = 1000
 
 
-@app.route('/')
+@app.route('/cover')
 def cover():
     return render_template('cover.html')
 
-@app.route('/expo')
+@app.route('/')
 def expo():
     return render_template('expo.html')
 

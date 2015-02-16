@@ -8,20 +8,6 @@ p, li {
   font-size: 14pt;
 }
 
-.highlight pre {
-  font-size: 12pt;
-  overflow: auto;
-  overflow-y: hidden;
-  white-space: pre;
-  word-wrap: normal;
-}
-
-.small-space {
-  /*word-spacing: -0.25em;*/
-  white-space: nowrap;
-  font-kerning: normal;
-}
-
 .jumbotron h1 {
   text-align: center;
   color: #FBFBFB;
@@ -49,37 +35,117 @@ p, li {
 }
 
 .banner-image {
-  background: url("../media/banner-clipped-q50.jpg") no-repeat center center fixed;
+  background: url("../media/banner-clipped-q50.jpg");
   -webkit-background-size: cover;
   -moz-background-size: cover;
   -o-background-size: cover;
   background-size: cover;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-position: center center;
 }
 
 .v-margins-extra {
-  margin-top: 30px;
-  margin-bottom: 30px;
+  margin-top: 40px;
+  margin-bottom: 50px;
 }
 
 .page-header {
   text-align: center;
 }
 
+/*
+ * Top links
+ */
+
+.top-link {
+  display: inline-block;
+  text-align: center;
+}
+
+a.top-link {
+  text-decoration: none;
+}
+
+a.top-link:hover {
+  text-decoration: none;
+}
+
+.top-link h2 {
+  color: #FAFAFA;
+  -webkit-text-stroke-width: 0.5px;
+  -webkit-text-stroke-color: #888;
+  -webkit-transition: color 0.5s;
+  transition: color 0.5s;
+}
+
+a.top-link:hover h2 {
+  color: #222;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-stroke-color: #888;
+  -webkit-transition: color 0.5s;
+  transition: color 0.5s;
+}
+
+@media (max-width: 767px) {
+  .top-link h2 {
+    font-size: 18pt;
+  }
+}
+
+a.top-link .fa {
+  color: #FAFAFA;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-stroke-color: #888;
+  -webkit-transition: color 0.5s;
+  transition: color 0.5s;
+}
+
+a.top-link:hover .fa {
+  color: #222;
+  -webkit-text-stroke-width: 1.5px;
+  -webkit-text-stroke-color: #AAA;
+  -webkit-transition: color 0.5s;
+  transition: color 0.5s;
+}
+
+
+
 
 /*
  * Button transition
  */
 
-.fa {
-  color: #888; /*#194775;*/
-  /*-webkit-text-stroke-width: 2px;
-  -webkit-text-stroke-color: #aaa;*/
+/*
+a .fa {
+  color: #888;
+  -webkit-transition: color 0.5s;
 }
 
-.fa-stack-1x {
+a:hover .fa {
+  color: #222;
+}
+
+a .fa-stack-2x {
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-stroke-color: #666;
+}
+
+a .fa-stack-1x {
   color: #222;
   -webkit-transition: color 0.5s;
 }
+
+a:hover .fa-stack-1x {
+  color: #eee;
+}
+
+.icon-text {
+  font-family: "Lora", serif;
+  text-align: center;
+  font-size: 16pt;
+}
+*/
 
 
 /*
@@ -116,6 +182,7 @@ div {
 
 /* xs */
 @media (max-width: 767px) {
+  
   .padding-xs-15 {
     padding-left: 15px;
     padding-right: 15px;
