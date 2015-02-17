@@ -8,18 +8,25 @@ p, li {
   font-size: 14pt;
 }
 
-.jumbotron h1 {
+a {
+  font-weight: inherit;
+  /*color: #99B;*/
+  -webkit-transition: color 0.5s;
+  transition: color 0.5s;
+}
+
+a:hover {
+  font-weight: inherit;
+  color: #000;
+  -webkit-transition: color 0.5s;
+  transition: color 0.5s;
+}
+
+.jumbotron h1, .jumbotron h2 {
   text-align: center;
   color: #FBFBFB;
   /*-webkit-text-stroke-width: 0.5px;
   -webkit-text-stroke-color: #999999;*/
-}
-
-.jumbotron h2 {
-  text-align: center;
-  color: #FBFBFB;
-  -webkit-text-stroke-width: 0.5px;
-  -webkit-text-stroke-color: #999999;
 }
 
 .jumbotron {
@@ -205,6 +212,11 @@ div {
   
   .padding-xs-right-5 {
     padding-right: 5px;
+  }
+  
+  .margins-lr-xs-0 {
+    margin-left: 0px;
+    margin-right: 0px;
   }
   
   .popover-title {
