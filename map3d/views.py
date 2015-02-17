@@ -68,6 +68,11 @@ def gal_lb_query():
     
     logger.write(txt_request)
     
+    if np.isnan(los_info['DM_reliable_min']):
+        los_info['DM_reliable_min'] = -999
+    if np.isnan(los_info['DM_reliable_max']):
+        los_info['DM_reliable_max'] = -999
+    
     success = int(int(los_info['n_stars']) != 0)
     
     label = ['%d pc' % d for d in dists]

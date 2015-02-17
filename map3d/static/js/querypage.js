@@ -359,15 +359,19 @@ $(document).ready(function() {
         .transition(dt)
         .attr("width", x(minDM))
         .attr("height", y(0));
+    } else {
+      d3.select("#DM-close-panel")
+        .transition(dt)
+        .attr("width", 0);
+    }
+    
+    if (maxDM > xVals[0]) {
       d3.select("#DM-far-panel")
         .transition(dt)
         .attr("x", x(maxDM))
         .attr("width", width-x(maxDM))
         .attr("height", y(0));
     } else {
-      d3.select("#DM-close-panel")
-        .transition(dt)
-        .attr("width", 0);
       d3.select("#DM-far-panel")
         .transition(dt)
         .attr("x", width)
