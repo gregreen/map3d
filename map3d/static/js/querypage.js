@@ -362,7 +362,8 @@ $(document).ready(function() {
     } else {
       d3.select("#DM-close-panel")
         .transition(dt)
-        .attr("width", 0);
+        .attr("width", 0)
+        .attr("height", y(0));
     }
     
     if (maxDM > xVals[0]) {
@@ -375,12 +376,14 @@ $(document).ready(function() {
       d3.select("#DM-far-panel")
         .transition(dt)
         .attr("x", x(minDM))
-        .attr("width", width-x(minDM));
+        .attr("width", width-x(minDM))
+        .attr("height", y(0));
     } else {
       d3.select("#DM-far-panel")
         .transition(dt)
         .attr("x", width)
-        .attr("width", 0);
+        .attr("width", 0)
+        .attr("height", y(0));
     }
     
     // Change plot appearance based on (non-)convergence
