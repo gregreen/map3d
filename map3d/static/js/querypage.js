@@ -202,15 +202,15 @@ $(document).ready(function() {
           .text("No Data");
       
       // Pattern
-      var patternScale = 4;
-      var strokeScale = 5;
+      var patternScale = 2;
+      var strokeScale = 3;
       var coordStr = function(cx, cy) {
         return patternScale*cx + "," + patternScale*cy;
       }
       
-      svg
-        .append("defs")
-        .append("pattern")
+      var defs = svg.append("defs");
+      
+      defs.append("pattern")
           .attr("id", "diagonalHatch")
           .attr("patternUnits", "userSpaceOnUse")
           .attr("width", 4*patternScale)
@@ -224,6 +224,80 @@ $(document).ready(function() {
                      " l" + coordStr(2,-2))
           .attr("stroke", "#000000")
           .attr("stroke-width", strokeScale);
+      
+      var reliabilityGp = svg.append("g")
+        .attr("id", "reliability-group");
+      
+      // Label for close distance limit
+      var closeLabel = defs.append("mask")
+        .attr("id", "closeLabel");
+      
+      closeLabel
+        .append("rect")
+          .attr("id", "closeLabelBgd")
+          .attr("x", 0)
+          .attr("y", 0)
+          .attr("width", "100%")
+          .attr("height", "100%")
+          .attr("fill", "white");
+      
+      closeLabel
+        .append("text")
+          .attr("id", "closeLabelTxt")
+          .attr("x", 0)
+          .attr("y", 0)
+          .style("font-family", "Droid Sans")
+          .style("font-weight", 600)
+          .style("text-anchor", "middle")
+          .attr("stroke", "black")
+          .text("No Stars");
+        
+      reliabilityGp
+        .append("text")
+          .attr("id", "closeLabelStroke")
+          .attr("x", 0)
+          .attr("y", 0)
+          .style("font-family", "Droid Sans")
+          .style("font-weight", 600)
+          .style("text-anchor", "middle")
+          .style("opacity", 0)
+          .text("No Stars");
+      
+      // Label for far distance limit
+      var farLabel = defs.append("mask")
+        .attr("id", "farLabel");
+      
+      farLabel
+        .append("rect")
+          .attr("id", "farLabelBgd")
+          .attr("x", 0)
+          .attr("y", 0)
+          .attr("width", "100%")
+          .attr("height", "100%")
+          .attr("fill", "white");
+      
+      farLabel
+        .append("text")
+          .attr("id", "farLabelTxt")
+          .attr("x", 0)
+          .attr("y", 0)
+          .style("font-family", "Droid Sans")
+          .style("font-weight", 600)
+          .style("text-anchor", "middle")
+          .attr("stroke", "black")
+          .text("No MS Stars");
+      
+      reliabilityGp
+        .append("text")
+          .attr("id", "farLabelStroke")
+          .attr("x", 0)
+          .attr("y", 0)
+          .style("font-family", "Droid Sans")
+          .style("font-weight", 600)
+          .style("text-anchor", "middle")
+          .style("opacity", 0)
+          .text("No MS Stars");
+        
     }
     
     d3.select(container).select("svg")
@@ -344,14 +418,16 @@ $(document).ready(function() {
         .attr("x", 0)
         .attr("y", 0)
         .style("fill", "url(#diagonalHatch)")
-        .style("fill-opacity", 0.03);
+        .style("fill-opacity", 0.035)
+        .style("mask", "url(#closeLabel)");
       
       relDistGroup.append("rect")
         .attr("id", "DM-far-panel")
         .attr("x", width)
         .attr("y", 0)
         .style("fill", "url(#diagonalHatch)")
-        .style("fill-opacity", 0.03);
+        .style("fill-opacity", 0.035)
+        .style("mask", "url(#farLabel)");
     }
     
     if (minDM > xVals[0]) {
@@ -359,33 +435,70 @@ $(document).ready(function() {
         .transition(dt)
         .attr("width", x(minDM))
         .attr("height", y(0));
+      d3.select("#closeLabelStroke")
+        .transition(dt)
+        .style("opacity", 1);
     } else {
       d3.select("#DM-close-panel")
         .transition(dt)
         .attr("width", 0)
         .attr("height", y(0));
+      d3.select("#closeLabelStroke")
+        .transition(dt)
+        .style("opacity", 0);
     }
     
+    var xFarTxt = (x(1) - x(0));
+    
     if (maxDM > xVals[0]) {
+      var xTmp = x(d3.max([minDM, maxDM]));
+      xFarTxt += xTmp;
       d3.select("#DM-far-panel")
         .transition(dt)
         .attr("x", x(maxDM))
         .attr("width", width-x(maxDM))
         .attr("height", y(0));
+      d3.select("#farLabelStroke")
+        .transition(dt)
+        .style("opacity", 1);
     } else if (maxDM < -998) {
       var xTmp = d3.max([0, x(minDM)]);
+      xFarTxt += xTmp;
       d3.select("#DM-far-panel")
         .transition(dt)
         .attr("x", xTmp)
         .attr("width", width-xTmp)
         .attr("height", y(0));
+      d3.select("#farLabelStroke")
+        .transition(dt)
+        .style("opacity", 1);
     } else {
+      xFarTxt += width;
       d3.select("#DM-far-panel")
         .transition(dt)
         .attr("x", width)
         .attr("width", 0)
         .attr("height", y(0));
+      d3.select("#farLabelStroke")
+        .transition(dt)
+        .style("opacity", 0);
     }
+    
+    d3.select("#closeLabelTxt")
+      .attr("transform", "rotate(-90) translate(-" + (0.55*height) + "," + x(xVals[0]+1) + ")")
+      .style("font-size", 2.5*labelsize);
+    
+    d3.select("#closeLabelStroke")
+      .attr("transform", "rotate(-90) translate(-" + (0.55*height) + "," + x(xVals[0]+1) + ")")
+      .style("font-size", 2.5*labelsize);
+    
+    d3.select("#farLabelTxt")
+      .attr("transform", "rotate(-90) translate(-" + (0.5*height) + "," + xFarTxt + ")")
+      .style("font-size", 2*labelsize);
+    
+    d3.select("#farLabelStroke")
+      .attr("transform", "rotate(-90) translate(-" + (0.5*height) + "," + xFarTxt + ")")
+      .style("font-size", 2*labelsize);
     
     // Change plot appearance based on (non-)convergence
     if ((conv == 0) && (noData == 0)) {

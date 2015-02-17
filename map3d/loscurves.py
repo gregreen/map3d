@@ -113,10 +113,10 @@ def get_los(coords, decimals=5):
     # Round floats to requested number of decimal places
     for key in los_data.keys():
         if issubclass(los_data[key].dtype.type, np.integer):
-            print 'Not a float array: "{0}"'.format(key)
+            #print 'Not a float array: "{0}"'.format(key)
             los_data[key] = los_data[key].tolist()
         else:#elif issubclass(los_data[key].dtype.type, np.float):
-            print 'Rounding float array "{0}"'.format(key)
+            #print 'Rounding float array "{0}"'.format(key)
             los_data[key] = np.around(los_data[key].tolist(), decimals=decimals).tolist()
     
     # Encode as JSON string
