@@ -373,10 +373,11 @@ $(document).ready(function() {
         .attr("width", width-x(maxDM))
         .attr("height", y(0));
     } else if (maxDM < -998) {
+      var xTmp = d3.max([0, x(minDM)]);
       d3.select("#DM-far-panel")
         .transition(dt)
-        .attr("x", x(minDM))
-        .attr("width", width-x(minDM))
+        .attr("x", xTmp)
+        .attr("width", width-xTmp)
         .attr("height", y(0));
     } else {
       d3.select("#DM-far-panel")
