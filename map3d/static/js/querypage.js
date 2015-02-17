@@ -101,14 +101,14 @@ $(document).ready(function() {
     });
   };
   
-  function drawPlotSafe(forceUncollapse, container, dt, xVals, yBest, ySamples, conv, noData) {
+  function drawPlotSafe(forceUncollapse, container, dt, xVals, yBest, ySamples, conv, noData, minDM, maxDM) {
     var linePlotDiv = d3.select("#line-plot-div");
     
     if (linePlotDiv.classed("collapse in")) {
-      drawPlot(container, dt, xVals, yBest, ySamples, conv, noData);
+      drawPlot(container, dt, xVals, yBest, ySamples, conv, noData, minDM, maxDM);
     } else if(forceUncollapse) {
       $(linePlotDiv[0][0]).on("shown.bs.collapse", function() {
-        drawPlot(container, dt, xVals, yBest, ySamples, conv, noData);
+        drawPlot(container, dt, xVals, yBest, ySamples, conv, noData, minDM, maxDM);
         
         $("#postage-stamp-div").on("shown.bs.collapse", function() {
           drawPSOverlays();
@@ -123,7 +123,7 @@ $(document).ready(function() {
     }
   }
   
-  function drawPlot(container, dt, xVals, yBest, ySamples, conv, noData) {
+  function drawPlot(container, dt, xVals, yBest, ySamples, conv, noData, minDM, maxDM) {
     if (!d3.select("#line-plot-div").classed("collapse in")) {
       return;
     }
@@ -200,6 +200,30 @@ $(document).ready(function() {
           .style("fill", "steelblue")
           .style("opacity", 0.5)
           .text("No Data");
+      
+      // Pattern
+      var patternScale = 4;
+      var strokeScale = 5;
+      var coordStr = function(cx, cy) {
+        return patternScale*cx + "," + patternScale*cy;
+      }
+      
+      svg
+        .append("defs")
+        .append("pattern")
+          .attr("id", "diagonalHatch")
+          .attr("patternUnits", "userSpaceOnUse")
+          .attr("width", 4*patternScale)
+          .attr("height", 4*patternScale)
+        .append("path")
+          .attr("d", "M" + coordStr(-1,1) +
+                     " l" + coordStr(2,-2) +
+                     " M" + coordStr(0,4) +
+                     " l" + coordStr(4,-4) +
+                     " M" + coordStr(3,5) +
+                     " l" + coordStr(2,-2))
+          .attr("stroke", "#000000")
+          .attr("stroke-width", strokeScale);
     }
     
     d3.select(container).select("svg")
@@ -309,6 +333,46 @@ $(document).ready(function() {
     d3.selectAll(".axis > text")
       .style("font-size", labelsize + "pt")
       .style("font-family", "Lora");
+    
+    // Reliable distance range
+    if (d3.selectAll("#DM-close-panel")[0].length < 1) {
+      var relDistGroup = svg.append("g")
+        .attr("id", "reliable-dists");
+      
+      relDistGroup.append("rect")
+        .attr("id", "DM-close-panel")
+        .attr("x", 0)
+        .attr("y", 0)
+        .style("fill", "url(#diagonalHatch)")
+        .style("fill-opacity", 0.03);
+      
+      relDistGroup.append("rect")
+        .attr("id", "DM-far-panel")
+        .attr("x", width)
+        .attr("y", 0)
+        .style("fill", "url(#diagonalHatch)")
+        .style("fill-opacity", 0.03);
+    }
+    
+    if (minDM > xVals[0]) {
+      d3.select("#DM-close-panel")
+        .transition(dt)
+        .attr("width", x(minDM))
+        .attr("height", y(0));
+      d3.select("#DM-far-panel")
+        .transition(dt)
+        .attr("x", x(maxDM))
+        .attr("width", width-x(maxDM))
+        .attr("height", y(0));
+    } else {
+      d3.select("#DM-close-panel")
+        .transition(dt)
+        .attr("width", 0);
+      d3.select("#DM-far-panel")
+        .transition(dt)
+        .attr("x", width)
+        .attr("width", 0);
+    }
     
     // Change plot appearance based on (non-)convergence
     if ((conv == 0) && (noData == 0)) {
@@ -444,7 +508,7 @@ $(document).ready(function() {
           .text("samples");
     }
     
-    var legendMargins = {"x": 5, "y": 5};
+    var legendMargins = {"x": 5, "y": 8};
     
     var h0 = (y(yMinLegend) - y(yMaxLegend));
     var labelFrameWidth = 1.7 * (scaling / naiveScaling);
@@ -741,6 +805,8 @@ $(document).ready(function() {
   distmod = d3.range(4, 19.01, 0.5);
   best = Array.apply(null, new Array(distmod.length)).map(Number.prototype.valueOf,0);
   samples = [best];
+  DMReliableMin = 4.0;
+  DMReliableMax = 19.0;
   converged = 1;
   tableData = "";
   noData = 0;
@@ -840,6 +906,8 @@ $(document).ready(function() {
         best = $.parseJSON(data.best);
         samples = $.parseJSON(data.samples);
         converged = $.parseJSON(data.converged);
+        DMReliableMin = $.parseJSON(data.DM_reliable_min);
+        DMReliableMax = $.parseJSON(data.DM_reliable_max);
         tableData = $.parseJSON(data.table_data);
         
         lCur = $.parseJSON(data.l);
@@ -848,7 +916,7 @@ $(document).ready(function() {
         
         noData = 1 - querySuccess;
         
-        drawPlotSafe(true, linePlotContainer, 500, distmod, best, samples, converged, noData);
+        drawPlotSafe(true, linePlotContainer, 500, distmod, best, samples, converged, noData, DMReliableMin, DMReliableMax);
         
         $("#postage-stamp-1").attr("src", data.image1);
         $("#postage-stamp-2").attr("src", data.image2);
@@ -1347,7 +1415,7 @@ $(document).ready(function() {
   }
   
   var debouncedDrawPlot = debounce(function() {
-    drawPlotSafe(false, linePlotContainer, 200, distmod, best, samples, converged, noData);
+    drawPlotSafe(false, linePlotContainer, 200, distmod, best, samples, converged, noData, DMReliableMin, DMReliableMax);
   }, 125);
   
   var debouncedDrawPSOverlays = debounce(function() {
