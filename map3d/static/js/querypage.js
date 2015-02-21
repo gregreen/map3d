@@ -486,19 +486,19 @@ $(document).ready(function() {
     
     d3.select("#closeLabelTxt")
       .attr("transform", "rotate(-90) translate(-" + (0.55*height) + "," + x(xVals[0]+1) + ")")
-      .style("font-size", 2.5*labelsize);
+      .style("font-size", 1.5*labelsize + "pt");
     
     d3.select("#closeLabelStroke")
       .attr("transform", "rotate(-90) translate(-" + (0.55*height) + "," + x(xVals[0]+1) + ")")
-      .style("font-size", 2.5*labelsize);
+      .style("font-size", 1.5*labelsize + "pt");
     
     d3.select("#farLabelTxt")
       .attr("transform", "rotate(-90) translate(-" + (0.5*height) + "," + xFarTxt + ")")
-      .style("font-size", 2*labelsize);
+      .style("font-size", 1.5*labelsize + "pt");
     
     d3.select("#farLabelStroke")
       .attr("transform", "rotate(-90) translate(-" + (0.5*height) + "," + xFarTxt + ")")
-      .style("font-size", 2*labelsize);
+      .style("font-size", 1.5*labelsize + "pt");
     
     // Change plot appearance based on (non-)convergence
     if ((conv == 0) && (noData == 0)) {
