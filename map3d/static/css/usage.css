@@ -8,6 +8,10 @@ p, li {
   font-size: 14pt;
 }
 
+.smaller-text {
+  font-size: 12pt;
+}
+
 .highlight pre {
   font-size: 12pt;
   overflow: auto;
