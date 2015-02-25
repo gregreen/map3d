@@ -44,7 +44,7 @@ def query(lon, lat, coordsys='gal'):
     
     Outputs a dictionary containing, among other things:
       'distmod':    The distance moduli that define the distance bins.
-      'best':       The best-fit (maximum proability density)
+      'best':       The best-fit (maximum probability density)
                     line-of-sight reddening, in units of SFD-equivalent
                     E(B-V), to each distance modulus in 'distmod.' See
                     Schlafly & Finkbeiner (2011) for a definition of the
@@ -88,7 +88,8 @@ formatter)
 
 map_query_API_example_single = highlight(
 """
->>> qresult = query(90, 10)
+>>> # Query the Galactic coordinates (l, b) = (90, 10):
+>>> qresult = query(90, 10, coordsys='gal')
 >>> 
 >>> # See what information is returned for each pixel:
 >>> print qresult.keys()

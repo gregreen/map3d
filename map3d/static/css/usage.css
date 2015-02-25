@@ -38,6 +38,49 @@ div[class^="col-"] {
   background-color: #FAFAFA;
 }
 
+.highlight {
+  position: relative;
+}
+
+.top-right-overlay {
+  display: block;
+  float: right;  
+  z-index: 3;
+  position: absolute;
+  right: 5px;
+  top: 5px;
+}
+
+.click-select {
+  cursor: pointer;
+}
+
+.click-select .fa-stack-2x {
+  color: #B8CFD9;
+  opacity: 0.5;
+  -webkit-transition: all 0.25s;
+  transition: all 0.25s;
+}
+
+.click-select:hover .fa-stack-2x {
+  color: #5C8799;
+  opacity: 0.5;
+  -webkit-transition: all 0.25s;
+  transition: all 0.25s;
+}
+
+.click-select .fa-stack-1x {
+  color: #0e84b5;
+  -webkit-transition: color 0.25s;
+  transition: color 0.25s;
+}
+
+.click-select:hover .fa-stack-1x {
+  color: #B6E0F2; /*#0e84b5;*/
+  -webkit-transition: color 0.25s;
+  transition: color 0.25s;
+}
+
 
 
 /*
