@@ -46,9 +46,11 @@
       </div>
       
       <p>You can query the Argonaut web server directly from your code, without having to download the full map to your local disk. If you're not interested in playing around with the entire map, this is the way we recommend you access it.</p>
-      <p>In Python, the following function will call the Argonaut server and return the line-of-sight reddening for any coordinates, or set of coordinates, on the sky:</p>
+      <p>In Python 2.x, the following function will call the Argonaut server and return the line-of-sight reddening for any coordinates, or set of coordinates, on the sky:</p>
       
-      {{snippets.map_query_API|safe}}
+      <div class="add-click-select">
+        {{snippets.map_query_API|safe}}
+      </div>
       
       <p>This code can be adapted for any programming language that can issue HTTP POST requests.</p>
       
@@ -56,7 +58,7 @@
         <h2>Example Usage</h2>
       </div>
       
-      <p>To query one sightline, say, (&#8467, <i>b</i>) = (90&#176, 10&#176), you would call</p>
+      <p>To query one sightline, say, Galactic coordinates (&#8467, <i>b</i>) = (90&#176, 10&#176), you would call</p>
       
       {{snippets.map_query_API_example_single|safe}}
       

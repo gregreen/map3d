@@ -100,6 +100,7 @@ u'n_stars', u'converged', u'success', u'dec', u'DM_reliable_min', u'best']
 750
 >>> print qresult['converged']
 1
+>>> # Get the best-fit E(B-V) in each distance bin
 >>> print qresult['best']
 [0.00426, 0.00678, 0.0074, 0.00948, 0.01202, 0.01623, 0.01815, 0.0245,
 0.0887, 0.09576, 0.10139, 0.12954, 0.1328, 0.21297, 0.23867, 0.24461,
