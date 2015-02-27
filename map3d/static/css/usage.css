@@ -4,7 +4,11 @@ body {
   font-family: "Lora", serif;
 }
 
-p, span, li {
+p, li {
+  font-size: 14pt;
+}
+
+.fontsize-normal {
   font-size: 14pt;
 }
 
