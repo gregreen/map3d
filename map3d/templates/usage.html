@@ -46,10 +46,27 @@
       </div>
       
       <p>You can query the Argonaut web server directly from your code, without having to download the full map to your local disk. If you're not interested in playing around with the entire map, this is the way we recommend you access it.</p>
-      <p>In Python 2.x, the following function will call the Argonaut server and return the line-of-sight reddening for any coordinates, or set of coordinates, on the sky:</p>
       
-      <div class="add-click-select">
-        {{snippets.map_query_API|safe}}
+      <span>In</span>
+      <div class="dropdown language-dropdown">
+        <button class="btn btn-success dropdown-toggle" type="button" data-toggle="dropdown" href="#" id="language-dropdown">
+          <span id="lang-dropdown-label">Python 2.7+</span>
+          <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" role="menu" aria-labelledby="language-dropdown">
+          <li><a class="language-link" role="menuitem" tabindex="-1" data-target="API-python-2x" href="#">Python 2.7+</a></li>
+          <li><a class="language-link" role="menuitem" tabindex="-1" data-target="API-IDL" href="#">IDL</a></li>
+        </ul>
+      </div>
+      <span>, the following function will call the Argonaut server and return the line-of-sight reddening for any coordinates, or set of coordinates, on the sky:</span>
+      
+      <div class="extra-margin-top language-toggle-parent">
+        <div class="API-python-2x language-toggle add-click-select">
+          {{snippets.map_query_API['python-2.x']|safe}}
+        </div>
+        <div class="API-IDL hidden language-toggle add-click-select">
+          {{snippets.map_query_API['IDL']|safe}}
+        </div>
       </div>
       
       <p>This code can be adapted for any programming language that can issue HTTP POST requests.</p>
@@ -60,11 +77,25 @@
       
       <p>To query one sightline, say, Galactic coordinates (&#8467, <i>b</i>) = (90&#176, 10&#176), you would call</p>
       
-      {{snippets.map_query_API_example_single|safe}}
+      <div class="extra-margin-top language-toggle-parent">
+        <div class="API-python-2x language-toggle">
+          {{snippets.map_query_API_example_single['python-2.x']|safe}}
+        </div>
+        <div class="API-IDL hidden language-toggle">
+          {{snippets.map_query_API_example_single['IDL']|safe}}
+        </div>
+      </div>
       
       <p>You can also query multiple sightlines simultaneously, simply by passing longitude and latitude as lists:</p>
       
-      {{snippets.map_query_API_example_multiple|safe}}
+      <div class="extra-margin-top language-toggle-parent">
+        <div class="API-python-2x language-toggle">
+          {{snippets.map_query_API_example_multiple['python-2.x']|safe}}
+        </div>
+        <div class="API-IDL hidden language-toggle">
+          {{snippets.map_query_API_example_multiple['IDL']|safe}}
+        </div>
+      </div>
       
       <p>If you are going to be querying large numbers of sightlines at once, we kindly request that you use this batch syntax, rather than calling <code>query()</code> in a loop. It will be faster, because you only have to contact the server once, and it will reduce the load on the Argonaut server.</p>
     </div>
@@ -104,6 +135,32 @@
       
       {{snippets.h5_open_example|safe}}
       
+      <div class="page-header">
+        <h2>Example Usage</h2>
+      </div>
+      
+      <p>As a simple example of how to work with the full data cube, we will plot the median reddening in the farthest distance bin. We begin by opening the HDF5 file and extracting the information we need:</p>
+      
+      {{snippets.reindex_example[0]|safe}}
+      
+      <p>The variable <code>pix_info</code> specifies the location of each pixel (by <code>nside</code> and <code>healpix_index</code>), while <code>EBV_far_median</code> contains the median reddening in each pixel in the farthest distance bin. We want to construct a single-resolution HEALPix map, which we can use standard library routines to plot.</p>
+      
+      <p>We find the maximum <code>nside</code> present in the map, and create an empty array, <code>pix_val</code>, to house the upsampled map:</p>
+      
+      {{snippets.reindex_example[1]|safe}}
+      
+      <p>Now, we have to fill the upsampled map, by putting every pixel in the original map into the correct location(s) in the upsampled map. Because our original map has multiple resolutions, pixels that are below the maximum resolution correspond to multiple pixels in the upsampled map. We loop through the <code>nside</code> resolutions present in the original map, placing all the pixels of the same resolution into the upsampled map at once:</p>
+      
+      {{snippets.reindex_example[2]|safe}}
+      
+      <p>Now we have an array, <code>pix_val</code>, that represents reddening in the farthest distance bin. We can use one of <a href="http://healpy.readthedocs.org/en/latest/index.html">healpy's</a> built-in visualization functions to plot the map:</p>
+      
+      {{snippets.reindex_example[3]|safe}}
+      
+      <p>Here's the resulting map. Note that it's centered on (&#8467, <i>b</i>) = (130&#176, 0&#176):</p>
+      <div class="thumbnail">
+        <img src="{{ url_for('static', filename='media/healpy-plot-example-1800.jpg') }}" class="img-responsive" />
+      </div>
     </div>
   </div>
   

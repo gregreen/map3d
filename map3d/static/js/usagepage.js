@@ -59,4 +59,23 @@ $(document).ready(function() {
   
   addSelectButtons();
   
+  
+  // Language links
+  $(".language-link").click(function(event) {
+    event.preventDefault();
+    
+    var targetIdentifier = "." + d3.select(this).attr("data-target");
+    
+    d3.selectAll(".language-toggle-parent")
+      .selectAll(".language-toggle")
+        .classed("hidden", true);
+    
+    d3.selectAll(".language-toggle-parent")
+      .selectAll(targetIdentifier)
+        .classed("hidden", false);
+    
+    var label = d3.select(this).text();
+    d3.select("#lang-dropdown-label").text(label);
+  });
+  
 });

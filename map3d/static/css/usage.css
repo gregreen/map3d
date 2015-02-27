@@ -4,7 +4,7 @@ body {
   font-family: "Lora", serif;
 }
 
-p, li {
+p, span, li {
   font-size: 14pt;
 }
 
@@ -45,6 +45,28 @@ div[class^="col-"] {
 /*.highlight {
   position: relative;
 }*/
+
+.dropdown-toggle {
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+
+.language-dropdown {
+  margin-left: 2pt;
+  display: inline-block;
+}
+
+#lang-dropdown-label {
+  padding-right: 4pt;
+}
+
+.hidden {
+  display: none;
+}
+
+.extra-margin-top {
+  margin-top: 15px;
+}
 
 .add-click-select {
   position: relative;
