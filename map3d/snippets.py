@@ -188,7 +188,8 @@ function query_argonaut, struct=struct, _extra=coords
   oUrl.SetProperty, HEADER = 'Content-Type: application/json'
   
 ; -------- Query Argonaut, send output to argo-output.dat
-  out = oUrl.Put(data, url=url, /buffer, /post, filename='argo-output.dat')
+  tmpfile = filepath('argo-'+string(randomu(iseed,/double)*1D9,format='(I9.9)'), /tmp)
+  out = oUrl.Put(data, url=url, /buffer, /post, filename=tmpfile)
 
 ; -------- Parse output to hash
   hash = json_parse(out)
