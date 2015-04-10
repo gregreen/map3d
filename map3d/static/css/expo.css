@@ -81,6 +81,10 @@ h3 {
   margin-bottom: 50px;
 }
 
+.v-margin-top-extra {
+  margin-top: 20px;
+}
+
 .v-padding-extra {
   padding-top: 40px;
   padding-bottom: 30px;
@@ -156,7 +160,7 @@ a.top-link:hover .fa {
 
 video {  
    width: 100%;
-   max-width: 640px; 
+   max-width: 640px;
    height: auto;
    text-align: center;
    border-width: thin;
