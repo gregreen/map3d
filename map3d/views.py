@@ -10,6 +10,7 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 log_path = os.path.join(script_dir, '..', 'log', 'argonaut_requests.log')
 
 from rate_limit import ratelimit
+from gzip_response import gzipped
 
 from redis_logger import Logger
 logger = Logger('argonaut_request_log', log_path)
@@ -95,9 +96,9 @@ def gal_lb_query():
                    table_data=table_data,
                    **los_info)
 
-
 @app.route('/gal-lb-query-light', methods=['POST'])
 @ratelimit(limit=1000, per=5*60, send_x_headers=True)
+@gzipped(6)
 def gal_lb_query_light():
     # Validate input
     coords, valid, msg = loscurves.get_coords(request.json, max_request_size)

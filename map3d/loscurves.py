@@ -39,40 +39,32 @@ def get_coords(json, max_request_size):
     # Extract lon and lat
     if array_like(lon):
         if not array_like(lat):
-            print '1'
             return {}, False, '{0} and {1} must have same number of dimensions.'.format(*coord_names)
         if len(lat) != len(lon):
-            print '2'
             return {}, False, '{0} and {1} must have same number of dimensions.'.format(*coord_names)
         if len(lon) > max_request_size:
-            print '3'
             return {}, False, 'Requests limited to {0} coordinates at a time.'.format(max_request_size)
         
         try:
             lon = np.array(lon).astype('f4')
             lat = np.array(lat).astype('f4')
         except ValueError:
-            print '4'
             return {}, False, 'Non-numeric coordinates detected.'
+        
+        if np.any((lat > 90.) | (lat < -90.)):
+            return {}, False, '|{0}| > 90 degrees detected.'.format(coord_names[1])
     else:
         if array_like(lat):
-            print '5'
             return {}, False, '{0} and {1} must have same number of dimensions.'.format(*coord_names)
         
         try:
             lon = float(lon)
             lat = float(lat)
         except ValueError:
-            print '6'
             return {}, False, 'Non-numeric coordinates detected.'
-    
-    # Check for |latitude| > 90 degrees
-    if np.any((lat > 90.) | (lat < -90.)):
-        print lat
-        print lat[(lat > 90.) | (lat < -90.)]
         
-        print '7'
-        return {}, False, '|{0}| > 90 degrees detected.'.format(coord_names[1])
+        if (lat > 90.) or (lat < -90.):
+            return {}, False, '|{0}| > 90 degrees detected.'.format(coord_names[1])
     
     # Construct coordinate dictionary
     coords = {}

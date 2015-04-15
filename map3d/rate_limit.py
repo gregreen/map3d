@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 #  rate_limit.py
+#  Decorator to rate limit a given view.
 #  
 #  Adapted by Gregory Green from http://flask.pocoo.org/snippets/70/
 #  Originally by Armin Ronacher
@@ -12,10 +13,7 @@ from map3d import app, redis
 import time
 
 from flask import request, g
-from functools import update_wrapper
-
-#from redis import Redis
-#redis = Redis()
+import functools
 
 
 class RateLimit(object):
@@ -59,6 +57,7 @@ def ratelimit(limit, per=300, send_x_headers=False,
               key_func=lambda: request.endpoint):
     
     def decorator(f):
+        @functools.wraps(f)
         def rate_limited(*args, **kwargs):
             # The key prefix is, by default, a combination of the IP and view addresses
             key_prefix = 'rate-limit/%s/%s/' % (key_func(), scope_func())
@@ -73,7 +72,8 @@ def ratelimit(limit, per=300, send_x_headers=False,
             
             return f(*args, **kwargs)
         
-        return update_wrapper(rate_limited, f)
+        return rate_limited
+        #return update_wrapper(rate_limited, f)
     
     return decorator
 
