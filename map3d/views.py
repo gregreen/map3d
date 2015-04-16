@@ -97,7 +97,7 @@ def gal_lb_query():
                    **los_info)
 
 @app.route('/gal-lb-query-light', methods=['POST'])
-@ratelimit(limit=1000, per=5*60, send_x_headers=True)
+@ratelimit(limit=5000, per=5*60, send_x_headers=True)
 @gzipped(6)
 def gal_lb_query_light():
     # Validate input

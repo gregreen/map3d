@@ -61,7 +61,7 @@ def query(lon, lat, coordsys='gal'):
       'DM_reliable_max':  Maximum reliable distance modulus in pixel.
     '''
     
-    url = 'http://argonaut.rc.fas.harvard.edu/gal-lb-query-light'
+    url = 'http://argonaut.skymaps.info/gal-lb-query-light'
     
     payload = {}
     
@@ -78,9 +78,12 @@ def query(lon, lat, coordsys='gal'):
     
     r = requests.post(url, data=json.dumps(payload), headers=headers)
     
-    if r.status_code == 400:
-        print('400 (Bad Request) Response Received from Argonaut:')
+    try:
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        print('Response received from Argonaut:')
         print(r.text)
+        raise e
     
     return json.loads(r.text)
 """,

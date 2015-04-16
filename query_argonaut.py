@@ -67,15 +67,39 @@ def query(lon, lat, coordsys='gal'):
     
     r = requests.post(url, data=json.dumps(payload), headers=headers)
     
-    if r.status_code == 400:
-        print '400 (Bad Request) Response Received from Argonaut:'
-        print r.text
+    try:
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        print('Response received from Argonaut:')
+        print(r.text)
+        raise e
+    
+    print('Elapsed: {0} s'.format(r.elapsed.total_seconds()))
+    print('Length: {0:.2f} kB'.format(float(r.headers['content-length'])/1024.))
+    print('Encoding: {0}'.format(r.headers['content-encoding']))
     
     return json.loads(r.text)
 
 
+def test_bad():
+    query(90, 110., coordsys='equ')
 
-def main():
+def test_batch():
+    import numpy as np
+    import time
+    
+    N = 10000
+    lon = 360. * (np.random.random(N) - 0.5)
+    lat = -30. + (90 + 30.) * np.random.random(N)
+    
+    t_start = time.time()
+    q = query(lon.tolist(), lat.tolist(), coordsys='equ')
+    t_end = time.time()
+    
+    print 't = %.4fs' % (t_end - t_start)
+
+
+def test_single():
     import numpy as np
     import time
     
@@ -109,6 +133,13 @@ def main():
     print np.array(pixel_data['dec']) - b
     
     print query(180, 0).keys()
+    
+    return 0
+
+
+def main():
+    #test_bad()
+    test_batch()
     
     return 0
 
