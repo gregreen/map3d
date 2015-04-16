@@ -21,7 +21,7 @@ import snippets
 
 from utils import array_like
 
-max_request_size = 1000
+max_request_size = 5000
 
 
 @app.route('/cover')
@@ -97,7 +97,7 @@ def gal_lb_query():
                    **los_info)
 
 @app.route('/gal-lb-query-light', methods=['POST'])
-@ratelimit(limit=5000, per=5*60, send_x_headers=True)
+@ratelimit(limit=1000, per=5*60, send_x_headers=True)
 @gzipped(6)
 def gal_lb_query_light():
     # Validate input
