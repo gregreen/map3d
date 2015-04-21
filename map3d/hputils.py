@@ -25,6 +25,8 @@
 import numpy as np
 import healpy as hp
 
+from utils import array_like
+
 
 def transform_coords(lon, lat, coord_in, coord_out):
     '''
@@ -46,6 +48,10 @@ def transform_coords(lon, lat, coord_in, coord_out):
     t_out, p_out = rot(t_in, p_in)
     lon_out = np.degrees(p_out)
     lat_out = 90. - np.degrees(t_out)
+    
+    if array_like(lon) and not array_like(lon_out):
+        lon_out = np.array([lon_out])
+        lat_out = np.array([lat_out])
     
     return lon_out, lat_out
 
