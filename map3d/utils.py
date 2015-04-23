@@ -22,6 +22,23 @@
 #  
 #  
 
+import numpy as np
 
 def array_like(x):
     return hasattr(x, '__len__') and not isinstance(x, basestring)
+
+def filter_dict(d, decimals=5):
+    # Round floats to requested number of decimal places
+    for key in d.keys():
+        if isinstance(d[key], np.ndarray):
+            if issubclass(d[key].dtype.type, np.integer):
+                d[key] = d[key].tolist()
+            else:
+                d[key] = np.around(d[key].tolist(), decimals=decimals).tolist()
+        elif isinstance(d[key], float) or isinstance(d[key], np.floating):
+            d[key] = np.around(np.array(d[key]).tolist(), decimals=decimals).tolist()
+            #d[key] = float(round(d[key], decimals))
+        elif isinstance(d[key], int) or isinstance(d[key], np.integer):
+            d[key] = int(d[key])
+        else:
+            raise TypeError('{} has type {}'.format(key, str(type(d[key]))))

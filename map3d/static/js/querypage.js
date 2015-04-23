@@ -1281,8 +1281,8 @@ $(document).ready(function() {
         psEquTxt.select(".RA-ss")
           .text(formatter_02d(Math.round(hms.s)));
         
-        console.log(hms);
-        console.log(psEquTxt.select(".RA-ss"));
+        // console.log(hms);
+        // console.log(psEquTxt.select(".RA-ss"));
       };
       
       // Format and position labels

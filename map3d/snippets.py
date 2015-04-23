@@ -36,17 +36,18 @@ map_query_API['python-2.x'] = highlight(
 """
 import json, requests
 
-def query(lon, lat, coordsys='gal'):
+def query(lon, lat, coordsys='gal', mode='full'):
     '''
     Send a line-of-sight reddening query to the Argonaut web server.
     
     Inputs:
       lon, lat: longitude and latitude, in degrees.
       coordsys: 'gal' for Galactic, 'equ' for Equatorial (J2000).
+      mode: 'full', 'lite' or 'sfd'
     
-    Outputs a dictionary containing, among other things:
+    In 'full' mode, outputs a dictionary containing, among other things:
       'distmod':    The distance moduli that define the distance bins.
-      'best':       The best-fit (maximum probability density)
+      'best':       The best-fit (maximum proability density)
                     line-of-sight reddening, in units of SFD-equivalent
                     E(B-V), to each distance modulus in 'distmod.' See
                     Schlafly & Finkbeiner (2011) for a definition of the
@@ -59,11 +60,14 @@ def query(lon, lat, coordsys='gal'):
       'n_stars':    # of stars used to fit the line-of-sight reddening.
       'DM_reliable_min':  Minimum reliable distance modulus in pixel.
       'DM_reliable_max':  Maximum reliable distance modulus in pixel.
+    
+    Less information is returned in 'lite' mode, while in 'sfd' mode,
+    the Schlegel, Finkbeiner & Davis (1998) E(B-V) is returned.
     '''
     
     url = 'http://argonaut.skymaps.info/gal-lb-query-light'
     
-    payload = {}
+    payload = {'mode': mode}
     
     if coordsys.lower() in ['gal', 'g']:
         payload['l'] = lon

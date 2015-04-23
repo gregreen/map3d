@@ -3,6 +3,10 @@ import os
 import h5py
 import numpy as np
 
+import astropy.wcs as pywcs
+import astropy.io.fits as pyfits
+from scipy.ndimage import map_coordinates
+
 import hputils
 
 from utils import array_like
@@ -87,7 +91,7 @@ class MapQuery:
         
         return pix_idx
     
-    def query(self, l, b):
+    def query(self, l, b, mode='full'):
         # Ensure that l and b are arrays
         is_scalar = False
         
@@ -109,6 +113,18 @@ class MapQuery:
         ret['DM_reliable_max'] = pix_info['DM_reliable_max']
         ret['converged'] = pix_info['converged']
         
+        if mode == 'lite':
+            ret['samples'] = ret['samples'][:,:5]
+            x_low, x_med, x_high = np.percentile(ret['samples'], [15.8, 50., 84.2], axis=1)
+            sigma = 0.5*(x_high - x_low)
+            sigma = np.sqrt(sigma**2 + 0.03**2)
+            ret['median'] = x_med
+            ret['sigma'] = sigma
+            ret.pop('samples')
+            ret.pop('GR')
+        elif mode != 'full':
+            raise ValueError('Unknown query mode passed to MapQuery.query: {}'.format(mode))
+        
         idx_null = (idx == -1)
         
         if np.any(idx_null):
@@ -127,14 +143,57 @@ class MapQuery:
         
         return ret
     
-    def __call__(self, *args):
-        return self.query(*args)
+    def __call__(self, *args, **kwargs):
+        return self.query(*args, **kwargs)
+
+
+class SFDQuery():
+    def __init__(self, map_dir):
+        self.data = {}
+        
+        base_fname = os.path.join(map_dir, 'SFD_dust_4096')
+        
+        for pole in ['ngp', 'sgp']:
+            fname = '{}_{}.fits'.format(base_fname, pole)
+            with pyfits.open(fname) as hdulist:
+                self.data[pole] = hdulist[0].header, hdulist[0].data
+    
+    def query(self, l, b):
+        l = np.asarray(l)
+        b = np.asarray(b)
+        
+        if l.shape != b.shape:
+            raise ValueError('l.shape must equal b.shape')
+        
+        out = np.zeros_like(l, dtype='f4')
+        
+        for pole in ['ngp', 'sgp']:
+            m = (b >= 0) if pole == 'ngp' else b < 0
+            
+            if np.any(m):
+                header, data = self.data[pole]
+                wcs = pywcs.WCS(header)
+                
+                if not m.shape: # Support for 0-dimensional arrays (scalars). Otherwise it barfs on l[m], b[m]
+                    x, y = wcs.wcs_world2pix(l, b, 0)
+                    out = map_coordinates(data, [[y], [x]], order=0)[0]
+                    continue
+                
+                x, y = wcs.wcs_world2pix(l[m], b[m], 0)
+                out[m] = map_coordinates(data, [y, x], order=0)
+    
+        return out
+    
+    def __call__(self, *args, **kwargs):
+        return self.query(*args, **kwargs)
 
 
 print 'Loading map query object ...'
 map_query = MapQuery(os.path.join(data_path, 'dust-map-3d.h5'))
 print 'Loading map images ...'
 map_nside, map_pixval = load_images()
+print 'Loading SFD ...'
+sfd_query = SFDQuery(data_path)
 print 'Done loading data.'
 
 

@@ -16,11 +16,26 @@ def get_coords(json, max_request_size):
     Takes JSON containing coordinate specifications, and returns
        dict     :  containing l, b, ra, dec
        success  :  True if the coordinates are well-formed
+       mode     :  The query mode ('full', 'lite' or 'sfd')
        message  :  Error message if success == False
     '''
     
     lon, lat = None, None
     coord_in = None
+    mode = 'full'
+    
+    # Check the return mode
+    if 'mode' in json:
+        mode = json['mode'].lower()
+        
+        good_modes = ['full', 'lite', 'sfd']
+        
+        if mode not in good_modes:
+            msg = 'Unkonwn query mode: "{}" (recognized modes: {})'.format(
+                mode,
+                ', '.join(['"{}"'.format(m) for m in good_modes])
+            )
+            return {}, False, '', msg
     
     # Check that either (l,b) or (ra,dec) are provided
     if ('l' in json) and ('b' in json):
@@ -32,39 +47,39 @@ def get_coords(json, max_request_size):
         lat = json['dec']
         coord_in = 'C'
     else:
-        return {}, False, 'No coordinates found in request: Submit JSON with either (l,b) or (ra,dec).'
+        return {}, False, '', 'No coordinates found in request: Submit JSON with either (l,b) or (ra,dec).'
     
     coord_names = ('l','b') if coord_in == 'G' else ('ra','dec')
     
     # Extract lon and lat
     if array_like(lon):
         if not array_like(lat):
-            return {}, False, '{0} and {1} must have same number of dimensions.'.format(*coord_names)
+            return {}, False, '', '{0} and {1} must have same number of dimensions.'.format(*coord_names)
         if len(lat) != len(lon):
-            return {}, False, '{0} and {1} must have same number of dimensions.'.format(*coord_names)
+            return {}, False, '', '{0} and {1} must have same number of dimensions.'.format(*coord_names)
         if len(lon) > max_request_size:
-            return {}, False, 'Requests limited to {0} coordinates at a time.'.format(max_request_size)
+            return {}, False, '', 'Requests limited to {0} coordinates at a time.'.format(max_request_size)
         
         try:
             lon = np.array(lon).astype('f4')
             lat = np.array(lat).astype('f4')
         except ValueError:
-            return {}, False, 'Non-numeric coordinates detected.'
+            return {}, False, '', 'Non-numeric coordinates detected.'
         
         if np.any((lat > 90.) | (lat < -90.)):
-            return {}, False, '|{0}| > 90 degrees detected.'.format(coord_names[1])
+            return {}, False, '', '|{0}| > 90 degrees detected.'.format(coord_names[1])
     else:
         if array_like(lat):
-            return {}, False, '{0} and {1} must have same number of dimensions.'.format(*coord_names)
+            return {}, False, '', '{0} and {1} must have same number of dimensions.'.format(*coord_names)
         
         try:
             lon = float(lon)
             lat = float(lat)
         except ValueError:
-            return {}, False, 'Non-numeric coordinates detected.'
+            return {}, False, '', 'Non-numeric coordinates detected.'
         
         if (lat > 90.) or (lat < -90.):
-            return {}, False, '|{0}| > 90 degrees detected.'.format(coord_names[1])
+            return {}, False, '', '|{0}| > 90 degrees detected.'.format(coord_names[1])
     
     # Construct coordinate dictionary
     coords = {}
@@ -78,51 +93,30 @@ def get_coords(json, max_request_size):
         coords['dec'] = lat
         coords['l'], coords['b'] = hputils.transform_coords(lon, lat, 'C', 'G')
     
-    return coords, True, ''
+    return coords, True, mode, ''
 
 
-
-def get_los(coords, decimals=5):
-    los_data = mapdata.map_query(coords['l'], coords['b'])
+def get_los(coords, mode='full', gen_table=False):
+    los_data = mapdata.map_query(coords['l'], coords['b'], mode=mode)
     los_data['distmod'] = np.linspace(4., 19., 31)
     
-    #best = los_data['best']
-    #samples = los_data['samples']
-    #n_stars = los_data['n_stars']
-    #DM_reliable_min = locs_data['DM_reliable_min']
+    if array_like(los_data['n_stars']):
+        los_data['success'] = (np.array(los_data['n_stars']) != 0).astype('u1')
+    else:
+        los_data['success'] = int(los_data['n_stars'] != 0)
     
-    #axis = len(los_data['GR'].shape) - 1
-    #converged = np.array(np.all(los_data['GR'] < 1.2, axis=axis)).astype('u1').tolist()
-    
-    table_enc = u''
-    
-    if not mapdata.array_like(coords['l']):
+    if gen_table:
         table_txt = los_to_ascii(coords, los_data)
         table_enc = json.dumps(encode_ascii(table_txt))
         
-        #converged = int(converged)
+        return los_data, table_enc
     
-    # Round floats to requested number of decimal places
-    for key in los_data.keys():
-        if issubclass(los_data[key].dtype.type, np.integer):
-            #print 'Not a float array: "{0}"'.format(key)
-            los_data[key] = los_data[key].tolist()
-        else:#elif issubclass(los_data[key].dtype.type, np.float):
-            #print 'Rounding float array "{0}"'.format(key)
-            los_data[key] = np.around(los_data[key].tolist(), decimals=decimals).tolist()
-    
-    # Encode as JSON string
-    #if encode:
-    #    for key in los_data.keys():
-    #        los_data[key] = json.dumps(los_data[key])
-    
-    #best = np.around(best.tolist(), decimals=decimals).tolist()
-    #samples = np.around(samples.tolist(), decimals=decimals).tolist()
-    #n_stars = np.around(n_stars.tolist(), decimals=decimals).tolist()
-    
-    #return mu, best, samples, n_stars, converged, table_enc
-    
-    return los_data, table_enc
+    return los_data
+
+
+def get_sfd(coords, decimals=5):
+    ebv = mapdata.sfd_query(coords['l'], coords['b'])
+    return {'EBV_SFD': ebv}
 
 
 def get_encoded_los(coords):

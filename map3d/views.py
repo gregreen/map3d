@@ -19,7 +19,7 @@ import postage_stamp
 import loscurves
 import snippets
 
-from utils import array_like
+from utils import array_like, filter_dict
 
 max_request_size = 5000
 
@@ -43,7 +43,7 @@ def query():
 @app.route('/gal-lb-query', methods=['POST'])
 @ratelimit(limit=30, per=60, send_x_headers=False)
 def gal_lb_query():
-    coords, valid, msg = loscurves.get_coords(request.json, 0)
+    coords, valid, mode, msg = loscurves.get_coords(request.json, 0)
     
     if not valid:
         return msg, 400
@@ -60,7 +60,7 @@ def gal_lb_query():
     
     t_ps = time.time()
     
-    los_info, table_data = loscurves.get_los(coords)
+    los_info, table_data = loscurves.get_los(coords, mode='full', gen_table=True)
     
     t_los = time.time()
     
@@ -74,11 +74,12 @@ def gal_lb_query():
     if np.isnan(los_info['DM_reliable_max']):
         los_info['DM_reliable_max'] = -999
     
-    success = int(int(los_info['n_stars']) != 0)
+    #success = int(int(los_info['n_stars']) != 0)
     
     label = ['%d pc' % d for d in dists]
     
     los_info.update(**coords)
+    filter_dict(los_info, decimals=5)
     
     for key in los_info.keys():
         los_info[key] = json.dumps(los_info[key])
@@ -88,8 +89,7 @@ def gal_lb_query():
     #    print los_info[key]
     #    print ''
     
-    return jsonify(success=success,
-                   radius=radius,
+    return jsonify(radius=radius,
                    label1=label[0], image1=img[0],
                    label2=label[1], image2=img[1],
                    label3=label[2], image3=img[2],
@@ -101,7 +101,7 @@ def gal_lb_query():
 @gzipped(6)
 def gal_lb_query_light():
     # Validate input
-    coords, valid, msg = loscurves.get_coords(request.json, max_request_size)
+    coords, valid, mode, msg = loscurves.get_coords(request.json, max_request_size)
     
     if not valid:
         return msg, 400
@@ -109,19 +109,12 @@ def gal_lb_query_light():
     # Retrieve the data
     t_start = time.time()
     
-    los_info, table_data = loscurves.get_los(coords)
+    los_info = None
     
-    success = None
-    if array_like(los_info['n_stars']):
-        success = (np.array(los_info['n_stars']) != 0).astype('u1').tolist()
+    if mode == 'sfd':
+        los_info = loscurves.get_sfd(coords)
     else:
-        success = int(los_info['n_stars'] != 0)
-    
-    if array_like(coords['l']):
-        coords['l'] = coords['l'].tolist()
-        coords['b'] = coords['b'].tolist()
-        coords['ra'] = coords['ra'].tolist()
-        coords['dec'] = coords['dec'].tolist()
+        los_info = loscurves.get_los(coords, mode=mode, gen_table=False)
     
     t_end = time.time()
     
@@ -129,17 +122,29 @@ def gal_lb_query_light():
     ip = request.remote_addr
     txt_request = None
     if array_like(coords['l']):
-        txt_request = '%d coordinates ' % (len(coords['l']))
-        txt_request += 'requested by %s ' % (str(ip))
-        txt_request += '(t: %.2fs, t/request: %.2gs)' % (t_end-t_start, (t_end-t_start)/len(coords['l']))
+        n_coords = len(coords['l'])
+        t_per_request = (t_end-t_start)/n_coords if n_coords != 0 else np.nan
+        
+        txt_request = '{:d} coordinates (mode: {}) requested by {:s} (t: {:.2f}s, t/request: {:.2g}s)'.format(
+            len(coords['l']),
+            mode,
+            str(ip),
+            t_end-t_start,
+            t_per_request
+        )
     else:
-        txt_request = 'l,b = (%.2f, %.2f) ' % (coords['l'], coords['b'])
-        txt_request += 'requested by %s ' % (str(ip))
-        txt_request += '(t: %.2fs)' % (t_end-t_start)
+        txt_request = '(l: {:.2f}, b: {:.2f}, mode: {}) requested by {:s} (t: {:.2f}s)'.format(
+            coords['l'],
+            coords['b'],
+            mode,
+            str(ip),
+            t_end-t_start,
+        )
     
     logger.write(txt_request)
     
     # Return JSON
     los_info.update(**coords)
+    filter_dict(los_info, decimals=5)
     
-    return jsonify(success=success, **los_info)
+    return jsonify(**los_info)
