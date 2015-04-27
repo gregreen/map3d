@@ -7,6 +7,55 @@
   <h1>Accessing the Map</h1>
 </div>
 
+<div id="nav-wrapper">
+  <!--<div id="nav" class="container affix" data-spy="affix" data-offset-top="120">-->
+  <div id="nav" class="container">
+    <div class="row">
+      <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
+        <ul class="nav navbar extra-margin-top">
+          
+          <li class="nav-section">
+            <a href="#intro">Introductory Notes</a>
+          </li>
+          
+          <li class="nav-subsection">
+            <a href="#units">Units</a>
+          </li>
+          <li class="nav-subsection">
+            <a href="#samples">Samples</a>
+          </li>
+          <li class="nav-subsection">
+            <a href="#QA">Quality Assurance</a>
+          </li>
+          
+          <li class="nav-section">
+            <a href="#API">Querying the Server</a>
+          </li>
+          
+          <li class="nav-subsection">
+            <a href="#function-call">Function Call</a>
+          </li>
+          <li class="nav-subsection">
+            <a href="#API-example">Example Usage</a>
+          </li>
+          
+          <li class="nav-section">
+            <a href="#download">Downloading the Data</a>
+          </li>
+          
+          <li class="nav-subsection">
+            <a href="#datacube-reading">Reading HDF5 Data Cube</a>
+          </li>
+          <li class="nav-subsection">
+            <a href="#datacube-example">Example Usage</a>
+          </li>
+          
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="container-fluid">
   <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
@@ -14,7 +63,7 @@
         <h1>Introductory Notes</h1>
       </div>
       
-      <p>Before diving into how you can access the 3D dust map, we'd like to make you aware of a few important points about the dataset.</p>
+      <p>Before diving into how you can access the 3D dust map, we'd like to make you aware of a few important points about the dataset. <b>For a detailed discussion of the map, please read <a href="#">Green <i>et al.</i> (2015)</a></b>.</p>
       
       <div class="page-header" id="units">
         <h2>Units</h2>
@@ -47,6 +96,10 @@
       
       <p>You can query the Argonaut web server directly from your code, without having to download the full map to your local disk. If you're not interested in playing around with the entire map, this is the way we recommend you access it.</p>
       
+      <div class="page-header" id="function-call">
+        <h2>Function Call</h2>
+      </div>
+      
       <span class="fontsize-normal">In</span>
       <div class="dropdown language-dropdown">
         <button class="btn btn-success dropdown-toggle" type="button" data-toggle="dropdown" href="#" id="language-dropdown">
@@ -71,7 +124,7 @@
       
       <p>This code can be adapted for any programming language that can issue HTTP POST requests.</p>
       
-      <div class="page-header">
+      <div class="page-header" id="API-example">
         <h2>Example Usage</h2>
       </div>
       
@@ -98,6 +151,29 @@
       </div>
       
       <p>If you are going to be querying large numbers of sightlines at once, we kindly request that you use this batch syntax, rather than calling <code>query()</code> in a loop. It will be faster, because you only have to contact the server once, and it will reduce the load on the Argonaut server.</p>
+      
+      <p>Two additional query modes are provided, beyond the default <code>'full'</code> mode. If <code>mode = 'lite'</code> is passed to the <code>query()</code> function, then less information is returned per sightline:</p>
+      
+      <div class="extra-margin-top language-toggle-parent">
+        <div class="API-python-2x language-toggle">
+          {{snippets.map_query_API_example_lite['python-2.x']|safe}}
+        </div>
+        <div class="API-IDL hidden language-toggle">
+          {{snippets.map_query_API_example_lite['IDL']|safe}}
+        </div>
+      </div>
+      
+      <p>Finally, for the convenience of many users who also want to query the two-dimensional <a href="http://adsabs.harvard.edu/abs/1998ApJ...500..525S">Schlegel, Finkbeiner &#38 Davis (1998)</a> map of dust reddening, the option <code>mode = 'sfd'</code> is also provided:</p>
+      
+      
+      <div class="extra-margin-top language-toggle-parent">
+        <div class="API-python-2x language-toggle">
+          {{snippets.map_query_API_example_SFD['python-2.x']|safe}}
+        </div>
+        <div class="API-IDL hidden language-toggle">
+          {{snippets.map_query_API_example_SFD['IDL']|safe}}
+        </div>
+      </div>
     </div>
   </div>
   
@@ -115,7 +191,7 @@
       </ul>
       <p>The full map comes to over 4.5 GB in compressed HDF5 format, so if you're only interested in individual sightlines, we strongly recommend you use <a href="#API">our web API</a>, which you can include directly as a function call in a number of programming languages.</p>
       
-      <div class="page-header">
+      <div class="page-header" id="datacube-reading">
         <h2>Reading HDF5 Data Cube</h2>
       </div>
       
@@ -135,7 +211,7 @@
       
       {{snippets.h5_open_example|safe}}
       
-      <div class="page-header">
+      <div class="page-header" id="datacube-example">
         <h2>Example Usage</h2>
       </div>
       

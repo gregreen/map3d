@@ -78,4 +78,9 @@ $(document).ready(function() {
     d3.select("#lang-dropdown-label").text(label);
   });
   
+  //$("#nav").affix({
+  //  offset: $("#nav").position()
+  //});
+  
+  //$('#nav-wrapper').height($("#nav").height());
 });

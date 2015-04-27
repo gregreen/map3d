@@ -16,6 +16,17 @@ p, li {
   font-size: 12pt;
 }
 
+.nav>.nav-section>a {
+  font-size: 18pt;
+  padding-bottom: 5px;
+}
+
+.nav>.nav-subsection>a {
+  font-size: 14pt;
+  margin-left: 25px;
+  padding-bottom: 5px;
+}
+
 .highlight pre {
   font-size: 12pt;
   overflow: auto;
@@ -311,4 +322,11 @@ div {
   .popover {
     max-width: 500px;
   }
+}
+
+#nav.affix {
+  position: fixed;
+  top: 0;
+  /*width: 100%;*/
+  z-index: 2;
 }

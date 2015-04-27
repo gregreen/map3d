@@ -232,23 +232,23 @@ map_query_API_example_single['python-2.x'] = highlight(
 >>> qresult = query(90, 10, coordsys='gal')
 >>> 
 >>> # See what information is returned for each pixel:
->>> print(qresult.keys())
+>>> qresult.keys()
 [u'b', u'GR', u'distmod', u'l', u'DM_reliable_max', u'ra', u'samples',
 u'n_stars', u'converged', u'success', u'dec', u'DM_reliable_min', u'best']
 >>> 
->>> print(qresult['n_stars'])
+>>> qresult['n_stars']
 750
->>> print(qresult['converged'])
+>>> qresult['converged']
 1
 >>> # Get the best-fit E(B-V) in each distance slice
->>> print(qresult['best'])
+>>> qresult['best']
 [0.00426, 0.00678, 0.0074, 0.00948, 0.01202, 0.01623, 0.01815, 0.0245,
 0.0887, 0.09576, 0.10139, 0.12954, 0.1328, 0.21297, 0.23867, 0.24461,
 0.37452, 0.37671, 0.37684, 0.37693, 0.37695, 0.37695, 0.37696, 0.37698,
 0.37698, 0.37699, 0.37699, 0.377, 0.37705, 0.37708, 0.37711]
 >>> 
 >>> # See the distance modulus of each distance slice
->>> print(qresult['distmod'])
+>>> qresult['distmod']
 [4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0, 10.5,
 11.0, 11.5, 12.0, 12.5, 13.0, 13.5, 14.0, 14.5, 15.0, 15.5, 16.0, 16.5,
 17.0, 17.5, 18.0, 18.5, 19.0]
@@ -304,12 +304,12 @@ map_query_API_example_multiple['python-2.x'] = highlight(
 """
 >>> qresult = query([45, 170, 250], [0, -20, 40])
 >>> 
->>> print(qresult['n_stars'])
+>>> qresult['n_stars']
 [352, 162, 254]
->>> print(qresult['converged'])
+>>> qresult['converged']
 [1, 1, 1]
 >>> # Look at the best fit for the first pixel:
->>> print(qresult['best'][0])
+>>> qresult['best'][0]
 [0.00545, 0.00742, 0.00805, 0.01069, 0.02103, 0.02718, 0.02955, 0.03305,
 0.36131, 0.37278, 0.38425, 0.41758, 1.53727, 1.55566, 1.65976, 1.67286,
 1.78662, 1.79262, 1.88519, 1.94605, 1.95938, 2.0443, 2.39438, 2.43858,
@@ -337,6 +337,66 @@ IDL> print, qresult['best',0].toarray()
        1.9593800       2.0443000       2.3943800       2.4385800       2.4992700
        2.5478700       2.5870400       2.5873800       2.5875400       2.5875400
        2.5875500
+""",
+IDLLexer(),
+formatter)
+
+
+map_query_API_example_lite = {}
+
+map_query_API_example_lite['python-2.x'] = highlight(
+"""
+>>> qresult = query(180, 0, coordsys='gal', mode='lite')
+>>> qresult.keys()
+[u'b', u'success', u'distmod', u'sigma', u'median', u'l',
+u'DM_reliable_max', u'ra', u'n_stars', u'converged', u'dec',
+u'DM_reliable_min', u'best']
+>>> 
+>>> # Get the median E(B-V) to each distance slice:
+>>> qresult['median']
+[0.0204, 0.02747, 0.03027, 0.03036, 0.03047, 0.05214, 0.05523, 0.0748,
+0.07807, 0.10002, 0.13699, 0.2013, 0.20158, 0.20734, 0.23129, 0.73734,
+0.76125, 0.83905, 0.90236, 1.05944, 1.08085, 1.11408, 1.11925, 1.12212,
+1.12285, 1.12289, 1.12297, 1.12306, 1.12308, 1.12309, 1.12312]
+>>> 
+>>> # Get the standard deviation of E(B-V) in each slice
+>>> # (actually, half the difference between the 84th and 16th percentiles):
+>>> qresult['sigma']
+[0.03226, 0.03476, 0.03452, 0.03442, 0.03439, 0.03567, 0.03625, 0.0317,
+0.03238, 0.03326, 0.05249, 0.0401, 0.03919, 0.03278, 0.08339, 0.05099,
+0.03615, 0.04552, 0.05177, 0.03678, 0.03552, 0.05246, 0.05055, 0.05361,
+0.05422, 0.0538, 0.05381, 0.05381, 0.0538, 0.0538, 0.05379]
+""",
+PythonConsoleLexer(),
+formatter)
+
+map_query_API_example_lite['IDL'] = highlight(
+"""
+IDL> TODO
+""",
+IDLLexer(),
+formatter)
+
+
+map_query_API_example_SFD = {}
+
+map_query_API_example_SFD['python-2.x'] = highlight(
+"""
+>>> qresult = query([0, 10, 15], [75, 80, 85], coordsys='gal', mode='sfd')
+>>> 
+>>> qresult.keys()
+[u'EBV_SFD', u'b', u'dec', u'l', u'ra']
+>>> 
+>>> # E(B-V), in magnitudes:
+>>> qresult['EBV_SFD']
+[0.02083, 0.0179, 0.0135]
+""",
+PythonConsoleLexer(),
+formatter)
+
+map_query_API_example_SFD['IDL'] = highlight(
+"""
+IDL> TODO
 """,
 IDLLexer(),
 formatter)
