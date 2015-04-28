@@ -78,8 +78,9 @@ def gal_lb_query():
     
     label = ['%d pc' % d for d in dists]
     
-    los_info.update(**coords)
     filter_dict(los_info, decimals=5)
+    filter_dict(coords, decimals=8)
+    los_info.update(**coords)
     
     for key in los_info.keys():
         los_info[key] = json.dumps(los_info[key])
@@ -144,7 +145,8 @@ def gal_lb_query_light():
     logger.write(txt_request)
     
     # Return JSON
-    los_info.update(**coords)
     filter_dict(los_info, decimals=5)
+    filter_dict(coords, decimals=8)
+    los_info.update(**coords)
     
     return jsonify(**los_info)
