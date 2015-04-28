@@ -158,7 +158,7 @@ class SFDQuery():
             with pyfits.open(fname) as hdulist:
                 self.data[pole] = hdulist[0].header, hdulist[0].data
     
-    def query(self, l, b):
+    def query(self, l, b, order=1):
         l = np.asarray(l)
         b = np.asarray(b)
         
@@ -176,11 +176,11 @@ class SFDQuery():
                 
                 if not m.shape: # Support for 0-dimensional arrays (scalars). Otherwise it barfs on l[m], b[m]
                     x, y = wcs.wcs_world2pix(l, b, 0)
-                    out = map_coordinates(data, [[y], [x]], order=0)[0]
+                    out = map_coordinates(data, [[y], [x]], order=order, cval=np.nan, mode='constant')[0]
                     continue
                 
                 x, y = wcs.wcs_world2pix(l[m], b[m], 0)
-                out[m] = map_coordinates(data, [y, x], order=1, cval=np.nan, mode='constant')
+                out[m] = map_coordinates(data, [y, x], order=order, cval=np.nan, mode='constant')
     
         return out
     
