@@ -22,18 +22,18 @@ def get_coords(json, max_request_size):
     
     lon, lat = None, None
     coord_in = None
-    mode = 'full'
+    mode = None
+    n_max = None
     
     # Check the return mode
     if 'mode' in json:
         mode = json['mode'].lower()
+        n_max = max_request_size.get(mode, None)
         
-        good_modes = ['full', 'lite', 'sfd']
-        
-        if mode not in good_modes:
+        if n_max == None:
             msg = 'Unkonwn query mode: "{}" (recognized modes: {})'.format(
                 mode,
-                ', '.join(['"{}"'.format(m) for m in good_modes])
+                ', '.join(['"{}"'.format(m) for m in max_request_size.keys()])
             )
             return {}, False, '', msg
     
@@ -57,8 +57,8 @@ def get_coords(json, max_request_size):
             return {}, False, '', '{0} and {1} must have same number of dimensions.'.format(*coord_names)
         if len(lat) != len(lon):
             return {}, False, '', '{0} and {1} must have same number of dimensions.'.format(*coord_names)
-        if len(lon) > max_request_size:
-            return {}, False, '', 'Requests limited to {0} coordinates at a time.'.format(max_request_size)
+        if len(lon) > n_max:
+            return {}, False, '', 'Requests limited to {0} coordinates at a time.'.format(n_max)
         
         try:
             lon = np.array(lon).astype('f4')

@@ -21,7 +21,11 @@ import snippets
 
 from utils import array_like, filter_dict
 
-max_request_size = 5000
+max_request_size = {
+    'full': 5000,
+    'lite': 50000,
+    'sfd':  500000
+}
 
 
 @app.route('/cover')
