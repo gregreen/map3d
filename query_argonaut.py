@@ -96,27 +96,38 @@ def test_sfd_comp():
     
     N = 1000
     
-    lon = 80. + 10. * (np.random.random(6*N) - 0.5)
-    lat = 10. * (np.random.random(6*N) - 0.5)
-    idx = np.abs(lat) > 4.
-    lon = lon[idx][:N]
-    lat = lat[idx][:N]
+    lon = 360. * np.random.random(N)
+    lat = -30. + 120. * np.random.random(N)
     
-    q1 = query(lon.tolist(), lat.tolist(), coordsys='gal', mode='sfd')
-    q2 = query(lon.tolist(), lat.tolist(), coordsys='gal', mode='lite')
+    q1 = query(lon.tolist(), lat.tolist(), coordsys='equ', mode='sfd')
+    q2 = query(lon.tolist(), lat.tolist(), coordsys='equ', mode='full')
     
     SFD = np.array(q1['EBV_SFD'])
     
     best = np.array(q2['best'])[:,-1]
-    idx0 = (np.array(q2['converged']) == 1)
+    samples = np.array(q2['samples'])[:,:,-1]
+    
+    converged = np.all(np.array(q2['GR']) < 1.2, axis=1)
+    success = (np.array(q2['success']) == 1)
+    inbounds = (np.abs(np.array(q2['b'])) > 20.)
+    
+    idx0 = converged & success & inbounds
+    idx1 = ~converged & success & inbounds
+    
+    print '(converged, nonconverged): ({}, {})'.format(np.sum(idx0), np.sum(idx1))
     
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1, aspect='equal')
     
-    ax.scatter(SFD[idx0], best[idx0], facecolor='b', edgecolor='none', alpha=0.25)
-    
-    idx1 = ~idx0 & (np.array(q2['success']) == 1)
-    ax.scatter(SFD[idx1], best[idx1], facecolor='r', edgecolor='none', alpha=0.5)
+    for n in range(samples.shape[1]):
+        fSFD0 = 1. + 0.05 * np.random.normal(size=np.sum(idx0))
+        fSFD1 = 1. + 0.05 * np.random.normal(size=np.sum(idx1))
+        
+        dSFD0 = 0.02 * np.random.normal(size=np.sum(idx0))
+        dSFD1 = 0.02 * np.random.normal(size=np.sum(idx1))
+        
+        ax.scatter(SFD[idx0]*fSFD0 + dSFD0, samples[idx0,n], facecolor='b', edgecolor='none', alpha=0.10)
+        ax.scatter(SFD[idx1]*fSFD1 + dSFD1, samples[idx1,n], facecolor='r', edgecolor='none', alpha=0.25)
     
     x = [0, np.percentile(best[idx0], 98.) * 1.2]
     
@@ -132,13 +143,14 @@ def test_batch():
     import numpy as np
     import time
     
-    N = 10
-    lon = 80. + 15. * (np.random.random(N) - 0.5)
-    lat = 15. * (np.random.random(N) - 0.5)
+    N = 100
+    lon = 360. * (np.random.random(N) - 0.5) #80. + 15. * (np.random.random(N) - 0.5)
+    lat = 180 * (np.random.random(N) - 0.5) #15. * (np.random.random(N) - 0.5)
     
     t_start = time.time()
     q = query(lon.tolist(), lat.tolist(), coordsys='gal', mode='sfd')
     t_end = time.time()
+    
     
     print ''
     
@@ -154,6 +166,7 @@ def test_batch():
         print ''
         print ''
         print ''
+    
     
     print 't = %.4fs' % (t_end - t_start)
 
@@ -196,12 +209,29 @@ def test_single():
     return 0
 
 
+def test_sfd():
+    import numpy as np
+    
+    #ra, dec = 248.08527000, -24.51136000
+    ra, dec = 150., -30.
+    
+    q = query(ra, dec, coordsys='equ', mode='sfd')
+    
+    q['l'] = np.mod(q['l'], 360.)
+    q['A_B'] = q['EBV_SFD'] * 3.626
+    
+    print ' '.join(['{: ^10s}'.format(s) for s in ['RA', 'Dec', 'l', 'b', 'E(B-V)', 'A_B']])
+    print ' '.join(['{: >10.6f}'.format(q[s]) for s in ['ra', 'dec', 'l', 'b', 'EBV_SFD', 'A_B']])
+    print ''
+
+
 def main():
     #test_bad()
     #test_batch()
     #test_single()
+    #test_sfd_comp()
     
-    test_sfd_comp()
+    test_sfd()
     
     return 0
 
