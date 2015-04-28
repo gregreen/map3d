@@ -180,7 +180,7 @@ class SFDQuery():
                     continue
                 
                 x, y = wcs.wcs_world2pix(l[m], b[m], 0)
-                out[m] = map_coordinates(data, [y, x], order=0)
+                out[m] = map_coordinates(data, [y, x], order=1, cval=np.nan, mode='constant')
     
         return out
     
