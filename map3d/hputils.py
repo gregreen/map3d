@@ -28,6 +28,15 @@ import healpy as hp
 from utils import array_like
 
 
+euler_transf_index = {
+    'CG': 1,
+    'GC': 2,
+    'CE': 3,
+    'EC': 4,
+    'EG': 5,
+    'GE': 6
+}
+
 def transform_coords(lon, lat, coord_in, coord_out):
     '''
     Convert between astronomical coordinate systems.
@@ -40,20 +49,7 @@ def transform_coords(lon, lat, coord_in, coord_out):
       'E' for 'Ecliptic'                (lon, lat)
     '''
     
-    rot = hp.rotator.Rotator(coord=[coord_in, coord_out])
-    
-    t_in = np.radians(90. - lat)
-    p_in = np.radians(lon)
-    
-    t_out, p_out = rot(t_in, p_in)
-    lon_out = np.degrees(p_out)
-    lat_out = 90. - np.degrees(t_out)
-    
-    if array_like(lon) and not array_like(lon_out):
-        lon_out = np.array([lon_out])
-        lat_out = np.array([lat_out])
-    
-    return lon_out, lat_out
+    return hp.rotator.euler(lon, lat, euler_transf_index[coord_in + coord_out])
 
 
 def lb2pix(nside, l, b, nest=True):
