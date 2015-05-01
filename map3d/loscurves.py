@@ -4,7 +4,7 @@ from map3d import mapdata
 import numpy as np
 import healpy as hp
 
-import json
+import ujson as json
 import urllib
 
 from utils import array_like
@@ -22,7 +22,7 @@ def get_coords(json, max_request_size):
     
     lon, lat = None, None
     coord_in = None
-    mode = None
+    mode = 'full'
     n_max = None
     
     # Check the return mode

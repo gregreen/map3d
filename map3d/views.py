@@ -1,8 +1,8 @@
 from map3d import app
 
-from flask import render_template, redirect, request, jsonify
+from flask import render_template, redirect, request, jsonify, Response
 import numpy as np
-import json
+import ujson as json
 import time
 import os
 
@@ -89,11 +89,6 @@ def gal_lb_query():
     for key in los_info.keys():
         los_info[key] = json.dumps(los_info[key])
     
-    #for key in los_info.keys():
-    #    print key, type(los_info[key])
-    #    print los_info[key]
-    #    print ''
-    
     return jsonify(radius=radius,
                    label1=label[0], image1=img[0],
                    label2=label[1], image2=img[1],
@@ -153,4 +148,5 @@ def gal_lb_query_light():
     filter_dict(coords, decimals=8)
     los_info.update(**coords)
     
-    return jsonify(**los_info)
+    return Response(json.dumps(los_info), mimetype='application/json', status=200)
+    #return jsonify(**los_info)

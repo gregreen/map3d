@@ -22,9 +22,12 @@
 #  
 #  
 
-import json, requests
+import ujson as json
+import requests
+import numpy as np
 
-def query(lon, lat, coordsys='gal', mode='full'):
+
+def query(lon, lat, coordsys='gal', mode='full', decimals=None):
     '''
     Send a line-of-sight reddening query to the Argonaut web server.
     
@@ -53,10 +56,14 @@ def query(lon, lat, coordsys='gal', mode='full'):
     the Schlegel, Finkbeiner & Davis (1998) E(B-V) is returned.
     '''
     
-    url = 'http://argonaut.rc.fas.harvard.edu/gal-lb-query-light'
-    #url = 'http://127.0.0.1:5000/gal-lb-query-light'
+    #url = 'http://argonaut.rc.fas.harvard.edu/gal-lb-query-light'
+    url = 'http://127.0.0.1:5000/gal-lb-query-light'
     
     payload = {'mode': mode}
+    
+    if decimals != None:
+        lon = np.around(np.array(lon).tolist(), decimals=decimals).tolist()
+        lat = np.around(np.array(lat).tolist(), decimals=decimals).tolist()
     
     if coordsys.lower() in ['gal', 'g']:
         payload['l'] = lon
@@ -139,19 +146,57 @@ def test_sfd_comp():
     plt.show()
 
 
+def time_query(n_queries=9, mode='full'):
+    import numpy as np
+    import time
+    
+    q_size = None
+    
+    if mode == 'full':
+        q_size = [5, 50, 500, 5000]
+    elif mode == 'lite':
+        q_size = [5, 50, 500, 5000, 50000]
+    elif mode == 'sfd':
+        q_size = [5, 50, 500, 5000, 50000, 500000]
+    
+    t_arr = np.empty((len(q_size), n_queries), dtype='f8')
+    
+    for j,N in enumerate(q_size):
+        lon = [(80. + 10. * (np.random.random(N) - 0.5)).tolist() for k in xrange(n_queries)]
+        lat = [(10. * (np.random.random(N) - 0.5)).tolist() for k in xrange(n_queries)]
+        
+        for k in xrange(n_queries):
+            t_start = time.time()
+            q = query(lon[k], lat[k], coordsys='gal', mode=mode)
+            t_end = time.time()
+            t_arr[j,k] = t_end - t_start
+    
+    t_mu = np.median(t_arr, axis=1)
+    t_sigma = np.std(t_arr, axis=1)
+    
+    print ''
+    print 'mode = "{}":'.format(mode)
+    
+    for N,t,s in zip(q_size, t_mu, t_sigma):
+        print '  {: >10d}: {:.5f} +- {:.5f} s'.format(N, t, s)
+
+
 def test_batch():
     import numpy as np
     import time
     
-    N = 100
-    lon = 360. * (np.random.random(N) - 0.5) #80. + 15. * (np.random.random(N) - 0.5)
-    lat = 180 * (np.random.random(N) - 0.5) #15. * (np.random.random(N) - 0.5)
+    N = 50
+    
+    #lon = 360. * (np.random.random(N) - 0.5)
+    #lat = 180 * (np.random.random(N) - 0.5)
+    lon = 80. + 10. * (np.random.random(N) - 0.5)
+    lat = 10. * (np.random.random(N) - 0.5)
     
     t_start = time.time()
-    q = query(lon.tolist(), lat.tolist(), coordsys='gal', mode='sfd')
+    q = query(lon.tolist(), lat.tolist(), coordsys='gal', mode='full', decimals=4)
     t_end = time.time()
     
-    
+    '''
     print ''
     
     for k in q.keys():
@@ -166,7 +211,7 @@ def test_batch():
         print ''
         print ''
         print ''
-    
+    '''
     
     print 't = %.4fs' % (t_end - t_start)
 
@@ -213,16 +258,27 @@ def test_sfd():
     import numpy as np
     
     #ra, dec = 248.08527000, -24.51136000
-    ra, dec = 150., -30.
+    #ra, dec = 150., -30.
+    #q = query(ra, dec, coordsys='equ', mode='sfd')
     
-    q = query(ra, dec, coordsys='equ', mode='sfd')
+    l = np.zeros(1000)
+    b = np.linspace(-1., 1., l.size)
     
+    q = query(l.tolist(), b.tolist(), coordsys='gal', mode='sfd')
+    
+    '''
     q['l'] = np.mod(q['l'], 360.)
     q['A_B'] = q['EBV_SFD'] * 3.626
     
     print ' '.join(['{: ^10s}'.format(s) for s in ['RA', 'Dec', 'l', 'b', 'E(B-V)', 'A_B']])
     print ' '.join(['{: >10.6f}'.format(q[s]) for s in ['ra', 'dec', 'l', 'b', 'EBV_SFD', 'A_B']])
     print ''
+    '''
+    
+    import matplotlib.pyplot as plt
+    plt.plot(q['b'], q['EBV_SFD'], 'b-')
+    plt.xlim(b[0], b[-1])
+    plt.show()
 
 
 def main():
@@ -230,8 +286,9 @@ def main():
     #test_batch()
     #test_single()
     #test_sfd_comp()
+    #test_sfd()
     
-    test_sfd()
+    time_query(mode='sfd')
     
     return 0
 
