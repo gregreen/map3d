@@ -102,16 +102,18 @@ map_query_API['IDL'] = highlight(
 ;   query_argonaut
 ;
 ; PURPOSE:
-;   Query the Argonaut server for 3D dust information
+;   Query the Argonaut server for 3D dust information or SFD
 ;
 ; CALLING SEQUENCE:
-;   qresult = query_argonaut(struct=struct, _extra=coords)
+;   qresult = query_argonaut(/struct, /debug, _extra=coords)
 ;
 ; INPUTS:
 ;   ra, dec   : numeric scalars or arrays [deg]
 ;     OR
 ;   l, b      : numeric scalars or arrays [deg]
+;   mode      : 'full', 'lite', or 'sfd'.  Default to 'full'
 ;   structure : set this keyword to return structure instead of hash
+;   debug     : set to return timing information
 ;   
 ; OUTPUTS:
 ;   qresult   : a hash (or structure, if /structure set) containing
@@ -152,7 +154,8 @@ map_query_API['IDL'] = highlight(
 ;      SAMPLES         DOUBLE    Array[20, 31]
 ;
 ; COMMENTS:
-;   - Any keywords other than "struct" go into the coords structure.  
+;   - Any keywords other than "struct" or "debug" go into the 
+;       coords structure.  
 ;   - Must call either with ra=, dec= or l=, b=.
 ;   - Angles are in degrees and can be arrays.
 ;   - JSON support introduced in IDL 8.2 (Jan, 2013) is required.
@@ -165,16 +168,43 @@ map_query_API['IDL'] = highlight(
 ;   2015-Feb-26 - Written by Douglas Finkbeiner, CfA
 ;
 ;----------------------------------------------------------------------
-function query_argonaut, struct=struct, _extra=coords
+function argo_json_serialize, struc
 
+  ntags = n_tags(struc)
+  key = tag_names(struc)
+  val = strarr(ntags)
+
+  for i=0L, ntags-1 do begin 
+     if size(struc.(i), /tname) EQ 'STRING' then $
+        val[i] = '"'+key[i]+'":"'+struc.(i)+'"' $
+     else begin 
+        arr = string(struc.(i), format='(F12.7)')+','
+        arr[0]='['+arr[0]
+        arr[-1] = repstr(arr[-1], ',', '')+']'
+        val[i] = '"'+key[i]+'":'+strjoin(arr)
+     endelse
+  endfor
+
+; -------- put it together
+  for i=0L, ntags-2 do val[i]=val[i]+','
+  string='{'+strjoin(val)+'}'
+
+  return, string
+end
+
+
+function query_argonaut, struct=struct, debug=debug, _extra=coords
+  
 ; -------- Check IDL version
   if !version.release lt 8.2 then begin 
      message, 'IDL '+!version.release+' may lack JSON support', /info
      return, 0
   endif 
 
+  t0=systime(1)
 ; -------- Check inputs
-  if n_tags(coords) EQ 2 then tags = tag_names(coords) else tags=['', '']
+  verb = keyword_set(debug)
+  if n_tags(coords) GE 2 then tags = tag_names(coords) else tags=['', '']
   if ~((total((tags eq 'RA')+(tags eq 'DEC')) eq 2) or $
        (total((tags eq 'L') +(tags eq 'B')) eq 2)) then begin 
      print, 'Must call with coordinates, e.g.'
@@ -182,10 +212,11 @@ function query_argonaut, struct=struct, _extra=coords
      print, 'qresult = query_argonaut(l=90, b=10)'
      return, 0
   endif 
-  ncoords = n_elements(coords.(0)) 
+  ncoords = n_elements(coords.(0)) > n_elements(coords.(1))
 
 ; -------- Convert input parameters to lower case JSON string  
-  data = strlowcase(json_serialize(coords))
+  data = strlowcase(argo_json_serialize(coords))
+  if verb then print, 'JSON serialize   :', systime(1)-t0, ' sec', format='(A,F8.3,A)'
 
 ; -------- Specify URL
   url  = 'http://argonaut.rc.fas.harvard.edu/gal-lb-query-light'
@@ -193,31 +224,24 @@ function query_argonaut, struct=struct, _extra=coords
 ; -------- Create a new url object and set header
   oUrl = OBJ_NEW('IDLnetUrl')
   oUrl.SetProperty, HEADER = 'Content-Type: application/json'
+  oUrl.SetProperty, encode=2            ; request gzipped response
   
-; -------- Query Argonaut, send output to argo-output.dat
-  tmpfile = filepath('argo-'+string(randomu(iseed,/double)*1D9,format='(I9.9)'), /tmp)
+; -------- Query Argonaut, send output to tmpfile
+  tmpfile = filepath('argo-'+string(randomu(iseed,/double)*1D9,$
+                                    format='(I9.9)'), /tmp)
   out = oUrl.Put(data, url=url, /buffer, /post, filename=tmpfile)
+  if verb then print, 'Server query time:', systime(1)-t0, ' sec', format='(A,F8.3,A)'
 
-; -------- Parse output to hash
-  hash = json_parse(out)
-  
+; -------- Parse output to hash or structure
+  result = keyword_set(struct) ? json_parse(out, /tostruct, /toarray) : $
+                                 json_parse(out)
+  if verb then print, 'Total time:       ', systime(1)-t0, ' sec', format='(A,F8.3,A)'
+
 ; -------- Clean up
   obj_destroy, oUrl
   file_delete, out
 
-; -------- Convert to struct if requested
-  if keyword_set(struct) then begin 
-     foreach key, hash.keys() do begin
-        if size(hash[key], /tname) EQ 'OBJREF' then begin
-           if (key eq 'samples') and (ncoords gt 1) then $
-              for j=0L, ncoords-1 do hash[key, j] = hash[key, j].toarray()
-           hash[key] = hash[key].toarray()
-        endif
-     end
-     return, hash.tostruct()
-  endif 
-
-  return, hash
+  return, result
 end
 """,
 IDLLexer(),
@@ -372,7 +396,45 @@ formatter)
 
 map_query_API_example_lite['IDL'] = highlight(
 """
-IDL> TODO
+IDL> qresult = query_argonaut(l=180, b=0, mode='lite', /struct)
+IDL> help,qresult
+** Structure <405ff58>, 13 tags, length=1064, data length=1064, refs=1:
+   DM_RELIABLE_MAX DOUBLE    Array[1]
+   DM_RELIABLE_MIN DOUBLE    Array[1]
+   B               DOUBLE    Array[1]
+   BEST            DOUBLE    Array[1, 31]
+   CONVERGED       LONG64    Array[1]
+   DEC             DOUBLE    Array[1]
+   DISTMOD         DOUBLE    Array[31]
+   L               DOUBLE    Array[1]
+   MEDIAN          DOUBLE    Array[1, 31]
+   N_STARS         LONG64    Array[1]
+   RA              DOUBLE    Array[1]
+   SIGMA           DOUBLE    Array[1, 31]
+   SUCCESS         LONG64    Array[1]
+
+; Get the median E(B-V) to each distance slice:
+
+IDL> print,reform(qresult.median)
+     0.020400000     0.027470000     0.030270000     0.030360000     0.030470000
+     0.052140000     0.055230000     0.074800000     0.078070000      0.10002000
+      0.13699000      0.20130000      0.20158000      0.20734000      0.23129000
+      0.73734000      0.76125000      0.83905000      0.90236000       1.0594400
+       1.0808500       1.1140800       1.1192500       1.1221200       1.1228500
+       1.1228900       1.1229700       1.1230600       1.1230800       1.1230900
+       1.1231200
+
+; Get the standard deviation of E(B-V) in each slice
+; (actually, half the difference between the 84th and 16th percentiles):
+
+IDL> print,reform(qresult.sigma)
+     0.032260000     0.034760000     0.034520000     0.034420000     0.034390000
+     0.035670000     0.036250000     0.031700000     0.032380000     0.033260000
+     0.052490000     0.040100000     0.039190000     0.032780000     0.083390000
+     0.050990000     0.036150000     0.045520000     0.051770000     0.036780000
+     0.035520000     0.052460000     0.050550000     0.053610000     0.054220000
+     0.053800000     0.053810000     0.053810000     0.053800000     0.053800000
+     0.053790000
 """,
 IDLLexer(),
 formatter)
@@ -389,14 +451,26 @@ map_query_API_example_SFD['python-2.x'] = highlight(
 >>> 
 >>> # E(B-V), in magnitudes:
 >>> qresult['EBV_SFD']
-[0.02083, 0.0179, 0.0135]
+[0.02119, 0.01813, 0.01352]
 """,
 PythonConsoleLexer(),
 formatter)
 
 map_query_API_example_SFD['IDL'] = highlight(
 """
-IDL> TODO
+IDL> qresult = query_argonaut(l=[0, 10, 15], b=[75, 80, 85], mode='sfd', /struct)
+IDL> help,qresult
+** Structure <16ae1a8>, 5 tags, length=120, data length=120, refs=1:
+   EBV_SFD         DOUBLE    Array[3]
+   B               DOUBLE    Array[3]
+   DEC             DOUBLE    Array[3]
+   L               DOUBLE    Array[3]
+   RA              DOUBLE    Array[3]
+
+; E(B-V) in magnitudes:
+
+IDL> print,qresult.ebv_sfd
+     0.021190000     0.018130000     0.013520000
 """,
 IDLLexer(),
 formatter)

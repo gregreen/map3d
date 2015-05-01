@@ -30,7 +30,7 @@ p, li {
 .highlight pre {
   font-size: 12pt;
   overflow: auto;
-  overflow-y: hidden;
+  /*overflow-y: hidden;*/
   white-space: pre;
   word-wrap: normal;
 }
@@ -90,7 +90,7 @@ div[class^="col-"] {
 .top-right-overlay {
   display: block;
   position: absolute;
-  right: 5px;
+  right: 10px;
   top: 5px;
 }
 
@@ -202,6 +202,10 @@ div {
     font-family: "Lora", serif;
     font-size: 10pt;
   }
+  
+  .highlight pre {
+    max-height: 250px;
+  }
 }
 
 /* sm */
@@ -247,6 +251,10 @@ div {
   .popover {
     max-width: 300px;
   }
+  
+  .highlight pre {
+    max-height: 300px;
+  }
 }
 
 /* md */
@@ -283,6 +291,10 @@ div {
   
   .popover {
     max-width: 450px;
+  }
+  
+  .highlight pre {
+    max-height: 400px;
   }
 }
 
@@ -321,6 +333,10 @@ div {
   
   .popover {
     max-width: 500px;
+  }
+  
+  .highlight pre {
+    max-height: 500px;
   }
 }
 

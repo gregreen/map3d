@@ -108,7 +108,7 @@
         </button>
         <ul class="dropdown-menu" role="menu" aria-labelledby="language-dropdown">
           <li><a class="language-link" role="menuitem" tabindex="-1" data-target="API-python-2x" href="#">Python 2.7+</a></li>
-          <li><a class="language-link" role="menuitem" tabindex="-1" data-target="API-IDL" href="#">IDL</a></li>
+          <li><a class="language-link" role="menuitem" tabindex="-1" data-target="API-IDL" href="#">IDL 8.2+</a></li>
         </ul>
       </div>
       <span class="fontsize-normal">, the following function will call the Argonaut server and return the line-of-sight reddening for any coordinates, or set of coordinates, on the sky:</span>
@@ -122,7 +122,7 @@
         </div>
       </div>
       
-      <p>This code can be adapted for any programming language that can issue HTTP POST requests.</p>
+      <p>This code can be adapted for any programming language that can issue HTTP POST requests. The code can also be found on <a href="https://gist.github.com/gregreen/20291d238bc398d9df84">GitHub</a>.</p>
       
       <div class="page-header" id="API-example">
         <h2>Example Usage</h2>
@@ -186,8 +186,12 @@
       
       <p>The entire 3D map can be downloaded in two different formats:</p>
       <ul>
-        <li><a href="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/data/dust-map-3d.h5">HDF5 <span class="smaller-text">(4.5 GB download)</span></li>
-        <li><a href="#">FITS</a></li>
+        <li>
+          <a href="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/data/dust-map-3d.h5">HDF5 <span class="smaller-text">(4.5 GB download)</span></a>
+        </li>
+        <li>
+          <a href="http://faun.rc.fas.harvard.edu/pan1/ggreen/argonaut/data/dust-map-3d.fits.gz">FITS <span class="smaller-text">(4.1 GB download)</span></a>
+        </li>
       </ul>
       <p>The full map comes to over 4.5 GB in compressed HDF5 format, so if you're only interested in individual sightlines, we strongly recommend you use <a href="#API">our web API</a>, which you can include directly as a function call in a number of programming languages.</p>
       
