@@ -47,28 +47,36 @@ function dms2deg(dd, mm, ss) {
  * Parse angle specification
  */
 
-function parseAngle(s) {
+function parseAngle(s, hms) {
   // Try to read the angle as a number
   if($.isNumeric(s)) {
     return {"val": s, "format": "deg"};
   }
   
-  // Try to parse as an hour angle (e.g., "10h5m3.45s" or "10:5:3.45")
-  var re = /^([-]?\d*[.]?\d*)(?:[h:]?\s*)(\d*[.]?\d*)(?:[m:]?\s*)(\d*[.]?\d*)(?:[s]?\s*)$/i;
-  var matches = s.match(re);
-  
-  if (matches !== null) {
-    var val = hms2deg(matches[1], matches[2], matches[3]);
-    return {"val": val, "format": "hms"};
-  }
-  
-  // Try to parse as degrees - arcmin - arcsec (e.g., "15d43m15.8s")
-  re = /^([-]?\d*[.]?\d*)(?:d\s*)(\d*[.]?\d*)(?:[m:]?\s*)(\d*[.]?\d*)(?:[s]?\s*)$/i;
-  var matches = s.match(re);
-  
-  if (matches !== null) {
-    var val = dms2deg(matches[1], matches[2], matches[3]);
-    return {"val": val, "format": "dms"};
+  if (hms) {
+    // Try to parse as an hour angle (e.g., "10h5m3.45s" or "10:5:3.45")
+    var re = /^([-]?)(?:\s*)(\d*[.]?\d*(?=[h:\s]|$))(?:[h:\s]\s*|$)(\d*[.]?\d*(?=[m:\s]|$))(?:[m:\s]\s*|$)(\d*[.]?\d*(?=[s:\s]|$))(?:[s:\s]\s*|\s*$)$/i;
+    var matches = s.match(re);
+    
+    if (matches !== null) {
+      var val = hms2deg(matches[2], matches[3], matches[4]);
+      if (matches[1] == '-') {
+        val *= -1.;
+      }
+      return {"val": val, "format": "hms"};
+    }
+  } else {
+    // Try to parse as degrees - arcmin - arcsec (e.g., "15d43m15.8s")
+    re = /^([-]?)(?:\s*)(\d*[.]?\d*(?=[d:\s]|$))(?:[d:\s]\s*|$)(\d*[.]?\d*(?=[m':\s]|$))(?:[m':\s]\s*|$)(\d*[.]?\d*(?=[s":\s]|$))(?:[s":\s]\s*|\s*$)$/i;
+    var matches = s.match(re);
+    
+    if (matches !== null) {
+      var val = dms2deg(matches[2], matches[3], matches[4]);
+      if (matches[1] == '-') {
+        val *= -1.;
+      }
+      return {"val": val, "format": "dms"};
+    }
   }
   
   return {"val": null, "format": null};

@@ -19,8 +19,8 @@ $(document).ready(function() {
       d3.select("#enter-coords-alert").classed("alert-info", false);
     } else {
       useGalactic = false;
-      d3.select("#gal-l-input").attr("placeholder", "R.A. (\u00B0)");
-      d3.select("#gal-b-input").attr("placeholder", "Dec. (\u00B0)");
+      d3.select("#gal-l-input").attr("placeholder", "R.A.");
+      d3.select("#gal-b-input").attr("placeholder", "Dec.");
       d3.select("#gal-l-symbol").text("\u03B1");
       d3.select("#gal-b-symbol").text("\u03B4");
       d3.select("#submit-btn").classed("btn-success", false);
@@ -968,8 +968,8 @@ $(document).ready(function() {
     var updateInputBoxes = false;
     
     if((typeof(lon) === 'undefined') || (typeof(lat) === 'undefined')) {
-      lon = parseAngle($('input[name="gal-l"]').val());
-      lat = parseAngle($('input[name="gal-b"]').val());
+      lon = parseAngle($('input[name="gal-l"]').val(), true);
+      lat = parseAngle($('input[name="gal-b"]').val(), false);
       
       if ((lon.val === null) || (lat.val === null)) {
         showBadCoordsAlert();
@@ -1027,18 +1027,31 @@ $(document).ready(function() {
       success: function(data) {
         queryLock = false;
         
+        console.log('success');
+        console.log(data.success);
         querySuccess = $.parseJSON(data.success);
+        console.log('distmod');
         distmod = $.parseJSON(data.distmod);
+        console.log('best');
         best = $.parseJSON(data.best);
+        console.log('samples');
         samples = $.parseJSON(data.samples);
+        console.log('converged');
         converged = $.parseJSON(data.converged);
+        console.log('DM_reliable_min');
         DMReliableMin = $.parseJSON(data.DM_reliable_min);
+        console.log('DM_reliable_max');
         DMReliableMax = $.parseJSON(data.DM_reliable_max);
+        console.log('table_data');
         tableData = $.parseJSON(data.table_data);
         
+        console.log('l');
         lCur = $.parseJSON(data.l);
+        console.log('b');
         bCur = $.parseJSON(data.b);
+        console.log('radius');
         rCur = $.parseJSON(data.radius);
+        console.log('done');
         
         noData = 1 - querySuccess;
         

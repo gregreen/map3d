@@ -80,6 +80,9 @@ h1 {
   margin-bottom: 20px;
 }
 
+.indent-small, .alert .indent-small {
+  padding-left: 10px;
+}
 
 /*
  * Container divs
