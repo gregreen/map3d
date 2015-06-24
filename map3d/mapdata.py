@@ -43,6 +43,11 @@ class MapQuery:
         
         f.close()
         
+        # Remove NaNs from reliable distance estimates
+        for k in ['DM_reliable_min', 'DM_reliable_max']:
+            idx = ~np.isfinite(self.pixel_info[k])
+            self.pixel_info[k][idx] = -1.
+        
         # Get healpix indices at each nside level
         sort_idx = np.argsort(self.pixel_info, order=['nside', 'healpix_index'])
         
