@@ -1027,31 +1027,18 @@ $(document).ready(function() {
       success: function(data) {
         queryLock = false;
         
-        console.log('success');
-        console.log(data.success);
         querySuccess = $.parseJSON(data.success);
-        console.log('distmod');
         distmod = $.parseJSON(data.distmod);
-        console.log('best');
         best = $.parseJSON(data.best);
-        console.log('samples');
         samples = $.parseJSON(data.samples);
-        console.log('converged');
         converged = $.parseJSON(data.converged);
-        console.log('DM_reliable_min');
         DMReliableMin = $.parseJSON(data.DM_reliable_min);
-        console.log('DM_reliable_max');
         DMReliableMax = $.parseJSON(data.DM_reliable_max);
-        console.log('table_data');
         tableData = $.parseJSON(data.table_data);
         
-        console.log('l');
         lCur = $.parseJSON(data.l);
-        console.log('b');
         bCur = $.parseJSON(data.b);
-        console.log('radius');
         rCur = $.parseJSON(data.radius);
-        console.log('done');
         
         noData = 1 - querySuccess;
         
