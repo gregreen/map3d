@@ -67,7 +67,7 @@ function parseAngle(s, hms) {
     }
   } else {
     // Try to parse as degrees - arcmin - arcsec (e.g., "15d43m15.8s")
-    re = /^([-]?)(?:\s*)(\d*[.]?\d*(?=[d:\s]|$))(?:[d:\s]\s*|$)(\d*[.]?\d*(?=[m':\s]|$))(?:[m':\s]\s*|$)(\d*[.]?\d*(?=[s":\s]|$))(?:[s":\s]\s*|\s*$)$/i;
+    re = /^([-]?)(?:\s*)(\d*[.]?\d*(?=[d:\s]|$))(?:[d:\s]\s*|$)(\d*[.]?\d*(?=[m':\s]|$))(?:[m':\s]\s*|$)(\d*[.]?\d*(?=[s":\s]|''\s*|$))(?:[s":\s]\s*|''\s*|\s*$)$/i;
     var matches = s.match(re);
     
     if (matches !== null) {
