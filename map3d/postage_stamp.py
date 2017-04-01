@@ -34,7 +34,7 @@ def encode_image(img_arr, c_mask=(202,222,219)):
 
     img_arr[img_arr > 1.] = 1.
 
-    img_arr = (254. * img_arr).astype(np.uint8)
+    img_arr = (255. * img_arr).astype(np.uint8)
     # img_arr[nan_mask] = 255
 
     # Convert to color image with mask color
