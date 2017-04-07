@@ -156,6 +156,20 @@ def gal_lb_query_light(coords):
         query_obj, _ = mapdata.handlers['sfd']
         res['EBV_SFD'] = query_obj(coords)
 
+    # Convert numpy arrays to lists before sending back
+    def _sanitize_output(x, n_digits=5):
+        if isinstance(x, np.ndarray):
+            if (n_digits is not None) and (x.dtype.kind == 'f'):
+                return np.round(x.astype(float), decimals=n_digits).tolist()
+            return x.tolist()
+        elif isinstance(x, float) or isinstance(x, np.floating):
+            if n_digits is not None:
+                return round(x, ndigits=n_digits)
+        return x
+
+    for key in res:
+        res[key] = _sanitize_output(res[key])
+
     t_end = time.time()
 
     # Log the query
