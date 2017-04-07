@@ -1,37 +1,40 @@
 from map3d import app
 
-from flask import render_template, redirect, request, jsonify, Response
+from flask import render_template, redirect, request, jsonify, Response, g
+from cerberus import Validator
 import numpy as np
 import ujson as json
 import time
 import os
+
+from astropy import units
+from astropy.coordinates import SkyCoord
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 log_path = os.path.join(script_dir, '..', 'log', 'argonaut_requests.log')
 
 from rate_limit import ratelimit
 from gzip_response import gzipped
+from validators import validate_json, validate_qstring, skycoords_from_args, get_n_coords
 
 from redis_logger import Logger
 logger = Logger('argonaut_request_log', log_path)
 
 import postage_stamp
+import mapdata
 import loscurves
 import snippets
-import map_handlers
 
-from utils import array_like, filter_dict
-
-max_request_size = {
-    'full': 5000,
-    'lite': 50000,
-    'sfd':  500000
-}
+from utils import array_like, filter_dict, filter_NaN
 
 from dustmaps import json_serializers
 app.json_decoder = json_serializers.MultiJSONDecoder
 app.json_encoder = json_serializers.get_encoder(ndarray_mode='b64')
 
+
+#
+# Web pages
+#
 
 @app.route('/cover')
 def cover():
@@ -49,174 +52,207 @@ def usage():
 def query():
     return render_template('query.html')
 
-@app.route('/gal-lb-query', methods=['POST'])
-@ratelimit(limit=30, per=60, send_x_headers=False)
-def gal_lb_query():
-    coords, valid, mode, msg = loscurves.get_coords(request.json, 0)
+#
+# API v2
+#
 
-    if not valid:
-        return msg, 400
-
-    ip = request.remote_addr
-
-    dists = [300., 1000., 5000.]
-    radius = 7.5
-
-    t_start = time.time()
-
-    img = postage_stamp.postage_stamps(coords['l'], coords['b'], dists=dists)
-    img = [postage_stamp.encode_image(img_d) for img_d in img]
-
-    t_ps = time.time()
-
-    los_info, table_data = loscurves.get_los(coords, mode='full', gen_table=True)
-
-    t_los = time.time()
-
-    txt_request = 'l,b = (%.2f, %.2f) requested by %s ' % (coords['l'], coords['b'], str(ip))
-    txt_request += '(t: %.2fs, ps: %.2fs, los: %.4fs)' % (t_los-t_start, t_ps-t_start, t_los-t_ps)
-
-    logger.write(txt_request)
-
-    if np.isnan(los_info['DM_reliable_min']):
-        los_info['DM_reliable_min'] = -999
-    if np.isnan(los_info['DM_reliable_max']):
-        los_info['DM_reliable_max'] = -999
-
-    #success = int(int(los_info['n_stars']) != 0)
-
-    label = ['%d pc' % d for d in dists]
-
-    filter_dict(los_info, decimals=5)
-    filter_dict(coords, decimals=8)
-    los_info.update(**coords)
-
-    for key in los_info.keys():
-        los_info[key] = json.dumps(los_info[key])
-
-    return jsonify(radius=radius,
-                   label1=label[0], image1=img[0],
-                   label2=label[1], image2=img[1],
-                   label3=label[2], image3=img[2],
-                   table_data=table_data,
-                   **los_info)
-
-@app.route('/gal-lb-query-light', methods=['POST'])
+@app.route('/api/v2/<map_name>/query', methods=['POST'])
 @ratelimit(limit=1000, per=5*60, send_x_headers=True)
 @gzipped(6)
-def gal_lb_query_light():
-    # Validate input
-    coords, valid, mode, msg = loscurves.get_coords(
-        request.json,
-        max_request_size)
-
-    if not valid:
-        return msg, 400
-
-    # Retrieve the data
-    t_start = time.time()
-
-    los_info = None
-
-    if mode == 'sfd':
-        los_info = loscurves.get_sfd(coords)
-    else:
-        los_info = loscurves.get_los(coords, mode=mode, gen_table=False)
-
-    t_end = time.time()
-
-    # Write to log
-    ip = request.remote_addr
-    txt_request = None
-    if array_like(coords['l']):
-        n_coords = len(coords['l'])
-        t_per_request = (t_end-t_start)/n_coords if n_coords != 0 else np.nan
-
-        txt_request = '{:d} coordinates (mode: {}) requested by {:s} (t: {:.2f}s, t/request: {:.2g}s)'.format(
-            len(coords['l']),
-            mode,
-            str(ip),
-            t_end-t_start,
-            t_per_request
-        )
-    else:
-        txt_request = '(l: {:.2f}, b: {:.2f}, mode: {}) requested by {:s} (t: {:.2f}s)'.format(
-            coords['l'],
-            coords['b'],
-            mode,
-            str(ip),
-            t_end-t_start,
-        )
-
-    logger.write(txt_request)
-
-    # Return JSON
-    filter_dict(los_info, decimals=5)
-    filter_dict(coords, decimals=8)
-    los_info.update(**coords)
-
-    return Response(json.dumps(los_info), mimetype='application/json', status=200)
-    #return jsonify(**los_info)
-
-
-@app.route('/api/v2/<map_name>/<query_type>', methods=['POST'])
-@ratelimit(limit=1000, per=5*60, send_x_headers=True)
-@gzipped(6)
-def api_v2(map_name, query_type):
-    # Check the query type
-    valid_queries = ('query', 'query_gal', 'query_equ')
-    if query_type not in valid_queries:
-        msg = 'Invalid query type: "{}"\n'.format(query_type)
-        msg += 'Valid queries: {}'.format(', '.join(valid_queries))
-        return msg, 400
-
+@validate_json('skycoord', 'gal', 'equ', 'distance', 'equ-frame', allow_unknown=True)
+@skycoords_from_args()
+def api_v2(coords, map_name):
     # Check map name
-    if map_name not in map_handlers.handlers:
+    if map_name not in mapdata.handlers:
         msg = 'Invalid map name: "{}".'.format(map_name)
         return msg, 400
 
     t_start = time.time()
 
     # Select correct map to query
-    query_obj, n_coords_max = map_handlers.handlers[map_name]
-
-    # Parse coordinates and keyword arguments
-    n_coords, coords, kwargs, err = map_handlers.parse_coords_kwargs(
-        request.json,
-        coord_format=query_type,
-        n_coords_max=n_coords_max)
-
-    if err is not None:
-        return err
+    query_obj, n_coords_max = mapdata.handlers[map_name]
+    if (n_coords_max is not None) and (g.n_coords > n_coords_max):
+        msg = 'Too many coordinates requested (requested: {:d}, max: {:d})'.format(
+            g.n_coords, n_coords_max)
+        return msg, 413
 
     # Conduct the query
     try:
-        if query_type == 'query':
-            res = query_obj(coords, **kwargs)
-        elif query_type == 'query_gal':
-            res = query_obj.query_gal(coords['l'], coords['b'], **kwargs)
-        elif query_type == 'query_equ':
-            res = query_obj.query_equ(coords['ra'], coords['dec'], **kwargs)
-        else:
-            msg = 'Unexpected internal server error (query_type).'
-            return msg, 500
+        res = query_obj(coords, **g.args)
     except TypeError as err:
         msg = 'Invalid keyword argument received.\n' + str(err)
         return msg, 400
+    # except Exception as err:
+    #     msg = 'An exception occurred in processing your query. This most\n'
+    #     msg += 'likely means that there was an error in the query parameters.\n'
+    #     msg += 'Please consult the "dustmaps" documentation at\n'
+    #     msg += '<dustmaps.readthedocs.io/>.\n'
+    #     msg += 'A readout of the error is as follows:\n'
+    #     msg += str(err)
+    #     return msg, 400
 
     t_end = time.time()
 
     # Log the query
-    txt_request = ('/api/v2/{query_type}/{map_name}: ' +
+    txt_request = ('/api/v2/{map_name}/query: ' +
                    '{n_coords} coordinates requested by {ip} ' +
-                   '(t: {delta_t:.2f}s, t/coord: {t_per_coord:.2g}s)').format(
-        query_type=query_type,
+                   '(t: {delta_t:.2f} s, t/coord: {t_per_coord:.2g} s)').format(
         map_name=map_name,
         ip=request.remote_addr,
-        n_coords=n_coords,
+        n_coords=g.n_coords,
         delta_t=t_end-t_start,
-        t_per_coord=(t_end-t_start) / max(1,len(coords)))
+        t_per_coord=(t_end-t_start) / max(1, g.n_coords))
     logger.write(txt_request)
 
     # JSONify and return the results
+    return jsonify(res)
+
+
+###########################################################################
+# Legacy API
+###########################################################################
+
+@app.route('/gal-lb-query-light', methods=['POST'])
+@ratelimit(limit=1000, per=5*60, send_x_headers=True)
+@gzipped(6)
+@validate_json('skycoord', 'gal', 'equ', 'distance', 'mode-legacy')
+@skycoords_from_args()
+def gal_lb_query_light(coords):
+    t_start = time.time()
+
+    n_coords_max = dict(full=5000, lite=50000, sfd=500000).get(g.args['mode'], None)
+    if (n_coords_max is not None) and (g.n_coords > n_coords_max):
+        msg = 'Too many coordinates requested: {}\n'.format(g.n_coords)
+        msg += 'Max. allowed for mode "{}": {}'.format(g.args['mode'], n_coords_max)
+        return msg, 413
+
+    # Conduct the query
+    res = {}
+
+    if g.args['mode'] == 'full':
+        query_obj, _ = mapdata.handlers['bayestar2015']
+        samples, flags = query_obj(coords, mode='samples', return_flags=True)
+        best = query_obj(coords, mode='best', return_flags=False)
+        res['samples'] = samples
+        res['best'] = best
+        for key in flags.dtype.names:
+            res[key] = flags[key]
+        res['distmod'] = (query_obj.distmods / units.mag).decompose().value
+    elif g.args['mode'] == 'lite':
+        query_obj, _ = mapdata.handlers['bayestar2015']
+        pctiles, flags = query_obj(
+            coords,
+            mode='percentile',
+            pct=[15.8, 50., 84.2],
+            return_flags=True)
+        best = query_obj(coords, mode='best', return_flags=False)
+        res['median'] = pctiles[...,1]
+        res['sigma'] = 0.5 * (pctiles[...,2] - pctiles[...,0])
+        res['best'] = best
+        for key in flags.dtype.names:
+            res[key] = flags[key]
+        res['distmod'] = (query_obj.distmods / units.mag).decompose().value
+    elif g.args['mode'] == 'sfd':
+        query_obj, _ = mapdata.handlers['sfd']
+        res['EBV_SFD'] = query_obj(coords)
+
+    t_end = time.time()
+
+    # Log the query
+    txt_request = ('/gal-lb-query-light: ' +
+                   '{n_coords} coordinates requested by {ip} ' +
+                   '(t: {delta_t:.2f}s, t/coord: {t_per_coord:.2g}s)').format(
+        ip=request.remote_addr,
+        n_coords=g.n_coords,
+        delta_t=t_end-t_start,
+        t_per_coord=(t_end-t_start) / max(1,g.n_coords))
+    logger.write(txt_request)
+
+    # JSONify and return the results
+    return jsonify(res)
+
+
+@app.route('/gal-lb-query', methods=['GET'])
+@ratelimit(limit=30, per=60, send_x_headers=False)
+@validate_qstring('scalar-lonlat')
+@skycoords_from_args()
+def gal_lb_query(coords):
+    t0 = time.time()
+
+    if coords.frame.name != 'galactic':
+        coords = coords.transform_to('galactic')
+
+    t1 = time.time()
+
+    # Execute query
+    query_obj,_ = mapdata.handlers['bayestar2015']
+    samples, flags = query_obj(
+        coords,
+        mode='samples',
+        return_flags=True)
+
+    t2 = time.time()
+
+    best = query_obj(coords, mode='best')
+    distmod = (query_obj.distmods/units.mag).decompose().value
+
+    t3 = time.time()
+
+    # Postage Stamps
+    dists = [300., 1000., 5000.]
+    radius = postage_stamp.radius
+    img = postage_stamp.postage_stamps(
+        coords.l.deg,
+        coords.b.deg,
+        dists=dists)
+
+    t4 = time.time()
+
+    img = [postage_stamp.encode_image(img_d) for img_d in img]
+    label = ['{:.0f} pc'.format(d) for d in dists]
+
+    t5 = time.time()
+
+    # ASCII table
+    table = loscurves.los_ascii_summary(
+        coords,
+        samples,
+        best,
+        flags,
+        distmod=distmod)
+
+    t6 = time.time()
+
+    # Determine success of query
+    success = np.all(np.isfinite(best))
+
+    # Collect results
+    res = filter_NaN({
+        'success': success,
+        'l': coords.l.deg,
+        'b': coords.b.deg,
+        'radius': radius,
+        'table': table,
+        'samples': samples.tolist(),
+        'best': best.tolist(),
+        'distmod': distmod.tolist(),
+        'converged': flags['converged'],
+        'min_reliable_distmod': flags['min_reliable_distmod'],
+        'max_reliable_distmod': flags['max_reliable_distmod']})
+
+    for k,(i,l) in enumerate(zip(img, label)):
+        res['label{:d}'.format(k+1)] = l
+        res['image{:d}'.format(k+1)] = i
+
+    t7 = time.time()
+
+    print('time inside query: {:.4f} s'.format(t7-t0))
+    print('{: >7.4f} s : {: >6.4f} s : transform to galactic'.format(t1-t0, t1-t0))
+    print('{: >7.4f} s : {: >6.4f} s : query samples'.format(t2-t0, t2-t1))
+    print('{: >7.4f} s : {: >6.4f} s : query best'.format(t3-t0, t3-t2))
+    print('{: >7.4f} s : {: >6.4f} s : rasterize postage stamps'.format(t4-t0, t4-t3))
+    print('{: >7.4f} s : {: >6.4f} s : encode postage stamps'.format(t5-t0, t5-t4))
+    print('{: >7.4f} s : {: >6.4f} s : ASCII table'.format(t6-t0, t6-t5))
+    print('{: >7.4f} s : {: >6.4f} s : collect results'.format(t7-t0, t7-t6))
+
     return jsonify(res)

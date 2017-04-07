@@ -2,25 +2,25 @@
 # -*- coding: utf-8 -*-
 #
 #  utils.py
-#  
+#
 #  Copyright 2015 greg <greg@greg-UX301LAA>
-#  
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
 #  (at your option) any later version.
-#  
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#  
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
-#  
-#  
+#
+#
 
 import numpy as np
 
@@ -42,3 +42,21 @@ def filter_dict(d, decimals=5):
             d[key] = int(d[key])
         else:
             raise TypeError('{} has type {}'.format(key, str(type(d[key]))))
+
+
+def filter_NaN(obj, replace=None):
+    """
+    Replace NaNs with the given replacement. The input can be a single float, a
+    list, a tuple, a dictionary, a list of dictionaries, or other similarly
+    nested objects.
+    """
+    if isinstance(obj, list):
+        return [filter_NaN(o) for o in obj]
+    elif isinstance(obj, tuple):
+        return (filter_NaN(o) for o in obj)
+    elif isinstance(obj, dict):
+        return {k: filter_NaN(obj[k]) for k in obj}
+    elif (isinstance(obj, float) or isinstance(obj, np.floating)) and np.isnan(obj):
+        return replace
+    else:
+        return obj
