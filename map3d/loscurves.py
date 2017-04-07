@@ -11,190 +11,84 @@ from utils import array_like
 import hputils
 
 
-def get_coords(json, max_request_size):
-    '''
-    Takes JSON containing coordinate specifications, and returns
-       dict     :  containing l, b, ra, dec
-       success  :  True if the coordinates are well-formed
-       mode     :  The query mode ('full', 'lite' or 'sfd')
-       message  :  Error message if success == False
-    '''
-    
-    lon, lat = None, None
-    coord_in = None
-    mode = 'full'
-    n_max = None
-    
-    # Check the return mode
-    if 'mode' in json:
-        mode = json['mode'].lower()
-        n_max = max_request_size.get(mode, None)
-        
-        if n_max == None:
-            msg = 'Unkonwn query mode: "{}" (recognized modes: {})'.format(
-                mode,
-                ', '.join(['"{}"'.format(m) for m in max_request_size.keys()])
-            )
-            return {}, False, '', msg
-    
-    # Check that either (l,b) or (ra,dec) are provided
-    if ('l' in json) and ('b' in json):
-        lon = json['l']
-        lat = json['b']
-        coord_in = 'G'
-    elif ('ra' in json) and ('dec' in json):
-        lon = json['ra']
-        lat = json['dec']
-        coord_in = 'C'
-    else:
-        return {}, False, '', 'No coordinates found in request: Submit JSON with either (l,b) or (ra,dec).'
-    
-    coord_names = ('l','b') if coord_in == 'G' else ('ra','dec')
-    
-    # Extract lon and lat
-    if array_like(lon):
-        if not array_like(lat):
-            return {}, False, '', '{0} and {1} must have same number of dimensions.'.format(*coord_names)
-        if len(lat) != len(lon):
-            return {}, False, '', '{0} and {1} must have same number of dimensions.'.format(*coord_names)
-        if len(lon) > n_max:
-            return {}, False, '', 'Requests limited to {0} coordinates at a time.'.format(n_max)
-        
-        try:
-            lon = np.array(lon).astype('f4')
-            lat = np.array(lat).astype('f4')
-        except ValueError:
-            return {}, False, '', 'Non-numeric coordinates detected.'
-        
-        if np.any((lat > 90.) | (lat < -90.)):
-            return {}, False, '', '|{0}| > 90 degrees detected.'.format(coord_names[1])
-    else:
-        if array_like(lat):
-            return {}, False, '', '{0} and {1} must have same number of dimensions.'.format(*coord_names)
-        
-        try:
-            lon = float(lon)
-            lat = float(lat)
-        except ValueError:
-            return {}, False, '', 'Non-numeric coordinates detected.'
-        
-        if (lat > 90.) or (lat < -90.):
-            return {}, False, '', '|{0}| > 90 degrees detected.'.format(coord_names[1])
-    
-    # Construct coordinate dictionary
-    coords = {}
-    
-    if coord_in == 'G':
-        coords['l'] = lon
-        coords['b'] = lat
-        coords['ra'], coords['dec'] = hputils.transform_coords(lon, lat, 'G', 'C')
-    else:
-        coords['ra'] = lon
-        coords['dec'] = lat
-        coords['l'], coords['b'] = hputils.transform_coords(lon, lat, 'C', 'G')
-    
-    return coords, True, mode, ''
-
-
-def get_los(coords, mode='full', gen_table=False):
-    los_data = mapdata.map_query(coords['l'], coords['b'], mode=mode)
-    los_data['distmod'] = np.linspace(4., 19., 31)
-    
-    if array_like(los_data['n_stars']):
-        los_data['success'] = (np.array(los_data['n_stars']) != 0).astype('u1')
-    else:
-        los_data['success'] = int(los_data['n_stars'] != 0)
-    
-    if gen_table:
-        table_txt = los_to_ascii(coords, los_data)
-        table_enc = json.dumps(encode_ascii(table_txt))
-        
-        return los_data, table_enc
-    
-    return los_data
-
-
-def get_sfd(coords, decimals=5):
-    ebv = mapdata.sfd_query(coords['l'], coords['b'])
-    return {'EBV_SFD': ebv}
-
-
-def get_encoded_los(coords):
-    return [json.dumps(d) for d in get_los(coords)]
-
-
-def los_to_ascii(coords, los_data, colwidth=6):
-    # Pixel header
-    txt  = '# Line-of-Sight Reddening Results\n'
-    txt += '# ===============================\n'
-    txt += '#\n'
-    txt += '# Galactic coordinates (in degrees):\n'
-    txt += '#     l = %.4f\n' % (coords['l'])
-    txt += '#     b = %.4f\n' % (coords['b'])
-    txt += '# Equatorial (J2000) coordinates (in degrees):\n'
-    txt += '#     ra = %.4f\n' % (coords['ra'])
-    txt += '#     dec = %.4f\n' % (coords['dec'])
-    txt += '# Number of stars: %d\n' % (los_data['n_stars'])
-    txt += '# Reliable distance moduli:\n'
-    txt += '#     min: %.2f\n' % (los_data['DM_reliable_min'])
-    txt += '#     max: %.2f\n' % (los_data['DM_reliable_max'])
-    txt += '# Fit converged: %s\n' % ('True' if los_data['converged'] else 'False')
-    txt += '#\n'
-    
-    # Explanation
-    txt += '# The table contains E(B-V) in magnitudes out to the specified distance moduli.\n'
-    txt += '# Each column corresponds to a different distance modulus, and each row\n'
-    txt += '# corresponds to a different sample. The first sample is the best fit, while\n'
-    txt += '# the following samples are drawn from the posterior distribution of\n'
-    txt += '# distance-reddening profiles.\n'
-    txt += '# \n'
-    txt += '# See Green et al. (2014) & Green et al. (2015) for a detailed description\n'
-    txt += '# of how the line-of-sight reddening is computed.\n'
-    txt += '# \n'
-    txt += '# Use coefficients in Table 6 of Schlafly & Finkbeiner (2011) to convert to\n'
-    txt += '# extinction in various bands (note that A_B - A_V != 1 for E(B-V) = 1; E(B-V)\n'
-    txt += '# is strictly a parameter name here).\n\n'
-    
-    n_rows = len(los_data['distmod']) + 1
-    
-    # Table column headings
-    txt += 'SampleNo'.center(10)
-    txt += '|'
-    txt += ' DistanceModulus\n'
-    
-    txt += ''.center(10)
-    txt += '|'
-    
-    for dm in los_data['distmod']:
-        txt += ('%.2f' % dm).rjust(colwidth)
-    
-    txt += '\n'
-    txt += '-' * (11 + len(los_data['distmod'])*colwidth)
-    txt += '\n'
-    
-    # Best fit
-    txt += 'BestFit'.center(10)
-    txt += '|'
-    
-    for E in los_data['best']:
-        txt += ('%.3f' % E).rjust(colwidth)
-    
-    txt += '\n'
-    
-    # Samples
-    for k,samp in enumerate(los_data['samples']):
-        txt += ('%d' % k).center(10)
-        txt += '|'
-        
-        for E in samp:
-            txt += ('%.3f' % E).rjust(colwidth)
-        
-        txt += '\n'
-    
-    return txt
-
 def encode_ascii(txt):
     data = txt.encode('US-ASCII')
     data = 'data:text/plain;charset=US-ASCII,{0}'.format(urllib.quote(data))
-    
+
     return data
+
+
+def los_ascii_summary(coords, samples, best, flags,
+                      distmod=np.linspace(4.,19.,31),
+                      colwidth=6):
+
+    # Coordinate description
+    if coords.frame.name == 'galactic':
+        coord_txt = (
+            "# Galactic coordinates (in degrees):\n"
+            "#     l = {gal.l.deg:.4f}\n"
+            "#     b = {gal.b.deg:.4f}\n"
+            ).format(gal=coords)
+    elif coords.frame.name in ('icrs', 'fk5', 'fk4', 'fk4noeterms'):
+        coord_txt = (
+            "# Equatorial (J2000, {frame:s}) coordinates (in degrees):\n"
+            "#     ra = {equ.ra.deg:.4f}\n"
+            "#     dec = {equ.dec.deg:.4f}\n"
+            ).format(equ=coords, frame=str(coords.frame.name.upper()))
+
+    # Pixel header
+    header = (
+        "#\n"
+        "# Line-of-Sight Reddening Results\n"
+        "# ===============================\n"
+        "#\n"
+        "# {coord_txt:s}"
+        "#\n"
+        "# Reliable distance moduli:\n"
+        "#     min: {min_reliable_distmod:.2f}\n"
+        "#     max: {max_reliable_distmod:.2f}\n"
+        "# Fit converged: {converged:}\n"
+        ).format(
+            coord_txt=coord_txt,
+            min_reliable_distmod=flags['min_reliable_distmod'],
+            max_reliable_distmod=flags['max_reliable_distmod'],
+            converged=flags['converged'])
+
+    # Explanation
+    explanation = (
+        "#\n"
+        "# The table contains E(B-V) in magnitudes out to the specified distance moduli.\n"
+        "# Each column corresponds to a different distance modulus, and each row\n"
+        "# corresponds to a different sample. The first sample is the best fit, while\n"
+        "# the following samples are drawn from the posterior distribution of\n"
+        "# distance-reddening profiles.\n"
+        "#\n"
+        "# See Green et al. (2014) & Green et al. (2015) for a detailed description\n"
+        "# of how the line-of-sight reddening is computed.\n"
+        "#\n"
+        "# Use coefficients in Table 6 of Schlafly & Finkbeiner (2011) to convert to\n"
+        "# extinction in various bands (note that A_B - A_V != 1 for E(B-V) = 1; E(B-V)\n"
+        "# is strictly a parameter name here).\n"
+        "#\n")
+
+    # Table column headings
+    table = 'SampleNo'.center(10) + '| DistanceModulus\n'
+    table += ''.center(10) + '|'
+
+    # Distance modulus labels
+    table += ''.join(['{:.2f}'.format(dm).rjust(colwidth) for dm in distmod])
+    table += '\n' + '-' * (11 + len(distmod)*colwidth) + '\n'
+
+    # Best fit
+    table += 'BestFit'.center(10) + '|'
+
+    table += ''.join(['{:.3f}'.format(E).rjust(colwidth) for E in best])
+    table += '\n'
+
+    # Samples
+    for k,samp in enumerate(samples):
+        table += '{:^10d}'.format(k) + '|'
+        table += ''.join(['{: >6.3f}'.format(E) for E in samp])
+        table += '\n'
+
+    return encode_ascii(header + explanation + table)
