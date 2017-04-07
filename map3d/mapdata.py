@@ -28,7 +28,9 @@ def load_images():
 
 
 print('Loading Bayestar2015 ...')
-bayestar2015 = BayestarQuery(map_fname=os.path.join(data_path, 'dust-map-3d.h5'))
+bayestar2015 = BayestarQuery(
+    map_fname=os.path.join(data_path, 'dust-map-3d.h5'),
+    max_samples=10)
 print('Loading SFD ...')
 sfd = SFDQuery(map_dir=data_path)
 # planck = PlanckQuery()

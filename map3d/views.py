@@ -3,7 +3,7 @@ from map3d import app
 from flask import render_template, redirect, request, jsonify, Response, g
 from cerberus import Validator
 import numpy as np
-import ujson as json
+import json
 import time
 import os
 
