@@ -64,6 +64,8 @@ def to_array(dtype):
 
 def to_quantity(unit_spec, dtype='f8'):
     def f(value):
+        if value is None:
+            return None
         if isinstance(value, Quantity):
             return value.to(unit_spec)
         elif isinstance(value, np.ndarray):
@@ -111,6 +113,7 @@ common_validators = {
             'coerce': to_quantity(units.kpc),
             'excludes': 'coords',
             'minall': 0.*units.kpc,
+            'nullable': True,
             'anyof': [
                 {'sameshape': 'l'},
                 {'sameshape': 'ra'},
@@ -158,27 +161,6 @@ def get_validator(*args, **kwargs):
     for a in args:
         schema.update(common_validators[a])
     return CoordValidator(schema, **kwargs)
-
-
-# def same_shape(*args):
-#     """
-#     Returns true if all the arguments have the same shape.
-#
-#     Args:
-#         *args: Two or more objects of type ``numpy.ndarray`` or
-#             ``astropy.units.Quantity`` (or any other object with a ``shape``
-#             attribute).
-#
-#     Returns:
-#         True if all the ``args`` have the same shape. False otherwise.
-#     """
-#     shape = None
-#     for a in args:
-#         if shape is None:
-#             shape = a.shape
-#         elif a.shape != shape:
-#             return False
-#     return True
 
 
 def validate_json(*schemata, **kw):
