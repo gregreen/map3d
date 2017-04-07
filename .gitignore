@@ -5,3 +5,4 @@
 *.jpg
 
 venv/
+map3d/static/data/
