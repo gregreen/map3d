@@ -26,6 +26,15 @@ class CoordValidator(Validator):
             return (value.dtype.kind in 'iuf')
         return False
 
+    def _validate_type_quantity(self, value):
+        return isinstance(value, Quantity)
+
+    def _validate_type_angle(self, value):
+        return (isinstance(value, Quantity) and value.unit.is_equivalent(units.rad))
+
+    def _validate_type_length(self, value):
+        return (isinstance(value, Quantity) and value.unit.is_equivalent(units.m))
+
     def _validate_type_scalar(self, value):
         if type in (float, int, np.floating, np.integer):
             return True
@@ -71,6 +80,10 @@ def to_quantity(unit_spec, dtype='f8'):
         elif isinstance(value, np.ndarray):
             return value.astype(dtype) * unit_spec
         else:
+            print('')
+            print(value)
+            print(np.array(value, dtype=dtype) * unit_spec)
+            print('')
             return np.array(value, dtype=dtype) * unit_spec
     return f
 
@@ -84,11 +97,13 @@ common_validators = {
     'gal': {
         'l': {
             'coerce': to_quantity(units.deg),
+            'type': 'angle',
             'excludes': ['coords', 'ra', 'dec'],
             'dependencies': 'b',
             'sameshape': 'b'},
         'b': {
             'coerce': to_quantity(units.deg),
+            'type': 'angle',
             'maxall': 90.*units.deg,
             'minall': -90.*units.deg,
             'excludes': ['coords', 'ra', 'dec'],
@@ -97,11 +112,13 @@ common_validators = {
     'equ': {
         'ra': {
             'coerce': to_quantity(units.deg),
+            'type': 'angle',
             'excludes': ['coords', 'l', 'b'],
             'dependencies': 'dec',
             'sameshape': 'dec'},
         'dec': {
             'coerce': to_quantity(units.deg),
+            'type': 'angle',
             'maxall': 90.*units.deg,
             'minall': -90.*units.deg,
             'excludes': ['coords', 'l', 'b'],
@@ -115,9 +132,12 @@ common_validators = {
             'minall': 0.*units.kpc,
             'nullable': True,
             'anyof': [
-                {'sameshape': 'l'},
-                {'sameshape': 'ra'},
-                {'type': 'scalar'}
+                {'type': 'length',
+                    'anyof': [{'sameshape': 'l'},
+                              {'sameshape': 'ra'}]},
+                {'allof': [
+                    {'type': 'scalar'},
+                    {'type': 'length'}]}
             ]
         }
     },
@@ -134,14 +154,20 @@ common_validators = {
             'required': False,
             'type': 'string',
             'allowed': ['icrs', 'fk5', 'fk4', 'fk4noeterms'],
-            # 'default': 'icrs',
             'excludes': ['coords', 'l', 'b']
         }
     },
     'scalar-lonlat': {
-        'lon': { 'coerce': to_quantity(units.deg)},
+        'lon': {
+            'coerce': to_quantity(units.deg),
+            'allof': [
+                {'type': 'scalar'},
+                {'type': 'angle'}]},
         'lat': {
             'coerce': to_quantity(units.deg),
+            'allof': [
+                {'type': 'scalar'},
+                {'type': 'angle'}],
             'min': -90.*units.deg,
             'max': 90.*units.deg},
         'coordsys': {'type': 'string', 'allowed': ['gal', 'equ']}
