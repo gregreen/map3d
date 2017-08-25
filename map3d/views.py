@@ -15,7 +15,7 @@ log_path = os.path.join(script_dir, '..', 'log', 'argonaut_requests.log')
 
 from rate_limit import ratelimit
 from gzip_response import gzipped
-from validators import validate_json, validate_qstring, skycoords_from_args, get_n_coords
+from validators import validate_json, validate_qstring, skycoords_from_args, ExtendedValidator
 
 from redis_logger import Logger
 logger = Logger('argonaut_request_log', log_path)
@@ -70,18 +70,25 @@ def api_v2(coords, map_name):
     t_start = time.time()
 
     # Select correct map to query
-    query_obj, n_coords_max = mapdata.handlers[map_name]
-    if (n_coords_max is not None) and (g.n_coords > n_coords_max):
-        msg = 'Too many coordinates requested (requested: {:d}, max: {:d})'.format(
-            g.n_coords, n_coords_max)
-        return msg, 413
+    handler = mapdata.handlers[map_name]
+    if 'schema' in handler:
+        v = ExtendedValidator(handler['schema'], allow_unknown=False)
+        if not v.validate(g.args):
+            msg = 'Invalid keyword arguments.\n' + json.dumps(v.errors, indent=2)
+            return msg, 400
+    if 'size_checker' in handler:
+        success, q_size, q_size_max = handler['size_checker'](coords, **g.args)
+        if not success:
+            msg = 'Requested output is too large (requested: {:d}, max: {:d})'.format(
+                q_size, int(q_size_max))
+            return msg, 413
 
     # Conduct the query
     try:
-        res = query_obj(coords, **g.args)
-    except TypeError as err:
-        msg = 'Invalid keyword argument received.\n' + str(err)
-        return msg, 400
+        res = handler['q'](coords, **g.args)
+    except Exception as err:
+        msg = 'An unexpected error occurred while executing the query.\n' + str(err)
+        return msg, 500
     # except Exception as err:
     #     msg = 'An exception occurred in processing your query. This most\n'
     #     msg += 'likely means that there was an error in the query parameters.\n'
@@ -130,7 +137,7 @@ def gal_lb_query_light(coords):
     res = {}
 
     if g.args['mode'] == 'full':
-        query_obj, _ = mapdata.handlers['bayestar2015']
+        query_obj, _ = mapdata.handlers['bayestar2015']['q']
         samples, flags = query_obj(coords, mode='samples', return_flags=True)
         best = query_obj(coords, mode='best', return_flags=False)
         res['samples'] = samples
@@ -139,7 +146,7 @@ def gal_lb_query_light(coords):
             res[key] = flags[key]
         res['distmod'] = (query_obj.distmods / units.mag).decompose().value
     elif g.args['mode'] == 'lite':
-        query_obj, _ = mapdata.handlers['bayestar2015']
+        query_obj, _ = mapdata.handlers['bayestar2015']['q']
         pctiles, flags = query_obj(
             coords,
             mode='percentile',
@@ -153,7 +160,7 @@ def gal_lb_query_light(coords):
             res[key] = flags[key]
         res['distmod'] = (query_obj.distmods / units.mag).decompose().value
     elif g.args['mode'] == 'sfd':
-        query_obj, _ = mapdata.handlers['sfd']
+        query_obj, _ = mapdata.handlers['sfd']['q']
         res['EBV_SFD'] = query_obj(coords)
 
     # Convert numpy arrays to lists before sending back
@@ -199,7 +206,7 @@ def gal_lb_query(coords):
     t1 = time.time()
 
     # Execute query
-    query_obj,_ = mapdata.handlers['bayestar2015']
+    query_obj, _ = mapdata.handlers['bayestar2015']['q']
     samples, flags = query_obj(
         coords,
         mode='samples',

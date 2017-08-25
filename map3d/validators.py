@@ -17,7 +17,12 @@ from astropy.coordinates import SkyCoord
 from astropy.units import Quantity
 
 
-class CoordValidator(Validator):
+class ExtendedValidator(Validator):
+    def __init__(self, *args, **kwargs):
+        # if 'additional_context' in kwargs:
+        #     self.additional_context = kwargs['additional_context']
+        super(ExtendedValidator, self).__init__(*args, **kwargs)
+
     def _validate_type_skycoord(self, value):
         return isinstance(value, SkyCoord)
 
@@ -42,22 +47,55 @@ class CoordValidator(Validator):
             return True
         return False
 
+    def _validate_type_list_of_numbers(self, value):
+        if type(value) not in (list, tuple):
+            return False
+        for el in value:
+            if type(el) not in (float, int, long):
+                return False
+        return True
+
+    def _validate_type_np_number(self, value):
+        return (isinstance(value, np.floating) or isinstance(value, np.integer))
+
     def _validate_maxall(self, max_val, field, value):
+        """
+        Test whether all the elements of an array are greater than a given
+        amount.
+
+        The rule's arguments are validated against this schema:
+        {}
+        """
         if np.any(value > max_val):
             self._error(field, 'Must not be greater than {}'.format(max_val))
 
     def _validate_minall(self, min_val, field, value):
+        """
+        Test whether all the elements of an array are less than a given amount.
+
+        The rule's arguments are validated against this schema:
+        {}
+        """
         if np.any(value < min_val):
             self._error(field, 'Must not be less than {}'.format(min_val))
 
     def _validate_sameshape(self, target_field, field, value):
+        """
+        Test whether this field has the same shape as one or more other fields.
+        If a target field does not exist, no error is raised (use 'dependency'
+        to require the existence of the target field).
+
+        The rule's arguments are validated against this schema:
+        {'type': ['string', 'list']}
+        """
         if isinstance(target_field, _str_type):
             target_field = [target_field]
         shape = value.shape
         for target in target_field:
             res = self._lookup_field(target)[1]
             if res is None:
-                self._error(field, 'Must have same shape as {}, which is not present.'.format(target))
+                return True # Target field does not exist
+                # self._error(field, 'Must have same shape as {}, which is not present.'.format(target))
             elif not hasattr(res, 'shape'):
                 self._error(field, 'Must have same shape as {}, which has no shape.'.format(target))
             elif res.shape != shape:
@@ -80,10 +118,6 @@ def to_quantity(unit_spec, dtype='f8'):
         elif isinstance(value, np.ndarray):
             return value.astype(dtype) * unit_spec
         else:
-            print('')
-            print(value)
-            print(np.array(value, dtype=dtype) * unit_spec)
-            print('')
             return np.array(value, dtype=dtype) * unit_spec
     return f
 
@@ -128,16 +162,14 @@ common_validators = {
         'd': {
             'required': False,
             'coerce': to_quantity(units.kpc),
+            'type': 'length',
             'excludes': 'coords',
             'minall': 0.*units.kpc,
             'nullable': True,
             'anyof': [
-                {'type': 'length',
-                    'anyof': [{'sameshape': 'l'},
-                              {'sameshape': 'ra'}]},
-                {'allof': [
-                    {'type': 'scalar'},
-                    {'type': 'length'}]}
+                {'sameshape': 'l'},
+                {'sameshape': 'ra'},
+                {'type': 'scalar'}
             ]
         }
     },
@@ -174,6 +206,7 @@ common_validators = {
     }
 }
 
+
 def get_validator(*args, **kwargs):
     """
     Returns a validator that combines one or more of the schemata in
@@ -186,7 +219,7 @@ def get_validator(*args, **kwargs):
     schema = {}
     for a in args:
         schema.update(common_validators[a])
-    return CoordValidator(schema, **kwargs)
+    return ExtendedValidator(schema, **kwargs)
 
 
 def validate_json(*schemata, **kw):
@@ -202,7 +235,7 @@ def validate_json(*schemata, **kw):
             # if JSON parsing fails
             request.on_json_loading_failed = json_parse_error
 
-            print('validating...')
+            # print('validating...')
             if not v.validate(request.json):
                 return Response(
                     json.dumps({'input_errors': v.errors}, indent=2),
@@ -228,7 +261,7 @@ def validate_qstring(*schemata, **kw):
     def decorator(f):
         @functools.wraps(f)
         def validated(*args, **kwargs):
-            print('validating query string...')
+            # print('validating query string...')
             if not v.validate(request.args.to_dict()):
                 return Response(
                     json.dumps({'input_errors': v.errors}, indent=2),
@@ -249,7 +282,7 @@ def skycoords_from_args():
     def decorator(f):
         @functools.wraps(f)
         def with_skycoords(*args, **kwargs):
-            print('getting skycoords...')
+            # print('getting skycoords...')
 
             if 'coords' in g.args:
                 coords = g.args.pop('coords')
