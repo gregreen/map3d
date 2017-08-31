@@ -961,6 +961,9 @@ function create_plot() {
 
     // On query success
     var success = function(data) {
+      // Update the URL query string
+      set_qstring(coords);
+
       // Hide any custom message
       hide_custom_alert(); // TODO: Create special warning div for this
 
@@ -1022,6 +1025,76 @@ function create_plot() {
     update_full(coords);
   };
 
+  // Converts the query string into coordinates.
+  // Returns null if query string is invalid.
+  var get_coords_from_qstring = function() {
+    var url_params = new URLSearchParams(window.location.search);
+
+    var expected_keys = {
+      "lon": "lon",
+      "lat": "lat",
+      "coordsys": "coord_sys"
+    };
+    var coords = {};
+
+    for (var key in expected_keys) {
+      if (!url_params.has(key)) { return null; }
+      coords[expected_keys[key]] = url_params.get(key);
+      console.log(key + " = " + url_params.get(key));
+    }
+
+    console.log(coords);
+
+    if((coords["coord_sys"] !== "gal")
+       && (coords["coord_sys"] !== "equ")) {
+      return null;
+    }
+    var lon = astrocoords.parse_angle(coords["lon"], true);
+    var lat = astrocoords.parse_angle(coords["lat"], false);
+
+    // if ((lon === null) || (lat === null)) {
+    //   return null;
+    // }
+
+    return {
+      "lon": lon,
+      "lat": lat,
+      "coord_sys": coords["coord_sys"]
+    };
+    // if(urlParams.has("lon") && urlParams.has("lat") && urlParams.has("coordsys")) {
+    //
+    // }
+  };
+
+  var update_input_boxes = function(coords) {
+    $('input[name="gal-l"]').val(coords.lon.val);
+    $('input[name="gal-b"]').val(coords.lat.val);
+    if (coords.coord_sys === "gal") {
+      $("#coord-toggle").bootstrapToggle("on");
+    } else if (coords.coord_sys === "equ") {
+      $("#coord-toggle").bootstrapToggle("off");
+    }
+  };
+
+  var set_qstring = function(coords) {
+    var qstring = "?lon=" + coords.lon.val +
+                  "&lat=" + coords.lat.val +
+                  "&coordsys=" + coords.coord_sys;
+    console.log(qstring);
+    window.history.pushState("", "", qstring);
+  };
+
+  var update_from_qstring = function() {
+    // Get coordinates
+    var coords = get_coords_from_qstring();
+    console.log(coords);
+    if (!coords) { return; }
+    update_input_boxes(coords);
+    if(!issue_coord_warnings(coords)) { return; }
+
+    update_full(coords);
+  };
+
 
   /*
    * User event listeners
@@ -1029,6 +1102,12 @@ function create_plot() {
 
   // Submit query
   $("#submit-btn").click(function() { update_from_submit(); });
+  var submit_if_enter = function(e) {
+    var key = e.which;
+    if (key == 13) { update_from_submit(); }
+  };
+  $("#gal-l-input").keypress(submit_if_enter);
+  $("#gal-b-input").keypress(submit_if_enter);
 
   // Toggle coordinates
   $("#coord-toggle").change(function() {
@@ -1054,6 +1133,9 @@ function create_plot() {
     d3.select(this.parentNode).select(".ps-focus")
       .classed("no-display", true);
   });
+
+  // Execute query from query string
+  update_from_qstring();
 }
 
 $(document).ready(function() { create_plot(); });
