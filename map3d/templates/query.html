@@ -6,7 +6,7 @@
 <div class="container-fluid">
   <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
-      
+
       <div class="row blue">
         <div class="col-xs-12 col-sm-12">
           <div class="alert alert-success fade in" role="alert" id="enter-coords-alert">
@@ -15,21 +15,21 @@
           </div>
         </div>
       </div>
-      
+
       <div class="row brown">
-        
+
         <div class="col-xs-12 col-sm-6 padding-sm-right-5 green">
           <div class="input-group">
             <span class="input-group-addon"><i id="gal-l-symbol">&#x2113</i></span>
             <input id="gal-l-input" name="gal-l" type="text" class="form-control" placeholder="lon. (&deg)">
           </div>
         </div>
-        
+
         <div class="col-xs-12 col-sm-6 padding-sm-5 padding-sm-right-15 blue">
           <div class="fixed-right">
             <input id="coord-toggle" type="checkbox" checked data-toggle="toggle" data-on="Galactic" data-off="Equ. (J2000)" data-onstyle="success" data-offstyle="primary">
           </div>
-          
+
           <div class="expand-left padding-sm-right-5">
             <div class="input-group">
               <span class="input-group-addon"><i id="gal-b-symbol">b</i></span>
@@ -42,21 +42,27 @@
             </div>
           </div>
         </div>
-        
+
       </div>
-      
+
       <div class="row cyan collapse" id="bad-coords-div">
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-          <div class="alert alert-warning" role="alert" id="bad-coords-alert">
+          <div class="alert alert-danger" role="alert" id="bad-coords-alert">
             <h3>Invalid coordinates. Please enter valid coordinates.</h3>
-            <h4>Examples:</h4>
-            <h4 class="indent-small">23.5</h4>
-            <h4 class="indent-small">05h30m17s</h4>
-            <h4 class="indent-small">-15d 30' 17"</h4>
+            <div id="lon-examples" class="no-bg">
+              <h4>Examples:</h4>
+              <h4 class="indent-small">82.57</h4>
+              <h4 class="indent-small">05h30m17s</h4>
+            </div>
+            <div id="lat-examples" class="no-bg">
+              <h4>Examples:</h4>
+              <h4 class="indent-small">-15.505</h4>
+              <h4 class="indent-small">-15d 30' 17"</h4>
+            </div>
           </div>
         </div>
       </div>
-      
+
       <div class="row cyan collapse" id="custom-alert-div">
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
           <div class="alert alert-warning" role="alert">
@@ -64,42 +70,67 @@
           </div>
         </div>
       </div>
-    
+
     </div>
   </div>
-  
+
   <div class="row black">
-    
+
     <div class="col-xs-12 col-sm-12 padding-xs-5 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2 collapse brown" id="line-plot-div">
       <h1>Reddening vs. Distance</h1>
       <div class="box-aspect-2-1">
-        <div class="line-plot-container"></div>
+        <div class="line-plot-container">
+          <svg id="distance-reddening-plot" viewbox="0 0 1000 500"></svg>
+        </div>
       </div>
     </div>
-    
+
     <div class="col-xs-12 col-sm-12 col-md-12 col-lg-10 col-lg-offset-1 collapse cyan" id="postage-stamp-div">
-      <h1>Postage Stamps</h1>
-      
+      <h1>Cumulative Reddening</h1>
+
       <div class="row">
-        <div class="thumbnail col-xs-12 col-sm-4 col-md-4 ps-container red">
-          <!--<div class="ps-container">-->
-            <img id="postage-stamp-1" src="" class="img-responsive ps-img" />
-          <!--</div>-->
-          <h4 id="ps-label-1" class="ps-label"></h4>
-        </div>
-        <div class="thumbnail col-xs-12 col-sm-4 col-md-4 ps-container red">
-          <img id="postage-stamp-2" src="" class="img-responsive ps-img" />
-          <h4 id="ps-label-2" class="ps-label"></h4>
-        </div>
-        <div class="thumbnail col-xs-12 col-sm-4 col-md-4 ps-container red">
-          <img id="postage-stamp-3" src="" class="img-responsive ps-img" />
-          <h4 id="ps-label-3" class="ps-label"></h4>
-        </div>
+        {% for n in range(3) %}
+          <div class="thumbnail col-xs-12 col-sm-4 col-md-4 ps-container red">
+            <img id="postage-stamp-{{ n+1 }}" src="" class="img-responsive ps-img" />
+            <h4 id="ps-label-{{ n+1 }}" class="ps-label"></h4>
+
+            <svg class="ps-overlay" viewbox="0 0 300 300">
+              <g class="ps-bullseye">
+                <circle class="ps-bullseye-outer"></circle>
+                <circle class="ps-bullseye-inner"></circle>
+              </g>
+              <g class="ps-focus no-display" transform="translate(8,8)">
+                <rect class="ps-text-bg" width="145" height="50"></rect>
+                <g class="ps-focus-gal no-display">
+                  <text class="ps-text ps-gal-indicator">
+                    <tspan class="ps-l-label" x="4pt" y="16pt">
+                      <tspan>l</tspan><tspan dx="0.25em"</span>=</tspan><tspan class="gal-l-deg" dx="0.25em">30</tspan><tspan>°</tspan>
+                    </tspan>
+                    <tspan class="ps-b-label" x="4pt" dy="16pt">
+                      <tspan>b</tspan><tspan dx="0.25em"</span>=</tspan><tspan class="gal-b-deg" dx="0.25em">30</tspan><tspan>°</tspan>
+                    </tspan>
+                  </text>
+                </g>
+                <g class="ps-focus-equ no-display">
+                  <text class="ps-text ps-equ-indicator">
+                    <tspan class="ps-a-label" x="4pt" y="16pt">
+                      <tspan>α</tspan><tspan dx="0.25em"</span>=</tspan><tspan class="RA-hh" dx="0.25em">15</tspan><tspan class="RA-hh-sup RA-hms" dx="0em" dy="-8pt">h</tspan><tspan class="RA-mm" dy="8pt">17</tspan><tspan class="RA-mm-sup RA-hms" dy="-8pt">m</tspan><tspan class="RA-ss" dy="8pt">35</tspan><tspan class="RA-ss-sup RA-hms" dy="-8pt">s</tspan><tspan class="RA-end" dy="8pt"> </tspan>
+                    </tspan>
+                    <tspan class="ps-d-label" x="4pt" dy="16pt">
+                      <tspan>δ</tspan><tspan dx="0.25em">=</tspan><tspan class="Dec-deg" dx="0.25em">-40.3</tspan><tspan>°</tspan>
+                    </tspan>
+                  </text>
+                </g>
+              </g>
+              <rect class="overlay" width="300", height="300"></rect>
+            </svg>
+          </div>
+        {% endfor %}
       </div>
     </div>
-    
+
   </div>
-  
+
   <div class="row collapse" id="download-div">
     <h1>Download Results</h1>
     <div class="col-xs-8 col-xs-offset-2 col-sm-4 col-sm-offset-4 col-lg-4 col-lg-offset-4 bottom-spacer brown">
