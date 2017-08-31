@@ -191,18 +191,23 @@ common_validators = {
     },
     'scalar-lonlat': {
         'lon': {
+            'required': True,
             'coerce': to_quantity(units.deg),
             'allof': [
                 {'type': 'scalar'},
                 {'type': 'angle'}]},
         'lat': {
+            'required': True,
             'coerce': to_quantity(units.deg),
             'allof': [
                 {'type': 'scalar'},
                 {'type': 'angle'}],
             'min': -90.*units.deg,
             'max': 90.*units.deg},
-        'coordsys': {'type': 'string', 'allowed': ['gal', 'equ']}
+        'coordsys': {
+            'required': True,
+            'type': 'string',
+            'allowed': ['gal', 'equ']}
     }
 }
 
