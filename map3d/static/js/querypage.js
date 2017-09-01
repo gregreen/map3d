@@ -863,46 +863,174 @@ function create_plot() {
     };
   };
 
-  var set_ps_labels_gal = function(coords_gal) {
-    d3.selectAll(".ps-focus-equ")
-      .classed("no-display", true);
-    d3.selectAll(".ps-focus-gal")
-      .classed("no-display", false);
-    var fmt = d3.format(".2f");
-    d3.selectAll(".gal-l-deg")
-      .text(fmt(coords_gal.l));
-    d3.selectAll(".gal-b-deg")
-      .text(fmt(coords_gal.b));
-  };
+  // Gets coordinates when user clicks on postage stamp,
+  // and converts to whatever coordinate system the toggle
+  // indicates.
+  var get_ps_coords = function(obj, query_data) {
+    var coords_gal = get_ps_lb(obj, query_data);
+    var target_coord_sys = get_coord_sys();
+    var coords = convert_coord_sys(
+      package_gal_coords(coords_gal),
+      target_coord_sys
+    );
+    return coords;
+  }
 
-  var set_ps_labels_equ = function(coords_equ) {
-    d3.selectAll(".ps-focus-gal")
-      .classed("no-display", true);
-    d3.selectAll(".ps-focus-equ")
-      .classed("no-display", false);
-    var fmt = d3.format("02d");
-    var hms = astrocoords.deg2hms(coords_equ.a);
-    d3.selectAll(".RA-hh")
-      .text(fmt(hms.h));
-    d3.selectAll(".RA-mm")
-      .text(fmt(hms.m));
-    d3.selectAll(".RA-ss")
-      .text(fmt(hms.s));
-    d3.selectAll(".Dec-deg")
-      .text(d3.format(".2f")(coords_equ.d));
-  };
-
-  var set_ps_labels = function(coords_gal) {
-    var coord_sys = get_coord_sys();
-    if(coord_sys === "gal") {
-      set_ps_labels_gal(coords_gal);
-    } else if (coord_sys === "equ") {
-      var coords_equ = astrocoords.gal2equ_J2000(
-        coords_gal.l,
-        coords_gal.b
-      );
-      set_ps_labels_equ(coords_equ);
+  var set_ps_labels = function(coords) {
+    if (coords.coord_sys === "equ") {
+      d3.selectAll(".ps-focus-gal")
+        .classed("no-display", true);
+      d3.selectAll(".ps-focus-equ")
+        .classed("no-display", false);
+      var fmt = d3.format("02d");
+      var hms = astrocoords.deg2hms(coords.lon.val);
+      d3.selectAll(".RA-hh")
+        .text(fmt(hms.h));
+      d3.selectAll(".RA-mm")
+        .text(fmt(hms.m));
+      d3.selectAll(".RA-ss")
+        .text(fmt(hms.s));
+      d3.selectAll(".Dec-deg")
+        .text(d3.format(".2f")(coords.lat.val));
+    } else if (coords.coord_sys === "gal" ){
+      d3.selectAll(".ps-focus-equ")
+        .classed("no-display", true);
+      d3.selectAll(".ps-focus-gal")
+        .classed("no-display", false);
+      var fmt = d3.format(".2f");
+      d3.selectAll(".gal-l-deg")
+        .text(fmt(coords.lon.val));
+      d3.selectAll(".gal-b-deg")
+        .text(fmt(coords.lat.val));
+    } else {
+      console.log("set_ps_labels: Invalid coordsys:");
+      console.log(coords.coord_sys);
     }
+  };
+
+  // var set_ps_labels_gal = function(coords_gal) {
+  //   d3.selectAll(".ps-focus-equ")
+  //     .classed("no-display", true);
+  //   d3.selectAll(".ps-focus-gal")
+  //     .classed("no-display", false);
+  //   var fmt = d3.format(".2f");
+  //   d3.selectAll(".gal-l-deg")
+  //     .text(fmt(coords_gal.l));
+  //   d3.selectAll(".gal-b-deg")
+  //     .text(fmt(coords_gal.b));
+  // };
+  //
+  // var set_ps_labels_equ = function(coords_equ) {
+  //   d3.selectAll(".ps-focus-gal")
+  //     .classed("no-display", true);
+  //   d3.selectAll(".ps-focus-equ")
+  //     .classed("no-display", false);
+  //   var fmt = d3.format("02d");
+  //   var hms = astrocoords.deg2hms(coords_equ.a);
+  //   d3.selectAll(".RA-hh")
+  //     .text(fmt(hms.h));
+  //   d3.selectAll(".RA-mm")
+  //     .text(fmt(hms.m));
+  //   d3.selectAll(".RA-ss")
+  //     .text(fmt(hms.s));
+  //   d3.selectAll(".Dec-deg")
+  //     .text(d3.format(".2f")(coords_equ.d));
+  // };
+
+  // var set_ps_labels = function(coords_gal) {
+  //   var coord_sys = get_coord_sys();
+  //   if(coord_sys === "gal") {
+  //     set_ps_labels_gal(coords_gal);
+  //   } else if (coord_sys === "equ") {
+  //     var coords_equ = astrocoords.gal2equ_J2000(
+  //       coords_gal.l,
+  //       coords_gal.b
+  //     );
+  //     set_ps_labels_equ(coords_equ);
+  //   }
+  // };
+
+  /*
+   * Update UI elements
+   */
+
+  var coords2qstring = function(coords) {
+    var qstring = "?lon=" + coords.lon.val +
+                  "&lat=" + coords.lat.val +
+                  "&coordsys=" + coords.coord_sys;
+    return qstring;
+  };
+
+  // Update button to access ASCII table
+  var update_table_btn = function(coords) {
+    var href = "/api/v2/interactive/bayestar2015/lostable"
+               + coords2qstring(coords);
+    d3.select("#table-btn")
+      .attr("href", href)
+      .classed("disabled", false);
+  };
+
+  var disable_table_btn = function() {
+    d3.select("#table-btn")
+      .attr("href", "#")
+      .classed("disabled", false);
+  };
+
+  // Converts coordinates to the specified target coordinate system.
+  var convert_coord_sys = function(coords, target_coord_sys) {
+    if (coords.coord_sys === target_coord_sys) {
+      return coords;
+    }
+    if ((coords.coord_sys === "gal")
+     && (target_coord_sys === "equ")) {
+      var c_target = astrocoords.gal2equ_J2000(
+        coords.lon.val,
+        coords.lat.val
+      );
+      return package_equ_coords(c_target);
+    } else if ((coords.coord_sys === "equ")
+            && (target_coord_sys === "gal")) {
+      var c_target = astrocoords.equ2gal_J2000(
+        coords.lon.val,
+        coords.lat.val
+      );
+      return package_gal_coords(c_target);
+    }
+    return null; // Something wrong with either coords.coord_sys or
+                 // target_coord_sys.
+  };
+
+  // Sets lon/lat input boxes to the specified coordinates, and flips
+  // the coordinate system toggle to the correct setting.
+  var update_input_boxes = function(coords, preserve_coordsys_toggle) {
+    var do_update = function(c) {
+      $('input[name="gal-l"]').val(c.lon.val);
+      $('input[name="gal-b"]').val(c.lat.val);
+      if (c.coord_sys === "gal") {
+        $("#coord-toggle").bootstrapToggle("on");
+      } else if (c.coord_sys === "equ") {
+        $("#coord-toggle").bootstrapToggle("off");
+      }
+    };
+
+    if (preserve_coordsys_toggle) { // Do not flip the coordsys toggle
+      console.log("Preserving coordsys toggle.");
+      var target_coord_sys = get_coord_sys();
+      console.log("Target coordsys: " + target_coord_sys);
+      var c = convert_coord_sys(coords, target_coord_sys);
+      console.log("Setting input boxes to:");
+      console.log(c);
+      do_update(c);
+    } else {  // Flip the coordsys toggle to whatever is in "coords"
+      do_update(coords);
+    }
+  };
+
+  // Sets the URL query string to represent the given coordinates.
+  var set_qstring = function(coords) {
+    var qstring = coords2qstring(coords);
+    console.log(qstring);
+    window.history.pushState("", "", qstring);
   };
 
   /*
@@ -950,6 +1078,20 @@ function create_plot() {
     };
   };
 
+  var package_equ_coords = function(coords_equ) {
+    return {
+      "lon": {
+        "val": coords_equ.a,
+        "format": "deg"
+      },
+      "lat": {
+        "val": coords_equ.d,
+        "format": "deg"
+      },
+      "coord_sys": "equ"
+    };
+  };
+
   var update_full = function(coords) {
     console.log("update_full");
 
@@ -963,6 +1105,9 @@ function create_plot() {
     var success = function(data) {
       // Update the URL query string
       set_qstring(coords);
+
+      // Update link to ASCII table
+      update_table_btn(coords);
 
       // Hide any custom message
       hide_custom_alert(); // TODO: Create special warning div for this
@@ -988,16 +1133,18 @@ function create_plot() {
 
       // Mouse over postage stamp
       d3.selectAll(".overlay").on("mousemove", function() {
-        var coords_gal = get_ps_lb(this, data);
-        set_ps_labels(coords_gal);
+        var coords = get_ps_coords(this, data);
+        set_ps_labels(coords);
       });
 
       // Click on postage stamp
       d3.selectAll(".overlay").on("click", function() {
         console.log("clicked");
-        var coords_gal = get_ps_lb(this, data);
-        console.log(coords_gal);
-        update_full(package_gal_coords(coords_gal));
+        var coords = get_ps_coords(this, data);
+        console.log(coords);
+        // var coords = package_gal_coords(coords_gal);
+        update_input_boxes(coords);//, true);
+        update_full(coords);
       });
     }
 
@@ -1007,6 +1154,8 @@ function create_plot() {
         "class",
         "glyphicon glyphicon-search"
       );
+
+      disable_table_btn();
 
       show_custom_alert("Query failed."); // TODO: Create special warning div for this
     };
@@ -1064,24 +1213,6 @@ function create_plot() {
     // if(urlParams.has("lon") && urlParams.has("lat") && urlParams.has("coordsys")) {
     //
     // }
-  };
-
-  var update_input_boxes = function(coords) {
-    $('input[name="gal-l"]').val(coords.lon.val);
-    $('input[name="gal-b"]').val(coords.lat.val);
-    if (coords.coord_sys === "gal") {
-      $("#coord-toggle").bootstrapToggle("on");
-    } else if (coords.coord_sys === "equ") {
-      $("#coord-toggle").bootstrapToggle("off");
-    }
-  };
-
-  var set_qstring = function(coords) {
-    var qstring = "?lon=" + coords.lon.val +
-                  "&lat=" + coords.lat.val +
-                  "&coordsys=" + coords.coord_sys;
-    console.log(qstring);
-    window.history.pushState("", "", qstring);
   };
 
   var update_from_qstring = function() {

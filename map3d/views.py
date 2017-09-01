@@ -124,11 +124,11 @@ def api_v2(coords, map_name):
 # Interactive Website
 ###########################################################################
 
-@app.route('/api/v2/interactive/<map_name>/images', methods=['GET'])
+@app.route('/api/v2/interactive/<map_name>/losdata', methods=['GET'])
 @ratelimit(limit=30, per=60, send_x_headers=False)
 @validate_qstring('scalar-lonlat')
 @skycoords_from_args()
-def interactive_images(coords):
+def interactive_data(coords):
     t0 = time.time()
 
     # Check map name
@@ -171,16 +171,6 @@ def interactive_images(coords):
 
     t5 = time.time()
 
-    # ASCII table
-    table = loscurves.los_ascii_summary(
-        coords,
-        samples,
-        best,
-        flags,
-        distmod=distmod)
-
-    t6 = time.time()
-
     # Determine success of query
     success = np.all(np.isfinite(best))
 
@@ -190,7 +180,6 @@ def interactive_images(coords):
         'l': coords.l.deg,
         'b': coords.b.deg,
         'radius': radius,
-        'table': table,
         'samples': samples.tolist(),
         'best': best.tolist(),
         'distmod': distmod.tolist(),
@@ -202,18 +191,76 @@ def interactive_images(coords):
         res['label{:d}'.format(k+1)] = l
         res['image{:d}'.format(k+1)] = i
 
-    t7 = time.time()
+    t6 = time.time()
 
-    print('time inside query: {:.4f} s'.format(t7-t0))
+    print('time inside query: {:.4f} s'.format(t6-t0))
     print('{: >7.4f} s : {: >6.4f} s : transform to galactic'.format(t1-t0, t1-t0))
     print('{: >7.4f} s : {: >6.4f} s : query samples'.format(t2-t0, t2-t1))
     print('{: >7.4f} s : {: >6.4f} s : query best'.format(t3-t0, t3-t2))
     print('{: >7.4f} s : {: >6.4f} s : rasterize postage stamps'.format(t4-t0, t4-t3))
     print('{: >7.4f} s : {: >6.4f} s : encode postage stamps'.format(t5-t0, t5-t4))
-    print('{: >7.4f} s : {: >6.4f} s : ASCII table'.format(t6-t0, t6-t5))
-    print('{: >7.4f} s : {: >6.4f} s : collect results'.format(t7-t0, t7-t6))
+    print('{: >7.4f} s : {: >6.4f} s : collect results'.format(t6-t0, t6-t5))
 
     return jsonify(res)
+
+
+@app.route('/api/v2/interactive/<map_name>/lostable', methods=['GET'])
+@ratelimit(limit=30, per=60, send_x_headers=False)
+@validate_qstring('scalar-lonlat')
+@skycoords_from_args()
+def interactive_table(coords, map_name):
+    t0 = time.time()
+
+    # Check map name
+    if map_name not in ['bayestar2015', 'bayestar2017']:
+        msg = 'Invalid map name: "{}".'.format(map_name)
+        return msg, 400
+
+    if coords.frame.name != 'galactic':
+        coords = coords.transform_to('galactic')
+
+    t1 = time.time()
+
+    # Execute query
+    query_obj = mapdata.handlers[map_name]['q']
+    samples, flags = query_obj(
+        coords,
+        mode='samples',
+        return_flags=True)
+
+    t2 = time.time()
+
+    best = query_obj(coords, mode='best')
+    distmod = (query_obj.distmods/units.mag).decompose().value
+
+    t3 = time.time()
+
+    # ASCII table
+    table = loscurves.los_ascii_summary(
+        coords,
+        samples,
+        best,
+        flags,
+        distmod=distmod,
+        encode=False)
+
+    t4 = time.time()
+
+    print('time inside query: {:.4f} s'.format(t4-t0))
+    print('{: >7.4f} s : {: >6.4f} s : transform to galactic'.format(t1-t0, t1-t0))
+    print('{: >7.4f} s : {: >6.4f} s : query samples'.format(t2-t0, t2-t1))
+    print('{: >7.4f} s : {: >6.4f} s : query best'.format(t3-t0, t3-t2))
+    print('{: >7.4f} s : {: >6.4f} s : ASCII table'.format(t4-t0, t4-t3))
+
+    fname = "{:s}_l_{:.4f}_b_{:.4f}.txt".format(
+        map_name, coords.l.deg, coords.b.deg)
+    headers = {
+        "Content-Disposition": 'inline; filename="{:s}"'.format(fname)}
+
+    return Response(
+        table,
+        mimetype="data:text/plain; charset=US-ASCII",
+        headers=headers)
 
 
 ###########################################################################
