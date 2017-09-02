@@ -109,12 +109,15 @@ h1 {
 }
 
 .expand-left {
-  width: auto;
+  width: 50%;
   overflow: hidden;
+  padding-right: 5px;
 }
 
 .fixed-right {
   float: right;
+  width: 50%;
+  padding-left: 5px;
 }
 
 
@@ -173,7 +176,18 @@ h1 {
 }
 
 .ps-bullseye {
-  opacity: 0.75;
+  opacity: 0.5;
+}
+
+.ps-bullseye-outer {
+  stroke: #ffd35c;
+  stroke-width: 2px;
+  fill: none;
+}
+
+.ps-bullseye-inner {
+  stroke: none;
+  fill: #ffd35c;
 }
 
 .ps-focus {
@@ -361,6 +375,21 @@ g#legend-group rect#legend-frame {
   display: none;
 }
 
+
+.input-row div[class^="col-"] {
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-top: 5px;
+}
+
+div.input-row div.toggle {
+  width: 100% !important;
+}
+
+div.input-row {
+  padding-left: 10px;
+  padding-right: 10px;
+}
 
 /*
  * Media queries

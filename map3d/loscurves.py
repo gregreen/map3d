@@ -20,7 +20,7 @@ def encode_ascii(txt):
 
 def los_ascii_summary(coords, samples, best, flags,
                       distmod=np.linspace(4.,19.,31),
-                      colwidth=6):
+                      colwidth=6, encode=True):
 
     # Coordinate description
     if coords.frame.name == 'galactic':
@@ -91,4 +91,7 @@ def los_ascii_summary(coords, samples, best, flags,
         table += ''.join(['{: >6.3f}'.format(E) for E in samp])
         table += '\n'
 
-    return encode_ascii(header + explanation + table)
+    if encode:
+        return encode_ascii(header + explanation + table)
+
+    return header + explanation + table

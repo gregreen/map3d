@@ -23,7 +23,10 @@ media_path = os.path.join(script_dir, 'static', 'media')
 # Pre-generate rasterizer
 img_shape = (500, 500)
 radius = 1.5*7.5
-rasterizer = proj_fast.MapRasterizerFast(mapdata.map_nside, img_shape, fov=2*radius)
+rasterizer = proj_fast.MapRasterizerFast(
+    mapdata.image_data['bayestar2015'][0],
+    img_shape,
+    fov=2*radius)
 
 
 import time
@@ -75,11 +78,12 @@ def encode_image(img_arr, c_mask=(202,222,219)):
     return data
 
 
-def postage_stamps(l, b,
+def postage_stamps(map_name, l, b,
                    dists=[300., 1000., 5000.],
                    difference=False):
     t1 = time.time()
-    pix_val = [mapdata.map_pixval[:,k] for k in xrange(len(dists))]
+    map_nside, map_pixval = mapdata.image_data[map_name]
+    pix_val = [map_pixval[:,k] for k in xrange(len(dists))]
     t2 = time.time()
     img = rasterizer.rasterize(pix_val, l, b)
     t3 = time.time()

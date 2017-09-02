@@ -197,6 +197,10 @@ function create_plot() {
     return $("#coord-toggle").prop("checked") ? "gal" : "equ";
   };
 
+  var get_map_name = function() {
+    return $("#map-toggle").prop("checked") ? "bayestar2017" : "bayestar2015";
+  };
+
   // Read the input boxes to get the coordinates
   var get_coordinates = function() {
     var coord_sys = get_coord_sys();
@@ -214,6 +218,7 @@ function create_plot() {
       "lat": lat
     };
   };
+
 
   /*
    * Distance - E(B-V) plot
@@ -244,7 +249,7 @@ function create_plot() {
     var margins = {
       "left": 0.10 * svg_width,
       "right": 0.05 * svg_width,
-      "bottom": 0.10 * svg_width,
+      "bottom": 0.07 * svg_width,
       "top": 0.02 * svg_width
     };
 
@@ -954,16 +959,19 @@ function create_plot() {
    * Update UI elements
    */
 
-  var coords2qstring = function(coords) {
+  var coords2qstring = function(coords, map_name) {
     var qstring = "?lon=" + coords.lon.val +
                   "&lat=" + coords.lat.val +
                   "&coordsys=" + coords.coord_sys;
+    if (map_name) {
+      qstring += "&mapname=" + map_name;
+    }
     return qstring;
   };
 
   // Update button to access ASCII table
-  var update_table_btn = function(coords) {
-    var href = "/api/v2/interactive/bayestar2015/lostable"
+  var update_table_btn = function(coords, map_name) {
+    var href = "/api/v2/interactive/" + map_name + "/lostable"
                + coords2qstring(coords);
     d3.select("#table-btn")
       .attr("href", href)
@@ -1027,8 +1035,8 @@ function create_plot() {
   };
 
   // Sets the URL query string to represent the given coordinates.
-  var set_qstring = function(coords) {
-    var qstring = coords2qstring(coords);
+  var set_qstring = function(coords, map_name) {
+    var qstring = coords2qstring(coords, map_name);
     console.log(qstring);
     window.history.pushState("", "", qstring);
   };
@@ -1037,10 +1045,10 @@ function create_plot() {
    * Query server
    */
 
-  var query_server = function(coords, f_success, f_error) {
+  var query_server = function(coords, map_name, f_success, f_error) {
     $.ajax({
       type: "GET",
-      url: "/gal-lb-query",
+      url: "/api/v2/interactive/" + map_name + "/losdata",
       data: {
         "lon": coords.lon.val,
         "lat": coords.lat.val,
@@ -1092,7 +1100,7 @@ function create_plot() {
     };
   };
 
-  var update_full = function(coords) {
+  var update_full = function(coords, map_name) {
     console.log("update_full");
 
     // Animate query button
@@ -1104,10 +1112,10 @@ function create_plot() {
     // On query success
     var success = function(data) {
       // Update the URL query string
-      set_qstring(coords);
+      set_qstring(coords, map_name);
 
       // Update link to ASCII table
-      update_table_btn(coords);
+      update_table_btn(coords, map_name);
 
       // Hide any custom message
       hide_custom_alert(); // TODO: Create special warning div for this
@@ -1140,11 +1148,17 @@ function create_plot() {
       // Click on postage stamp
       d3.selectAll(".overlay").on("click", function() {
         console.log("clicked");
+        // Get clicked coordinates
         var coords = get_ps_coords(this, data);
         console.log(coords);
-        // var coords = package_gal_coords(coords_gal);
-        update_input_boxes(coords);//, true);
-        update_full(coords);
+
+        // Which map to query?
+        var map_name = get_map_name();
+
+        update_input_boxes(coords);
+
+        // Launch query
+        update_full(coords, map_name);
       });
     }
 
@@ -1162,7 +1176,7 @@ function create_plot() {
 
     // Get data from server
     console.log("querying");
-    query_server(coords, success, error);
+    query_server(coords, map_name, success, error);
   };
 
   var update_from_submit = function() {
@@ -1171,7 +1185,11 @@ function create_plot() {
     console.log(coords);
     if(!issue_coord_warnings(coords)) { return; }
 
-    update_full(coords);
+    // Which map to query?
+    var map_name = get_map_name();
+
+    // Launch query
+    update_full(coords, map_name);
   };
 
   // Converts the query string into coordinates.
@@ -1182,7 +1200,8 @@ function create_plot() {
     var expected_keys = {
       "lon": "lon",
       "lat": "lat",
-      "coordsys": "coord_sys"
+      "coordsys": "coord_sys",
+      "mapname": "map_name"
     };
     var coords = {};
 
@@ -1205,10 +1224,15 @@ function create_plot() {
     //   return null;
     // }
 
-    return {
+    var ret_coords = {
       "lon": lon,
       "lat": lat,
       "coord_sys": coords["coord_sys"]
+    };
+
+    return {
+      "coords": ret_coords,
+      "map_name": coords["map_name"]
     };
     // if(urlParams.has("lon") && urlParams.has("lat") && urlParams.has("coordsys")) {
     //
@@ -1216,14 +1240,14 @@ function create_plot() {
   };
 
   var update_from_qstring = function() {
-    // Get coordinates
-    var coords = get_coords_from_qstring();
-    console.log(coords);
-    if (!coords) { return; }
-    update_input_boxes(coords);
-    if(!issue_coord_warnings(coords)) { return; }
+    // Get coordinates and map name
+    var qstring = get_coords_from_qstring();
+    if (!qstring) { return; }
+    console.log(qstring.coords);
+    update_input_boxes(qstring.coords);
+    if(!issue_coord_warnings(qstring.coords)) { return; }
 
-    update_full(coords);
+    update_full(qstring.coords, qstring.map_name);
   };
 
 
@@ -1251,7 +1275,7 @@ function create_plot() {
   $("#coord-toggle").bootstrapToggle("on");
 
   // Window resize
-  $(window).resize(utils.debounce(update_ps_dimensions, 250));
+  $(window).resize(utils.debounce(update_ps_dimensions, 50));
 
   // Mouse over postage stamp
   d3.selectAll(".overlay").on("mouseover", function() {

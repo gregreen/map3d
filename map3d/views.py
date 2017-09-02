@@ -128,7 +128,7 @@ def api_v2(coords, map_name):
 @ratelimit(limit=30, per=60, send_x_headers=False)
 @validate_qstring('scalar-lonlat')
 @skycoords_from_args()
-def interactive_data(coords):
+def interactive_data(coords, map_name):
     t0 = time.time()
 
     # Check map name
@@ -158,8 +158,8 @@ def interactive_data(coords):
     # Postage Stamps
     dists = [300., 1000., 5000.]
     radius = postage_stamp.radius
-    # TODO: Add Bayestar2017 postage stamps
     img = postage_stamp.postage_stamps(
+        map_name,
         coords.l.deg,
         coords.b.deg,
         dists=dists)
@@ -371,6 +371,7 @@ def gal_lb_query(coords):
     dists = [300., 1000., 5000.]
     radius = postage_stamp.radius
     img = postage_stamp.postage_stamps(
+        'bayestar2015',
         coords.l.deg,
         coords.b.deg,
         dists=dists)
