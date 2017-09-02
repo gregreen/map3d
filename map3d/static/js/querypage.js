@@ -1,1451 +1,20 @@
-$(document).ready(function() {
+(function() {
+"use strict"
 
-  monoFont = "Cousine";
-
-  $('#coord-toggle').bootstrapToggle('on');
-  useGalactic = true;
-
-  // Coordinate toggle
-  $('#coord-toggle').change(function() {
-    if ($(this).prop("checked")) {
-      useGalactic = true;
-      d3.select("#gal-l-input").attr("placeholder", "lon. (\u00B0)");
-      d3.select("#gal-b-input").attr("placeholder", "lat. (\u00B0)");
-      d3.select("#gal-l-symbol").text("\u2113");
-      d3.select("#gal-b-symbol").text("b");
-      d3.select("#submit-btn").classed("btn-success", true);
-      d3.select("#submit-btn").classed("btn-primary", false);
-      d3.select("#enter-coords-alert").classed("alert-success", true);
-      d3.select("#enter-coords-alert").classed("alert-info", false);
-    } else {
-      useGalactic = false;
-      d3.select("#gal-l-input").attr("placeholder", "R.A.");
-      d3.select("#gal-b-input").attr("placeholder", "Dec.");
-      d3.select("#gal-l-symbol").text("\u03B1");
-      d3.select("#gal-b-symbol").text("\u03B4");
-      d3.select("#submit-btn").classed("btn-success", false);
-      d3.select("#submit-btn").classed("btn-primary", true);
-      d3.select("#enter-coords-alert").classed("alert-success", false);
-      d3.select("#enter-coords-alert").classed("alert-info", true);
-    }
-    if(d3.select("#line-plot-div").classed("collapse in")) {
-      drawPSOverlays();
-    }
-  });
-
-  $(function () {
-    $('[data-toggle="popover"]').popover()
-  })
-
-  // Alerts
-  function showBadCoordsAlert() {
-    if (d3.select("#bad-coords-div").classed("collapse in")) {
-      return;
-    }
-    $("#bad-coords-div").collapse("show")
-    d3.select("#bad-coords-div")
-      .transition().duration(200)
-      .style("opacity", 1);
-  }
-
-  function hideBadCoordsAlert() {
-    if (!d3.select("#bad-coords-div").classed("collapse in")) {
-      return;
-    }
-    $("#bad-coords-div").collapse("hide");
-    d3.select("#bad-coords-div")
-      .transition().duration(200)
-      .style("opacity", 0);
-  }
-
-  function showCustomAlert(msg) {
-    var alertDiv = d3.select("#custom-alert-div");
-    var prevMsg = alertDiv.select("h4").text();
-
-    var execShow = function() {
-      alertDiv.select("h4").text(msg);
-      $("#custom-alert-div").collapse("show")
-      alertDiv.transition().duration(200)
-        .style("opacity", 1);
-    };
-
-    if (d3.select("#custom-alert-div").classed("collapse in")) {
-      if (prevMsg == msg) {
-        return;
-      } else {
-        $("#custom-alert-div").on("hidden.bs.collapse", function() {
-          execShow();
-        });
-        $("#custom-alert-div").collapse("hide");
+var utils = (function() {
+  // Fire listener only every <timeout> milliseconds, at the most
+  var debounce = function(fn, timeout) {
+    var timeoutID = -1;
+    return function() {
+      if (timeoutID > -1) {
+        window.clearTimeout(timeoutID);
       }
-    } else {
-      execShow();
-    }
-  }
-
-  function hideCustomAlert() {
-    if (!d3.select("#custom-alert-div").classed("collapse in")) {
-      return;
-    }
-    $("#custom-alert-div").collapse("hide");
-    d3.select("#custom-alert-div")
-      .transition().duration(200)
-      .style("opacity", 0);
-  }
-
-  // D3 Plots
-
-  function packData(xVals, yData) {
-    return d3.range(yData.length).map( function(idx) {
-      return d3.zip(xVals, yData[idx]);
-    });
-  };
-
-  function drawPlotSafe(forceUncollapse, container, dt, xVals, yBest, ySamples, conv, noData, minDM, maxDM) {
-    var linePlotDiv = d3.select("#line-plot-div");
-
-    if (linePlotDiv.classed("collapse in")) {
-      drawPlot(container, dt, xVals, yBest, ySamples, conv, noData, minDM, maxDM);
-    } else if(forceUncollapse) {
-      $(linePlotDiv[0][0]).on("shown.bs.collapse", function() {
-        drawPlot(container, dt, xVals, yBest, ySamples, conv, noData, minDM, maxDM);
-
-        $("#postage-stamp-div").on("shown.bs.collapse", function() {
-          drawPSOverlays();
-
-          $("#download-div").collapse("show");
-        });
-
-        $("#postage-stamp-div").collapse("show");
-      });
-
-      $(linePlotDiv[0][0]).collapse("show");
-    }
-  }
-
-  function drawPlot(container, dt, xVals, yBest, ySamples, conv, noData, minDM, maxDM) {
-    if (!d3.select("#line-plot-div").classed("collapse in")) {
-      return;
-    }
-
-    var fullwidth = $(container).width(),
-        fullheight = $(container).height();
-
-    var naiveScaling = fullwidth/600;
-
-    scaling = d3.max([0.5, fullwidth/600]);
-    scaling = d3.min([2, scaling]);
-
-    console.log("scaling: " + scaling);
-
-    labelsize = 14 * scaling;
-    ticksize = 12 * scaling;
-
-    var margins = {left:73*scaling, right:18*scaling,
-                   bottom:80*scaling, top:20*scaling};
-
-    var width = fullwidth - margins.left - margins.right,
-        height = fullheight - margins.bottom - margins.top;
-
-    x = d3.scale.linear()
-      .domain(d3.extent(xVals))
-      .range([0, width]);
-
-    yMax = d3.max(ySamples, function(a) { return d3.max(a); });
-    yMax = d3.max([yMax, yBest[yBest.length-1]]);
-
-    y = d3.scale.linear()
-      .domain([0, 1.2*yMax])
-      .range([height, 0]);
-
-    var line = d3.svg.line()
-      .x(function(d) { return x(d[0]); })
-      .y(function(d) { return y(d[1]); });
-
-    var xAxis = d3.svg.axis()
-      .scale(x)
-      .orient("bottom");
-
-    var yAxis = d3.svg.axis()
-      .scale(y)
-      .orient("left")
-      .ticks(6);
-
-    // SVG Canvas
-    if (d3.select(container).selectAll("svg")[0].length < 1) {
-      svg = d3.select(container).append("svg")
-        .append("g")
-          .attr("id", "main-group");
-
-      lineGroup = svg.append("g")
-        .attr("id", "DM-EBV-lines");
-
-      svg.append("g")
-        .attr("class", "toggle-converged")
-        .style("opacity", 0)
-        .append("text")
-          .attr("id", "convergence-warning")
-          .style("text-anchor", "end")
-          .style("font-family", monoFont)
-          .style("fill", "red")
-          .text("non-converged!");
-
-      svg.append("g")
-        .attr("class", "nodata-on")
-        .style("opacity", 0)
-        .append("text")
-          .attr("id", "nodata-indicator")
-          .style("text-anchor", "middle")
-          .style("font-family", monoFont)
-          .style("fill", "steelblue")
-          .style("opacity", 0.5)
-          .text("No Data");
-
-      // Pattern
-      var patternScale = 2;
-      var strokeScale = 3;
-      var coordStr = function(cx, cy) {
-        return patternScale*cx + "," + patternScale*cy;
-      }
-
-      var defs = svg.append("defs");
-
-      defs.append("pattern")
-          .attr("id", "diagonalHatch")
-          .attr("patternUnits", "userSpaceOnUse")
-          .attr("width", 4*patternScale)
-          .attr("height", 4*patternScale)
-        .append("path")
-          .attr("d", "M" + coordStr(-1,1) +
-                     " l" + coordStr(2,-2) +
-                     " M" + coordStr(0,4) +
-                     " l" + coordStr(4,-4) +
-                     " M" + coordStr(3,5) +
-                     " l" + coordStr(2,-2))
-          .attr("stroke", "#000000")
-          .attr("stroke-width", strokeScale);
-
-      var reliabilityGp = svg.append("g")
-        .attr("id", "reliability-group");
-
-      // Label for close distance limit
-      var closeLabel = defs.append("mask")
-        .attr("id", "closeLabel");
-
-      closeLabel
-        .append("rect")
-          .attr("id", "closeLabelBgd")
-          .attr("x", 0)
-          .attr("y", 0)
-          .attr("width", "100%")
-          .attr("height", "100%")
-          .attr("fill", "white");
-
-      closeLabel
-        .append("text")
-          .attr("id", "closeLabelTxt")
-          .attr("x", 0)
-          .attr("y", 0)
-          .style("font-family", "Droid Sans")
-          .style("font-weight", 600)
-          .style("text-anchor", "middle")
-          .attr("stroke", "black")
-          .text("No Stars");
-
-      reliabilityGp
-        .append("text")
-          .attr("id", "closeLabelStroke")
-          .attr("x", 0)
-          .attr("y", 0)
-          .style("font-family", "Droid Sans")
-          .style("font-weight", 600)
-          .style("text-anchor", "middle")
-          .style("opacity", 0)
-          .text("No Stars");
-
-      // Label for far distance limit
-      var farLabel = defs.append("mask")
-        .attr("id", "farLabel");
-
-      farLabel
-        .append("rect")
-          .attr("id", "farLabelBgd")
-          .attr("x", 0)
-          .attr("y", 0)
-          .attr("width", "100%")
-          .attr("height", "100%")
-          .attr("fill", "white");
-
-      farLabel
-        .append("text")
-          .attr("id", "farLabelTxt")
-          .attr("x", 0)
-          .attr("y", 0)
-          .style("font-family", "Droid Sans")
-          .style("font-weight", 600)
-          .style("text-anchor", "middle")
-          .attr("stroke", "black")
-          .text("No MS Stars");
-
-      reliabilityGp
-        .append("text")
-          .attr("id", "farLabelStroke")
-          .attr("x", 0)
-          .attr("y", 0)
-          .style("font-family", "Droid Sans")
-          .style("font-weight", 600)
-          .style("text-anchor", "middle")
-          .style("opacity", 0)
-          .text("No MS Stars");
-
-    }
-
-    d3.select(container).select("svg")
-      .attr("width", fullwidth)
-      .attr("height", fullheight)
-      .attr("viewBox", "0 0 " + fullwidth + " " + fullheight);
-
-    d3.select("#main-group")
-      .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
-
-    d3.select("#convergence-warning")
-      .transition().duration(dt)
-      .attr("x", x(xVals[xVals.length-1]))
-      .attr("y", height)
-      .attr("dy", (-1*ticksize) + "pt")
-      .style("font-size", ticksize + "pt");
-
-    d3.select("#nodata-indicator")
-      .transition().duration(dt)
-      .attr("x", 0.5*width)
-      .attr("y", 0.5*height)
-      .attr("dy", (-0.5*ticksize) + "pt")
-      .style("font-size", (3*ticksize) + "pt");
-
-    // x-Axis
-    if (svg.selectAll(".x.axis")[0].length < 1) {
-      svg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + height + ")")
-        .call(xAxis)
-      .append("text")
-        .attr("id", "xlabel")
-        .attr("x", width/2)
-        .attr("dy", (5*ticksize) + "pt")
-        .text("Distance Modulus (mags)")
-        .style("text-anchor", "middle");
-    }
-
-    svg.selectAll(".x.axis")
-      .attr("transform", "translate(0," + height + ")")
-      .transition(dt).duration(dt)
-      .call(xAxis);
-
-    d3.select("#xlabel")
-      .transition().duration(dt)
-      .attr("x", width/2)
-      .attr("dy", (3*ticksize) + "pt");
-
-
-    // y-Axis
-    if (svg.selectAll(".y.axis")[0].length < 1) {
-      svg.append("g")
-        .attr("class", "y axis")
-        .call(yAxis)
-      .append("text")
-        .attr("id", "ylabel")
-        .attr("transform", "rotate(-90)")
-        .attr("y", 0)
-        .attr("x", -height/2)
-        .attr("dy", (-5*ticksize) + "pt")
-        .style("text-anchor", "middle")
-        .text("E(B-V) (mags)");
-
-      $("#ylabel").popover({
-        title: "Usage",
-        content: "Consult Table 6 of Schlafly & Finkbeiner (2011) to convert to extinction.",
-        container: "body",
-        trigger: "hover"
-      })
-    }
-
-    d3.select("#ylabel")
-      .transition().duration(dt)
-      .attr("x", -height/2)
-      .attr("dy", (-3.4*ticksize) + "pt");
-
-    svg.selectAll(".y.axis")
-      .transition().duration(dt)
-      .call(yAxis)
-      .call(endall, function() {  // Deal with label overlap on y-axis
-        d3.timer(function() {
-          var yTickDigits = d3.select(".y.axis").select("text").text().length-1;
-
-          if (yTickDigits > 3) {
-            //console.log(d3.select(".y.axis").selectAll(".tick > text"));
-
-            d3.select(".y.axis").selectAll(".tick > text")
-              .style("font-size", 0.85*ticksize + "pt");
-
-            d3.select(".y.axis").selectAll(".axis > text")
-              .style("font-size", 0.95*labelsize + "pt");
-
-            d3.select("#ylabel")
-              .transition().duration(dt)
-              .attr("dy", (-3.6*ticksize) + "pt");
-          }
-
-          return true;
-        }, 0.1*dt);
-      });
-
-    // Fonts
-    d3.selectAll(".tick > text")
-      .style("font-size", ticksize + "pt")
-      .style("font-family", "Lora");
-
-    d3.selectAll(".axis > text")
-      .style("font-size", labelsize + "pt")
-      .style("font-family", "Lora");
-
-    // Reliable distance range
-    if (d3.selectAll("#DM-close-panel")[0].length < 1) {
-      var relDistGroup = svg.append("g")
-        .attr("id", "reliable-dists");
-
-      relDistGroup.append("rect")
-        .attr("id", "DM-close-panel")
-        .attr("x", 0)
-        .attr("y", 0)
-        .style("fill", "url(#diagonalHatch)")
-        .style("fill-opacity", 0.035)
-        .style("mask", "url(#closeLabel)");
-
-      relDistGroup.append("rect")
-        .attr("id", "DM-far-panel")
-        .attr("x", width)
-        .attr("y", 0)
-        .style("fill", "url(#diagonalHatch)")
-        .style("fill-opacity", 0.035)
-        .style("mask", "url(#farLabel)");
-    }
-
-    if (minDM > xVals[0]) {
-      d3.select("#DM-close-panel")
-        .transition(dt)
-        .attr("width", x(minDM))
-        .attr("height", y(0));
-      d3.select("#closeLabelStroke")
-        .transition(dt)
-        .style("opacity", 1);
-    } else {
-      d3.select("#DM-close-panel")
-        .transition(dt)
-        .attr("width", 0)
-        .attr("height", y(0));
-      d3.select("#closeLabelStroke")
-        .transition(dt)
-        .style("opacity", 0);
-    }
-
-    var xFarTxt = (x(1) - x(0));
-
-    if (maxDM > xVals[0]) {
-      var xTmp = x(d3.max([minDM, maxDM]));
-      xFarTxt += xTmp;
-      d3.select("#DM-far-panel")
-        .transition(dt)
-        .attr("x", x(maxDM))
-        .attr("width", width-x(maxDM))
-        .attr("height", y(0));
-      d3.select("#farLabelStroke")
-        .transition(dt)
-        .style("opacity", 1);
-    } else if (maxDM < -998) {
-      var xTmp = d3.max([0, x(minDM)]);
-      xFarTxt += xTmp;
-      d3.select("#DM-far-panel")
-        .transition(dt)
-        .attr("x", xTmp)
-        .attr("width", width-xTmp)
-        .attr("height", y(0));
-      d3.select("#farLabelStroke")
-        .transition(dt)
-        .style("opacity", 1);
-    } else {
-      xFarTxt += width;
-      d3.select("#DM-far-panel")
-        .transition(dt)
-        .attr("x", width)
-        .attr("width", 0)
-        .attr("height", y(0));
-      d3.select("#farLabelStroke")
-        .transition(dt)
-        .style("opacity", 0);
-    }
-
-    d3.select("#closeLabelTxt")
-      .attr("transform", "rotate(-90) translate(-" + (0.55*height) + "," + x(xVals[0]+1) + ")")
-      .style("font-size", 1.5*labelsize + "pt");
-
-    d3.select("#closeLabelStroke")
-      .attr("transform", "rotate(-90) translate(-" + (0.55*height) + "," + x(xVals[0]+1) + ")")
-      .style("font-size", 1.5*labelsize + "pt");
-
-    d3.select("#farLabelTxt")
-      .attr("transform", "rotate(-90) translate(-" + (0.5*height) + "," + xFarTxt + ")")
-      .style("font-size", 1.5*labelsize + "pt");
-
-    d3.select("#farLabelStroke")
-      .attr("transform", "rotate(-90) translate(-" + (0.5*height) + "," + xFarTxt + ")")
-      .style("font-size", 1.5*labelsize + "pt");
-
-    // Change plot appearance based on (non-)convergence
-    if ((conv == 0) && (noData == 0)) {
-      lineColor = "red";
-
-      d3.selectAll(".toggle-converged")
-        .transition().duration(dt)
-        .style("opacity", 1);
-    } else {
-      lineColor = "steelblue";
-
-      d3.selectAll(".toggle-converged")
-        .transition().duration(dt)
-        .style("opacity", 0);
-    }
-
-    // Indicate absence of data
-    if (noData == 1) {
-      d3.selectAll(".nodata-on")
-        .transition().duration(dt)
-        .style("opacity", 1);
-      d3.selectAll(".nodata-off")
-        .transition().duration(dt)
-        .style("opacity", 0);
-    } else {
-      d3.selectAll(".nodata-on")
-        .transition().duration(dt)
-        .style("opacity", 0);
-      d3.selectAll(".nodata-off")
-        .transition().duration(dt)
-        .style("opacity", 1);
-    }
-
-    // Best Line
-    bestData = [d3.zip(xVals, yBest)];
-
-    var lines = lineGroup.selectAll("#best").data(bestData).attr("class", "line");
-
-    // transition from previous paths to new paths
-    lines.transition().duration(dt)
-      .attr("stroke", lineColor)
-      .attr("d", line);
-
-    // enter any new data
-    lines.enter()
-      .append("path")
-      .attr("id", "best")
-      .attr("class", "line")
-      .attr("d", line)
-      .attr("stroke", lineColor)
-      .attr("stroke-width", "2.5px");
-
-    // exit
-    lines.exit()
-      .remove();
-
-    // Samples
-    sampleData = packData(xVals, ySamples);
-
-    var lines = lineGroup.selectAll("#samples").data(sampleData).attr("class", "line");
-
-    // transition from previous paths to new paths
-    lines.transition().duration(dt)
-      .attr("stroke", lineColor)
-      .attr("d", line);
-
-    // enter any new data
-    lines.enter()
-      .append("path")
-      .attr("id", "samples")
-      .attr("class", "line")
-      .attr("d", line)
-      .attr("opacity", 0.2)
-      .attr("stroke", lineColor)
-      .attr("stroke-width", "1.5px");
-
-    // exit
-    lines.exit()
-      .remove();
-
-
-    /*
-     * Legend
-     */
-
-    var xLegendStart = 15.5;
-    var xLegend = d3.range(0., 1.251, 0.25)
-      .map(function(a) { return xLegendStart + a; });
-    var yLegendBest =     [ 0.70,  0.75,  0.75,   0.85,  1.00, 1.00];
-    var yLegendSamples = [[ 0.10,  0.10,  0.15,   0.20,  0.25, 0.25],
-                          [ 0.20,  0.25,  0.25,   0.30,  0.35, 0.35],
-                          [ 0.00,  0.05,  0.30,   0.35,  0.40, 0.40]];
-    var yMinLegend = 0.25 * yMax;
-    var yMaxLegend = 0.45 * yMax;
-    var kLegendLast = xLegend.length-1;
-
-    var yScaleLegend = d3.scale.linear()
-      .domain([0, 1])
-      .range([yMinLegend, yMaxLegend]);
-    //function(a) { return yMinLegend + (yMaxLegend-yMinLegend)*a; };
-
-    if (d3.select("#main-group").selectAll("#legend-wrapper")[0].length < 1) {
-      var legendWrapper = d3.select("#main-group").append("g")
-        .attr("id", "legend-wrapper")
-        //.style("display", "none")
-        .attr("class", "nodata-off");
-
-      var legend = legendWrapper.append("g")
-        .attr("id", "legend");
-
-      legendWrapper.append("rect")
-        .attr("id", "legend-frame")
-        .style("fill", "black")
-        .style("fill-opacity", 0.01)
-        .style("stroke", "black")
-        .style("stroke-width", "1pt")
-        .style("stroke-opacity", 0.05);
-
-      legend.append("text")
-        .attr("id", "legend-best-label")
-        .style("text-anchor", "start")
-        .style("font-family", monoFont)
-        .style("fill", "steelblue")
-        .style("opacity", 1)
-        .text("best fit");
-
-      legend.append("text")
-        .attr("id", "legend-sample-label")
-          .style("text-anchor", "start")
-          .style("font-family", monoFont)
-          .style("fill", "steelblue")
-          .style("opacity", 1)
-          .text("samples");
-    }
-
-    var legendMargins = {"x": 5, "y": 8};
-
-    var h0 = (y(yMinLegend) - y(yMaxLegend));
-    var labelFrameWidth = 1.7 * (scaling / naiveScaling);
-    labelFrameWidth = (1+labelFrameWidth) * (x(xLegend[kLegendLast])-x(xLegend[0]));
-    labelFrameWidth += 2*legendMargins.y;
-    var xOffsetLabel = x(xVals[xVals.length-1]) - (x(xLegend[0]) + labelFrameWidth);
-
-    var legendBounds = {
-      "x": x(xLegend[0]) + xOffsetLabel,
-      "y": y(yMaxLegend)-0.1*h0,
-      "width": labelFrameWidth,
-      "height": 1.1*h0 + 2*legendMargins.y
-    };
-
-    d3.select("#legend-frame")
-      .transition().duration(dt)
-      .attr("x", (legendBounds.x - legendMargins.x) + "px")
-      .attr("y", (legendBounds.y - legendMargins.y) + "px")
-      .attr("width", legendBounds.width + "px")
-      .attr("height", legendBounds.height + "px");
-
-    d3.select("#legend-best-label")
-      .transition().duration(dt)
-      .attr("x", x(xLegend[kLegendLast]+0.25) + xOffsetLabel)
-      .attr("y", y(yScaleLegend(yLegendBest[kLegendLast])))
-      .attr("dy", (0.25*0.8*ticksize) + "pt")
-      .style("font-size", (0.8*ticksize) + "pt")
-      .style("fill", lineColor);
-
-    d3.select("#legend-sample-label")
-      .transition().duration(dt)
-      .attr("x", x(xLegend[kLegendLast]+0.25) + xOffsetLabel)
-      .attr("y", y(yScaleLegend(0.325)))
-      .attr("dy", (0.25*0.8*ticksize) + "pt")
-      .style("font-size", (0.8*ticksize) + "pt")
-      .style("fill", lineColor);
-
-    xLegend = xLegend.map(function(a) {
-      return a + x.invert(xOffsetLabel) - x.invert(0);
-    });
-
-    var legendBestData = [d3.zip(xLegend, yLegendBest.map(yScaleLegend))];
-
-    var linesLegendBest = d3.select("#legend").selectAll("#legend-line-best")
-      .data(legendBestData)
-      .attr("class", "line");
-
-    linesLegendBest.transition().duration(dt)
-      .attr("stroke", lineColor)
-      .attr("d", line)
-      .attr("stroke-width", "2.5px");
-
-    linesLegendBest.enter()
-      .append("path")
-      .attr("id", "legend-line-best")
-      .attr("class", "line")
-      .attr("d", line)
-      .attr("stroke", lineColor)
-      .attr("stroke-width", "2.5px");
-
-    linesLegendBest.exit()
-      .remove();
-
-    var yLegendSamplesScaled = yLegendSamples.map(function(a) { return a.map(yScaleLegend); });
-
-    var legendSampleData = packData(xLegend, yLegendSamplesScaled);
-
-    var linesLegendSamples = d3.select("#legend").selectAll("#legend-line-samples")
-      .data(legendSampleData)
-      .attr("class", "line");
-
-    linesLegendSamples.transition().duration(dt)
-      .attr("stroke", lineColor)
-      .attr("d", line)
-      .attr("stroke-width", "1.5px");
-
-    linesLegendSamples.enter()
-      .append("path")
-      .attr("id", "legend-line-samples")
-      .attr("class", "line")
-      .attr("d", line)
-      .attr("opacity", 0.2)
-      .attr("stroke", lineColor)
-      .attr("stroke-width", "1.5px");
-
-    linesLegendSamples.exit()
-      .remove();
-
-    /*
-     *  Mouseover
-     */
-
-    var pmScale = 0.7;
-
-    if (svg.selectAll("#focus")[0].length < 1) {
-      focus = svg.append("g")
-        .attr("id", "focus")
-        .attr("display", "none");
-
-      svg.append("rect")
-        .attr("id", "mouse-overlay")
-        .attr("class", "overlay")
-        .attr("width", width)
-        .attr("height", height)
-        .on("mouseover", function() { d3.select("#focus").attr("display", null); })
-        .on("mouseout", function() { d3.select("#focus").attr("display", "none"); })
-        .on("mousemove", mouseMove);
-
-      focus.append("line")
-        .attr("id", "x-indicator")
-        .attr("x1", 0)
-        .attr("x2", 0)
-        .attr("y1", 0)
-        .attr("y2", height)
-        .attr("stroke", "black")
-        .attr("stroke-width", "2px")
-        .attr("opacity", 0.15);
-
-      focus.append("line")
-        .attr("id", "y-indicator")
-        .attr("x1", 0)
-        .attr("x2", width)
-        .attr("y1", 0)
-        .attr("y2", 0)
-        .attr("stroke", "black")
-        .attr("stroke-width", "2px")
-        .attr("opacity", 0.15);
-
-      focus.append("rect")
-        .attr("id", "y-spread-indicator")
-        .attr("fill", "black")
-        .attr("fill-opacity", 0.05);
-
-      txtEl = focus.append("text")
-        .attr("id", "text-indicator")
-        .attr("x", 0)
-        .attr("y", 0)
-        .style("text-anchor", "start")
-        .style("font-size", ticksize + "pt")
-        .style("font-family", monoFont)
-        .style("fill", "steelblue")
-        .style("opacity", 0.75);
-
-      txtEl.append("tspan")
-        .attr("id", "dist-label")
-        .attr("x", 0.8*ticksize + "pt");
-
-      txtEl.append("tspan")
-        .attr("id", "EBV-label")
-        .attr("x", 0.8*ticksize + "pt")
-        .attr("dy", ticksize + "pt");
-
-      txtEl.append("tspan")
-        .attr("id", "EBV-plus")
-        .attr("dx", 0.25*ticksize + "pt")
-        .attr("text-anchor", "start")
-        .attr("dy", -pmScale*ticksize + "pt");
-
-      txtEl.append("tspan")
-        .attr("id", "EBV-minus")
-        .attr("text-anchor", "start")
-        .attr("dy", pmScale*ticksize + "pt");
-    } else {
-      d3.select("#mouse-overlay")
-        .attr("width", width)
-        .attr("height", height);
-
-      d3.select("#focus")
-        .attr("display", "none");
-
-      d3.select("#dist-label")
-        .attr("x", 0.8*ticksize + "pt");
-
-      d3.select("#EBV-label")
-        .attr("x", 0.8*ticksize + "pt")
-        .attr("dy", ticksize + "pt");
-    }
-
-    d3.select("#EBV-plus")
-      .attr("dx", 0.25*ticksize + "pt")
-      .attr("dy", -0.65*pmScale*ticksize + "pt")
-      .style("font-size", pmScale*ticksize + "pt");
-
-    d3.select("#EBV-minus")
-      .attr("dx", -3*pmScale*ticksize + "pt")
-      .attr("dy", pmScale*ticksize + "pt")
-      .style("font-size", pmScale*ticksize + "pt");
-
-    d3.select("#text-indicator")
-      .transition().duration(dt)
-      .attr("x", 0.025*width)
-      .attr("y", 0.015*height)
-      .style("font-size", ticksize + "pt")
-      .attr("dy", 0.5*ticksize + "pt");
-
-    var bisect_x = d3.bisector(function(d) { return d; }).left;
-    var pm_formatter = d3.format(".2r");
-    //var maj_formatter = d3.format(".2r");
-
-    var format_2f = d3.format(".2f");
-    var format_3f = d3.format(".3f");
-
-    var maj_formatter = function(val) {
-      if (val < 0.1) {
-        return format_3f(val);
-      } else {
-        return format_2f(val);
-      }
-    }
-
-    function mouseMove() {
-      d3.select("#focus")
-        .attr("display", null);
-
-      var xDisp = d3.mouse(this)[0];
-      var xCoord = x.invert(xDisp);
-      var i = bisect_x(distmod, xCoord, 1);
-      x0 = distmod[i-1];
-      x1 = distmod[i];
-
-      // Best-fit E(B-V)
-      var y0 = best[i-1];
-      var y1 = best[i];
-      var xFactor = (xCoord-x0) / (x1-x0);
-      var yCoord = y0 + (y1-y0)*xFactor;
-      var yDisp = y(yCoord);
-
-      // Statistics from samples of E(B-V)
-      var ESamp = []
-      for (var k = 0; k < samples.length; k++) {
-        y0 = samples[k][i-1];
-        y1 = samples[k][i];
-        ESamp.push(y0 + (y1-y0)*xFactor);
-      }
-      ESamp.sort(d3.ascending);
-      var ELow = d3.quantile(ESamp, 0.1587);
-      var EHigh = d3.quantile(ESamp, 0.8413);
-      var EMed = d3.median(ESamp);
-
-      // Add small uncertainty in quadrature
-      var sigma0 = 0.03;
-      var plusSigma = Math.sqrt((EHigh - EMed)*(EHigh - EMed) + sigma0*sigma0);
-      var minusSigma = Math.sqrt((EMed - ELow)*(EMed - ELow) + sigma0*sigma0);
-
-      EHigh = EMed+plusSigma;
-      ELow = d3.max([0, EMed-minusSigma]);
-
-      var yLow = y(ELow);
-      var yHigh = y(EHigh);
-      var yMed = y(EMed);
-
-      var xDispLeft = x(xVals[0]);
-
-      DM = Math.pow(10, xCoord/5 - 2);
-
-      d3.select("#x-indicator")
-        .attr("y1", y(0))
-        .attr("y2", yMed)
-        .attr("x1", xDisp)
-        .attr("x2", xDisp);
-
-      d3.select("#y-indicator")
-        .attr("y1", yMed)
-        .attr("y2", yMed)
-        .attr("x1", xDispLeft)
-        .attr("x2", xDisp);
-
-      d3.select("#y-spread-indicator")
-        .attr("x", xDispLeft)
-        .attr("y", yHigh)
-        .attr("width", d3.max([0,xDisp-xDispLeft]))
-        .attr("height", yLow-yHigh);
-
-      d3.select("#dist-label")
-        .text("d = " + maj_formatter(DM) + " kpc");
-
-      d3.select("#EBV-label")
-        .text("E(B-V) = " + maj_formatter(EMed));
-
-      d3.select("#EBV-plus")
-        .text("+" + pm_formatter(plusSigma));
-
-      var dxMinus = $("#EBV-plus")[0].getComputedTextLength();
-
-      d3.select("#EBV-minus")
-        .text("-" + pm_formatter(minusSigma))
-        .attr("dx", "-" + dxMinus);
+      timeoutID = window.setTimeout(fn, timeout);
     }
   };
 
-  linePlotContainer = ".line-plot-container";
-
-  // Initial data
-  distmod = d3.range(4, 19.01, 0.5);
-  best = Array.apply(null, new Array(distmod.length)).map(Number.prototype.valueOf,0);
-  samples = [best];
-  DMReliableMin = 4.0;
-  DMReliableMax = 19.0;
-  converged = 1;
-  tableData = "";
-  noData = 0;
-
-  // Current view
-  lCur = 0;
-  bCur = 0;
-  rCur = 0;
-
-  // Draw initial plot
-  //drawPlot(linePlotContainer, 0, distmod, best, samples, converged, noData);
-
-  // Execute the query
-  submitTimeLast = 0;
-  queryTimeout = 5000;
-  queryLock = false;
-
-  function submitQuery(lon, lat) {
-    // Minimum time between queries
-    var submitTime = $.now();
-    if (queryLock && ((submitTime - submitTimeLast) < queryTimeout)) {
-      console.log("Query already in progress.");
-      return false;
-    } else {
-      submitTimeLast = submitTime;
-      queryLock = false;
-    }
-
-    // Remove initial instructional alert
-    $("#enter-coords-alert").alert("close");
-
-    // Read and validate input
-    var updateInputBoxes = false;
-
-    if((typeof(lon) === 'undefined') || (typeof(lat) === 'undefined')) {
-      lon = parseAngle($('input[name="gal-l"]').val(), true);
-      lat = parseAngle($('input[name="gal-b"]').val(), false);
-
-      if ((lon.val === null) || (lat.val === null)) {
-        showBadCoordsAlert();
-        return;
-      } else if ((lat.val < -90) || (lat.val > 90)) {
-        showBadCoordsAlert();
-        return;
-      } else {
-        hideBadCoordsAlert();
-      }
-
-      if (useGalactic & ((lon.format == "hms") || (lat.format == "hms"))) {
-        showCustomAlert("hh:mm:ss format detected. Did you mean to use Equatorial coordinates?");
-      } else {
-        hideCustomAlert();
-      }
-
-      lon = lon.val;
-      lat = lat.val;
-
-    } else {
-      updateInputBoxes = true;
-      hideBadCoordsAlert();
-      hideCustomAlert();
-    }
-
-    // Convert from (RA,Dec) to (l,b) if necessary
-    var lIn = lon;
-    var bIn = lat;
-
-    if (!useGalactic) {
-      var coordsGal = equ2gal_J2000(lIn, bIn);
-      lIn = coordsGal.l;
-      bIn = coordsGal.b;
-
-      console.log("(l,b) = (" + coordsGal.l + ", " + coordsGal.b + ")");
-    }
-
-    data = {
-      l: lIn,
-      b: bIn
-    };
-
-    // Animate query button
-    $("#submit-btn-icon").attr("class", "fa fa-spinner fa-spin fa-lg");
-
-    // Handle AJAX request
-    queryLock = true;
-
-    $.ajax({
-      type: "GET",
-      url: "/gal-lb-query",
-      data: {"lon": lIn, "lat": bIn, "coordsys": "gal"},
-      dataType: 'json',
-      success: function(data) {
-        queryLock = false;
-
-        console.log(data);
-        console.log('success');
-        querySuccess = data.success;
-        console.log('distmod');
-        console.log(data.distmod);
-        distmod = data.distmod;
-        console.log('best');
-        best = data.best;
-        samples = data.samples;
-        console.log('converged');
-        converged = data.converged;
-        DMReliableMin = data.min_reliable_distmod;
-        DMReliableMax = data.max_reliable_distmod;
-        tableData = data.table;
-
-        console.log('l');
-        lCur = data.l;
-        bCur = data.b;
-        rCur = data.radius;
-        console.log('done');
-
-        noData = 1 - querySuccess;
-
-        drawPlotSafe(true, linePlotContainer, 500, distmod, best, samples, converged, noData, DMReliableMin, DMReliableMax);
-
-        $("#postage-stamp-1").attr("src", data.image1);
-        $("#postage-stamp-2").attr("src", data.image2);
-        $("#postage-stamp-3").attr("src", data.image3);
-        $("#ps-label-1").text(data.label1);
-        $("#ps-label-2").text(data.label2);
-        $("#ps-label-3").text(data.label3);
-        $("#submit-btn-icon").attr("class", "glyphicon glyphicon-search");
-
-        if (querySuccess == 1) {
-          toggleTableBtn(false);
-          $("#table-btn").attr("href", tableData);
-        } else {
-          toggleTableBtn(true);
-        }
-
-        drawPSOverlays();
-
-        if (updateInputBoxes) {
-          var formatter_3f = d3.format(".3f");
-          $('input[name="gal-l"]').val(formatter_3f(lon));
-          $('input[name="gal-b"]').val(formatter_3f(lat));
-        }
-      },
-      error: function(xhr, status, error) {
-        queryLock = false;
-        $("#submit-btn-icon").attr("class", "glyphicon glyphicon-ok");
-        toggleTableBtn(true);
-
-        console.log('Message from server: ' + xhr.responseText);
-      }
-    });
-
-    return true;
-  };
-
-  // Bind the query to button click and enter key
-  $("#submit-btn").click(function() { submitQuery(); });
-  $("#gal-l-input").keypress(function(e) {
-    var key = e.which;
-    if (key == 13) {
-      submitQuery();
-    }
-  });
-  $("#gal-b-input").keypress(function(e) {
-    var key = e.which;
-    if (key == 13) {
-      submitQuery();
-    }
-  });
-
-  // Toggle ASCII table link
-  function toggleTableBtn(disable) {
-    d3.select("#table-btn").classed("disabled", disable);
-  }
-
-
-  /*
-   * Postage Stamp Overlays
-   */
-
-  function drawPSOverlays() {
-    if (!d3.select("#postage-stamp-div").classed("collapse in")) { return; }
-
-    var psContainers = d3.selectAll(".ps-container");
-
-    // Create SVG overlays, if they do not yet exist
-    var psSVG = d3.selectAll(".ps-overlay");
-
-    if (psSVG[0].length < 1) {
-      psSVG = psContainers.append("svg")
-        .attr("class", "ps-overlay")
-        .style("position", "absolute")
-        .style("top", "0px")
-        .style("left", "0px");
-
-      var psBullseye = psSVG.append("g")
-        .attr("class", "ps-bullseye")
-        .style("opacity", 0.75);
-
-      psBullseye.append("circle")
-        .attr("class", "ps-bullseye-outer")
-        .attr("fill", "none")
-        .attr("stroke", "#FFD35C")
-        .attr("stroke-width", "3px")
-        .attr("x", 0)
-        .attr("y", 0);
-
-      psBullseye.append("circle")
-        .attr("class", "ps-bullseye-inner")
-        .attr("fill", "#FFD35C")
-        .attr("x", 0)
-        .attr("y", 0);
-
-      focus = psSVG.append("g")
-        .attr("class", "ps-focus")
-        .style("opacity", 0);
-
-      focus.append("rect")
-        .attr("class", "ps-text-bg");
-
-      var psGalCoordEl = focus.append("text")
-        .attr("class", "ps-gal-indicator ps-text")
-        .style("text-anchor", "start");
-
-      psGalCoordEl.append("tspan")
-        .text("l = 0")
-        .attr("class", "ps-l-label");
-
-      psGalCoordEl.append("tspan")
-        .attr("class", "ps-b-label")
-        .text("b = 0");
-
-      var psEquCoordEl = focus.append("text")
-        .attr("class", "ps-equ-indicator ps-text")
-        .style("text-anchor", "start");
-
-      var psRA = psEquCoordEl.append("tspan")
-        .text("\u03B1 = ")
-        .attr("class", "ps-a-label");
-
-      // The RA label contains several parts, to allow superscript h, m, s
-      psRA.append("tspan")
-        .attr("class", "RA-hh");
-
-      psRA.append("tspan")
-        .attr("class", "RA-hh-sup")
-        .text("h");
-
-      psRA.append("tspan")
-        .attr("class", "RA-mm");
-
-      psRA.append("tspan")
-        .attr("class", "RA-mm-sup")
-        .text("m");
-
-      psRA.append("tspan")
-        .attr("class", "RA-ss")
-        .text("");
-
-      psRA.append("tspan")
-        .attr("class", "RA-ss-sup")
-        .text("s");
-
-      psRA.append("tspan")
-        .attr("class", "RA-end")
-        .text(" ");
-
-      psEquCoordEl.append("tspan")
-        .attr("class", "ps-d-label")
-        .text("d = 0");
-
-      psOverlayRect = psSVG.append("rect")
-        .attr("class", "overlay");
-
-      psOverlayRect.each(function(d,i) {
-        var assocFocus = d3.selectAll(".ps-focus")[0][i];
-        d3.select(this)
-          .on("mouseover", function() {
-            d3.select(assocFocus).style("opacity", 1);
-          })
-          .on("mouseout", function() {
-            d3.select(assocFocus).style("opacity", 0);
-          });
-      });
-    }
-
-    psContainers.each(function(d,i) {
-      var imgProp = getPosExtent(d3.select(this).select(".ps-img")[0]);
-
-      d3.select(this).select(".ps-overlay")
-        .attr("width", imgProp.width + "px")
-        .attr("height", imgProp.height + "px")
-        .style("left", imgProp.left + "px")
-        .style("top", imgProp.top + "px");
-
-      // Update bullseye
-      var rOuter = imgProp.width / 40;
-      rOuter = d3.max([rOuter, 8]);
-      rOuter = d3.min([rOuter, 24]);
-
-      var rInner = rOuter / 4.
-
-      d3.select(this).select(".ps-bullseye-outer")
-        .attr("r", rOuter);
-      d3.select(this).select(".ps-bullseye-inner")
-        .attr("r", rInner);
-      d3.select(this).select(".ps-bullseye")
-        .attr("transform", "translate(" + imgProp.width/2. + "," + imgProp.height/2. + ")");
-
-      // Update coordinate label positions
-      var psScaling = imgProp.width / 200;
-      psScaling = d3.max([psScaling, 0.5]);
-      psScaling = d3.min([psScaling, 3.]);
-
-      var psFontSize = 11 * psScaling;
-
-      var psGalTxt = d3.select(this).select(".ps-gal-indicator")
-        .attr("x", 1.2*psFontSize + "pt")
-        .attr("y", 1.2*psFontSize + "pt")
-        .style("font-size", psFontSize + "pt");
-
-      var psEquTxt = d3.select(this).select(".ps-equ-indicator")
-        .attr("x", 1.2*psFontSize + "pt")
-        .attr("y", 1.2*psFontSize + "pt")
-        .style("font-size", psFontSize + "pt");
-
-      if (useGalactic) {
-        psGalTxt.attr("opacity", 1);
-        psEquTxt.attr("opacity", 0);
-      } else {
-        psGalTxt.attr("opacity", 0);
-        psEquTxt.attr("opacity", 1);
-      }
-
-      // Function to update RA label
-      var formatter_02d = d3.format("02d");
-
-      var setRALab = function(alpha) {
-        if (alpha === null) {
-          psEquTxt.select(".RA-hh")
-            .text("");
-          psEquTxt.select(".RA-mm")
-            .text("");
-          psEquTxt.select(".RA-ss")
-            .text("");
-          return;
-        }
-
-        var hms = deg2hms(alpha);
-
-        psEquTxt.select(".RA-hh")
-          .text(hms.h);
-        psEquTxt.select(".RA-mm")
-          .text(formatter_02d(hms.m));
-        psEquTxt.select(".RA-ss")
-          .text(formatter_02d(Math.round(hms.s)));
-
-        // console.log(hms);
-        // console.log(psEquTxt.select(".RA-ss"));
-      };
-
-      // Format and position labels
-      var lLabPS = psGalTxt.select(".ps-l-label");
-      lLabPS
-        .attr("x", 0.5*psFontSize + "pt")
-        .attr("y", 1.2*psFontSize + "pt");
-
-      psEquTxt.select(".ps-a-label")
-        .attr("x", 0.5*psFontSize + "pt")
-        .attr("y", 1.2*psFontSize + "pt");
-
-      psEquTxt.select(".RA-hh")
-        .attr("font-size", psFontSize + "pt");
-
-      psEquTxt.select(".RA-hh-sup")
-        .attr("font-size", 0.5*psFontSize + "pt")
-        .attr("dy", -0.5*psFontSize + "pt");
-
-      psEquTxt.select(".RA-mm")
-        .attr("font-size", psFontSize + "pt")
-        .attr("dy", 0.5*psFontSize + "pt");
-
-      psEquTxt.select(".RA-mm-sup")
-        .attr("font-size", 0.5*psFontSize + "pt")
-        .attr("dy", -0.5*psFontSize + "pt");
-
-      psEquTxt.select(".RA-ss")
-        .attr("font-size", psFontSize + "pt")
-        .attr("dy", 0.5*psFontSize + "pt");
-
-      psEquTxt.select(".RA-ss-sup")
-        .attr("font-size", 0.5*psFontSize + "pt")
-        .attr("dy", -0.5*psFontSize + "pt");
-
-      psEquTxt.select(".RA-end")
-        .attr("font-size", 0.5*psFontSize + "pt")
-        .attr("dy", 0.5*psFontSize + "pt");
-
-      psGalTxt.select(".ps-b-label")
-        .attr("x", 0.5*psFontSize + "pt")
-        .attr("dy", psFontSize + "pt");
-
-      psEquTxt.select(".ps-d-label")
-        .attr("x", 0.5*psFontSize + "pt")
-        .attr("dy", psFontSize + "pt");
-
-      // Update frame size
-      var lTxtTmp = lLabPS.text();
-      var hhTxtTmp = psEquTxt.select(".RA-hh").text();
-      var mmTxtTmp = psEquTxt.select(".RA-mm").text();
-      var ssTxtTmp = psEquTxt.select(".RA-ss").text();
-
-      // Set longitude label to longest possible value
-      if (useGalactic) {
-        lLabPS.text("l = 359.9\u00B0");
-        setRALab(null);
-      } else {
-        lLabPS.text("");
-        setRALab(359.999);
-      }
-
-      var getPSTxtBounds = function() {
-        if (useGalactic) {
-          return psGalTxt[0][0].getBBox();
-        } else {
-          return psEquTxt[0][0].getBBox();
-        }
-      };
-
-      var psTxtBounds = getPSTxtBounds();
-
-      lLabPS.html(lTxtTmp); // Set l-label back to previous value
-      psEquTxt.select(".RA-hh").text(hhTxtTmp);
-      psEquTxt.select(".RA-mm").text(mmTxtTmp);
-      psEquTxt.select(".RA-ss").text(ssTxtTmp);
-
-      xMargin = 0.5 * psTxtBounds.x;
-      yMargin = 0.5 * psTxtBounds.y;
-
-      d3.select(this).select(".ps-text-bg")
-        .attr("x", (psTxtBounds.x - xMargin) + "px")
-        .attr("y", (psTxtBounds.y - yMargin) + "px")
-        .attr("width", (psTxtBounds.width + 2*xMargin) + "px")
-        .attr("height", (psTxtBounds.height + 2*yMargin) + "px")
-        .attr("rx", 0.75*xMargin + "px")
-        .attr("ry", 0.75*xMargin + "px");
-
-      // Update mouse overlay
-      var self = this;
-
-      // Properties of Postage-stamp Gnomonic projection
-      var lng0 = deg2rad(lCur);
-      var cLat0 = Math.cos(deg2rad(bCur));
-      var sLat0 = Math.sin(deg2rad(bCur));
-      var xMaxProj = GnomonicProj(deg2rad(rCur), 0, 0, 1, 0).x;
-
-      // Formatters for coordinate overlays
-      var lb_formatter = d3.format(".1f");
-
-      var alpha_formatter = function(theta) {
-        var hms = deg2hms(theta);
-        var retTxt = hms.h + ":" + hms.m + ":" + Math.round(hms.s);
-        return retTxt;
-      };
-
-      var get_ps_lb = function(objOverlay) {
-        var xDisp = d3.mouse(objOverlay)[0];
-        var yDisp = d3.mouse(objOverlay)[1];
-
-        var xProj = -2 * (xDisp / imgProp.width - 0.5) * xMaxProj;
-        var yProj = -2 * (yDisp / imgProp.height - 0.5) * xMaxProj;
-
-        var coords = GnomonicProjInv(xProj, yProj, lng0, cLat0, sLat0);
-
-        return {"l": rad2deg(coords.lng), "b": rad2deg(coords.lat)};
-      }
-
-      d3.select(this).select(".overlay")
-        .attr("width", imgProp.width)
-        .attr("height", imgProp.height)
-        .on("mousemove", function() {
-          var coordsGal = get_ps_lb(this);
-
-          if (useGalactic) {
-            var lTxt = "l = " + lb_formatter(coordsGal.l) + "\u00B0";
-            var bTxt = "b = " + lb_formatter(coordsGal.b) + "\u00B0";
-            d3.select(self).select(".ps-l-label")
-              .text(lTxt);
-            d3.select(self).select(".ps-b-label")
-              .text(bTxt);
-          } else {
-            var coordsEqu = gal2equ_J2000(coordsGal.l, coordsGal.b);
-            //lTxt = "\u03B1 = " + RAasHTML(coordsEqu.a);// + "\u00B0";
-            setRALab(coordsEqu.a);
-            var dTxt = "\u03B4 = " + lb_formatter(coordsEqu.d) + "\u00B0";
-            d3.select(self).select(".ps-d-label")
-              .text(dTxt);
-          }
-        })
-        .on("click", function() {
-          var coordsGal = get_ps_lb(this);
-
-          if (useGalactic) {
-            submitQuery(coordsGal.l, coordsGal.b);
-            //}
-          } else {
-            var coordsEqu = gal2equ_J2000(coordsGal.l, coordsGal.b);
-            submitQuery(coordsEqu.a, coordsEqu.d);
-          }
-        });
-    });
-  }
-
-  function getPosExtent(obj) {
+  // Return absolute (left, top, width, height) of a DOM element, in px.
+  var get_obj_dimensions = function(obj) {
     var xy0 = $(obj).position();
     var x0 = xy0.left;
     var y0 = xy0.top;
@@ -1459,110 +28,1271 @@ $(document).ready(function() {
     var w = parseInt($(obj).css("width"), 10);
     var h = parseInt($(obj).css("height"), 10);
 
-    return {"left": x0, "top": y0, "width": w, "height": h};
-  }
+    return {
+      "left": x0,
+      "top": y0,
+      "width": w,
+      "height": h
+    };
+  };
 
-  // Gnomonic projection
-  function GnomonicProj(lng, lat, lng0, cLat0, sLat0) {
-    var cLat = Math.cos(lat);
-    var sLat = Math.sin(lat);
+  return {
+    "debounce": debounce,
+    "get_obj_dimensions": get_obj_dimensions
+  };
+})();
 
-    var cDLng = Math.cos(lng - lng0);
-    var sDLng = Math.sin(lng - lng0);
+function create_plot() {
+  /*
+   * Warning/Error messages to user.
+   */
 
-    var aProj = 1. / (sLat0 * sLat + cLat0 * cLat * cDLng);
+  // Show a custom warning message at the top of the page
+  var show_custom_alert = function(msg) {
+    var alert_div = d3.select("#custom-alert-div");
+    var prev_msg = alert_div.select("h4").text();
 
-    var xProj = aProj * cLat * sDLng;
-    var yProj = aProj * (cLat0 * sLat - sLat0 * cLat * cDLng);
+    var exec_show = function() {
+      alert_div.select("h4").text(msg);
+      $("#custom-alert-div").collapse("show")
+      alert_div.transition().duration(200)
+        .style("opacity", 1);
+    };
 
-    return {"x": xProj, "y": yProj};
-  }
-
-  function GnomonicProjInv(xProj, yProj, lng0, cLat0, sLat0) {
-    var rho = Math.sqrt(xProj*xProj + yProj*yProj);
-    var c = Math.atan(rho);
-
-    var cc = Math.cos(c);
-    var sc = Math.sin(c);
-
-    var lat = Math.asin(cc * sLat0 + yProj * sc * cLat0 / rho);
-    var lng = lng0 + Math.atan2((xProj * sc), (rho * cLat0 * cc - yProj * sLat0 * sc));
-
-    if (lng > 2*Math.PI) {
-      lng -= 2*Math.PI;
-    } else if (lng < 0) {
-      lng += 2*Math.PI;
-    }
-
-    return {"lng": lng, "lat": lat};
-  }
-
-  // Set toggle text based on screen size
-  function setCoordToggleText() {
-    var coordToggle = d3.select("#coord-toggle");
-    var galLab = d3.select(".toggle-group").select(".toggle-on");
-    var equLab = d3.select(".toggle-group").select(".toggle-off");
-    if ($(window).width() < 450) {
-      galLab.text("Gal.");
-      equLab.text("Equ.");
-    } else {
-      galLab.text("Galactic");
-      equLab.text("Equ. (J2000)");
-    }
-  }
-
-
-  // Allow callbacks at end of transition
-  function endall(transition, callback) {
-    var n = 0;
-    transition
-      .each(function() { ++n; })
-      .each("end", function() { if (!--n) callback.apply(this, arguments); });
-  }
-
-  // Handle window resizing
-  var debounce = function(fn, timeout) {
-    var timeoutID = -1;
-    return function() {
-      if (timeoutID > -1) {
-        window.clearTimeout(timeoutID);
+    if (d3.select("#custom-alert-div").classed("collapse in")) {
+      if (prev_msg == msg) {
+        return;
+      } else {
+        $("#custom-alert-div").on("hidden.bs.collapse", function() {
+          exec_show();
+        });
+        $("#custom-alert-div").collapse("hide");
       }
-      timeoutID = window.setTimeout(fn, timeout);
+    } else {
+      exec_show();
     }
   };
 
-  function listenResize(obj, fn, dt) {
-    var w0 = $(obj).width();
-    var h0 = $(obj).height();
+  // Hide custom warning message
+  var hide_custom_alert = function() {
+    if (!d3.select("#custom-alert-div").classed("collapse in")) {
+      return;
+    }
+    $("#custom-alert-div").collapse("hide");
+    d3.select("#custom-alert-div")
+      .transition().duration(200)
+      .style("opacity", 0);
+    console.log("hiding");
+  };
 
-    setInterval(function() {
-      var w1 = $(obj).width();
-      var h1 = $(obj).height();
+  // Show an error about bad coordinates
+  var show_bad_coords_alert = function(msg) {
+    d3.select("#bad-coords-alert").selectAll("div")
+      .classed("no-display", true);
+    if (msg === "lon") {
+      msg = "Invalid longitude specification.";
+      d3.select("#bad-coords-alert").select("#lon-examples")
+        .classed("no-display", false);
+    } else if (msg === "lat") {
+      msg = "Invalid latitude specification.";
+      d3.select("#bad-coords-alert").select("#lat-examples")
+        .classed("no-display", false);
+    }
+    d3.select("#bad-coords-div").select("h3").text(msg);
+    $("#bad-coords-div").collapse("show")
+    d3.select("#bad-coords-div")
+      .transition().duration(200)
+      .style("opacity", 1);
+  };
 
-      if((w1 != w0) || (h1 != h0)) {
-        w0 = w1;
-        h0 = h1;
-        console.log("resized");
-        fn();
+  // Hide the bad coordinates error
+  var hide_bad_coords_alert = function() {
+    if (!d3.select("#bad-coords-div").classed("collapse in")) {
+      return;
+    }
+    $("#bad-coords-div").collapse("hide");
+    d3.select("#bad-coords-div")
+      .transition().duration(200)
+      .style("opacity", 0);
+  };
+
+  /*
+   * Set/Get coordinates
+   */
+
+  // Returns true if coordinates are valid.
+  // Issues appropriate warnings to user
+  var issue_coord_warnings = function(coords) {
+    if (coords.lon.val === null) {
+      hide_custom_alert();
+      show_bad_coords_alert("lon");
+      return false
+    } else if (coords.lat.val === null) {
+      hide_custom_alert();
+      show_bad_coords_alert("lat");
+      return false;
+    } else if ((coords.lat.val < -90) || (coords.lat.val > 90)) {
+      hide_custom_alert();
+      show_bad_coords_alert("Latitude outside domain [-90, 90].");
+      return false;
+    } else {
+      hide_bad_coords_alert();
+    }
+
+    if ((coords.coord_sys === "gal") & (coords.lon.format === "hms")) {
+      show_custom_alert("hh:mm:ss format detected in lontitude. Did you mean to use Equatorial coordinates?");
+    } else if ((coords.coord_sys === "gal")
+             & (coords.lat.format == "dms")) {
+      show_custom_alert("dd:mm:ss format detected in latitude. Did you mean to use Equatorial coordinates?");
+    } else {
+      hide_custom_alert();
+    }
+
+    return true;
+  };
+
+  // Set the coordinate system to either "gal" or "equ"
+  var set_coordsys = function(c) {
+    if(c === "gal") {
+      d3.select("#gal-l-input")
+        .attr("placeholder", "lon. (\u00B0)");
+      d3.select("#gal-b-input")
+        .attr("placeholder", "lat. (\u00B0)");
+      d3.select("#gal-l-symbol")
+        .text("\u2113");
+      d3.select("#gal-b-symbol")
+        .text("b");
+      d3.select("#submit-btn")
+        .classed("btn-success", true);
+      d3.select("#submit-btn")
+        .classed("btn-primary", false);
+      d3.select("#enter-coords-alert")
+        .classed("alert-success", true);
+      d3.select("#enter-coords-alert")
+        .classed("alert-info", false);
+    } else if(c === "equ") {
+      d3.select("#gal-l-input")
+        .attr("placeholder", "R.A.");
+      d3.select("#gal-b-input")
+        .attr("placeholder", "Dec.");
+      d3.select("#gal-l-symbol")
+        .text("\u03B1");
+      d3.select("#gal-b-symbol")
+        .text("\u03B4");
+      d3.select("#submit-btn")
+        .classed("btn-success", false);
+      d3.select("#submit-btn")
+        .classed("btn-primary", true);
+      d3.select("#enter-coords-alert")
+        .classed("alert-success", false);
+      d3.select("#enter-coords-alert")
+        .classed("alert-info", true);
+    } else {
+      console.log("Unknown coordinate system: " + c);
+      return;
+    }
+  };
+
+  var get_coord_sys = function() {
+    return $("#coord-toggle").prop("checked") ? "gal" : "equ";
+  };
+
+  var get_map_name = function() {
+    return $("#map-toggle").prop("checked") ? "bayestar2017" : "bayestar2015";
+  };
+
+  // Read the input boxes to get the coordinates
+  var get_coordinates = function() {
+    var coord_sys = get_coord_sys();
+    var lon = astrocoords.parse_angle(
+      $('input[name="gal-l"]').val(),
+      true  // Hour-minute-second possible
+    );
+    var lat = astrocoords.parse_angle(
+      $('input[name="gal-b"]').val(),
+      false // Hour-minute-deg possible
+    );
+    return {
+      "coord_sys": coord_sys,
+      "lon": lon,
+      "lat": lat
+    };
+  };
+
+
+  /*
+   * Distance - E(B-V) plot
+   */
+
+  var show_plot_div = function(callback) {
+    if (d3.select("#line-plot-div").classed("in")) {
+      callback();
+      return;
+    }
+    if (callback) {
+      $("#line-plot-div").on("shown.bs.collapse", function() {
+        callback();
+      });
+    }
+    $("#line-plot-div").collapse("show");
+  };
+
+  var plot_distance_reddening = function(query_data) {
+    var dt = 500; // Transition speed (in ms)
+
+    // Determine overall dimensions of plot
+    var svg = d3.select("#distance-reddening-plot");
+    var view_box = svg.attr("viewBox").split(" ").slice(2);
+    var svg_width = view_box[0],
+        svg_height = view_box[1];
+
+    var margins = {
+      "left": 0.10 * svg_width,
+      "right": 0.05 * svg_width,
+      "bottom": 0.07 * svg_width,
+      "top": 0.02 * svg_width
+    };
+
+    var plot_width = svg_width - margins.right - margins.left,
+        plot_height = svg_height - margins.top - margins.bottom;
+
+    // Remove NaNs from data
+    var remove_nans = function(arr) {
+      return arr.map(function(a) {
+        return a || 0;
+      });
+    };
+    var samples = remove_nans(query_data.samples);
+    var best = remove_nans(query_data.best);
+
+    // Determine max y-value
+    var y_max = d3.max(
+      samples,
+      function(row) { return d3.max(row); }
+    );
+    y_max = d3.max([y_max, d3.max(best)]);
+    y_max = 1.2 * y_max + 0.01;
+
+    // Convert between data (x, y) and SVG coordinates
+    var scale_x = d3.scaleLinear()
+      .domain(d3.extent(query_data.distmod))
+      .range([0, plot_width]);
+
+    var scale_y = d3.scaleLinear()
+      .domain([0, y_max])
+      .range([plot_height, 0]);
+
+    // Definitions
+    svg.selectAll("defs").data([null])
+        .enter()
+      .append("defs");
+
+    // Add groups in correct order
+    var main_group = svg.selectAll("#plot-main-group").data([null])
+      .enter()
+        .append("g")
+          .attr("id", "plot-main-group");
+
+    var plot_area_group = main_group.append("g")
+      .attr("id", "plot-area")
+      .attr("transform",
+        "translate(" + margins.left + "," + margins.top + ")"
+      );
+
+    // Reliable distance range
+    plot_area_group.append("g")
+      .attr("id", "reliable-dist-group");
+
+    // Distance-reddening lines
+    plot_area_group.append("g")
+      .attr("id", "plot-reddening-line-group");
+
+    // Legend
+    var legend_group = plot_area_group.append("g")
+      .attr("id", "legend-group");
+
+    // x-axis
+    var x_axis = d3.select("#plot-main-group")
+      .selectAll(".x.axis").data([null]);
+
+    x_axis.enter()
+      .append("g")
+        .attr("class", "x axis")
+        .attr("transform",
+          "translate(" + margins.left + "," +
+          (svg_height-margins.bottom) + ")"
+        )
+        .call(d3.axisBottom(scale_x))
+      .append("text")
+        .attr("class", "x axis-label")
+        .attr("x", plot_width/2)
+        .attr("dy", "38pt")
+        .text("Distance Modulus (mag)");
+
+    x_axis.transition().duration(dt)
+      .call(d3.axisBottom(scale_x));
+
+    x_axis.exit().remove();
+
+    // y-axis
+    var y_axis = d3.select("#plot-main-group")
+      .selectAll(".y.axis").data([null]);
+
+    y_axis.enter()
+      .append("g")
+        .attr("class", "y axis")
+        .attr("transform",
+          "translate(" + margins.left + "," +
+                         margins.top + ")"
+        )
+        .call(d3.axisLeft(scale_y))
+      .append("text")
+        .attr("class", "y axis-label")
+        .attr("x", -plot_height/2)
+        .attr("y", 0)
+        .attr("dy", "-52pt")
+        .attr("transform", "rotate(-90)")
+        .text("E(B-V) (mag)");
+
+    y_axis.transition().duration(dt)
+      .call(d3.axisLeft(scale_y));
+
+    y_axis.exit().remove();
+
+    // Function that creates SVG paths based on arrays
+    var line = d3.line()
+      .x(function(d) { return scale_x(d[0]); })
+      .y(function(d) { return scale_y(d[1]); });
+
+    // Add best-fit distance - reddening
+    var best_line = svg.select("#plot-reddening-line-group")
+      .selectAll("#best-line").data([
+        d3.zip(query_data.distmod, best)
+      ]);
+
+    best_line.enter()
+      .append("path")
+      .attr("id", "best-line")
+      .attr("class", "line best-line")
+      .attr("d", line);
+
+    best_line.transition().duration(dt)
+      .attr("d", line);
+
+    best_line.exit()
+      .remove();
+
+    // Add samples of distance - reddening
+    var pack_data = function(x_vals, y_data) {
+      return d3.range(y_data.length).map( function(idx) {
+        return d3.zip(x_vals, y_data[idx]);
+      });
+    };
+
+    var sample_line = svg.select("#plot-reddening-line-group")
+      .selectAll(".sample-line").data(
+        pack_data(query_data.distmod, samples)
+      );
+
+    sample_line.enter()
+      .append("path")
+      .attr("class", "line sample-line")
+      .attr("d", line);
+
+    sample_line.transition().duration(dt)
+      .attr("d", line);
+
+    sample_line.exit()
+      .remove();
+
+    // Create legend
+    var legend_geom = {
+      "width": 0.20 * plot_width,
+      "height": 0.10 * plot_width,
+      "bottom": 0.15 * plot_width,
+      "right": 0.02 * plot_width
+    };
+
+    legend_group.attr(
+      "transform",
+      "translate(" +
+        (plot_width - legend_geom.width - legend_geom.right) +
+        "," +
+        (plot_height - legend_geom.bottom) +
+      ")"
+    ).append("rect")
+      .attr("id", "legend-frame")
+      .attr("width", legend_geom.width)
+      .attr("height", legend_geom.height);
+
+    legend_group.append("text")
+      .attr("id", "legend-best-label")
+      .attr("x", 0.50*legend_geom.width)
+      .attr("y", 0.10*legend_geom.height)
+      .text("best fit");
+
+    legend_group.append("text")
+      .attr("id", "legend-sample-label")
+      .attr("x", 0.50*legend_geom.width)
+      .attr("y", 0.60*legend_geom.height)
+      .text("samples");
+
+    var legend_lines = legend_group.append("g")
+      .attr("id", "legend-lines");
+
+    // Add example "sample" and "best" lines to legend
+    var add_legend_lines = function() {
+      var legend_x = d3.range(0., 1.0, 0.20);
+      var legend_best =     [ 0.70,  0.75,  0.75,   0.85,  1.00, 1.00];
+      var legend_samples = [[ 0.10,  0.10,  0.15,   0.20,  0.25, 0.25],
+                            [ 0.20,  0.25,  0.25,   0.30,  0.35, 0.35],
+                            [ 0.00,  0.05,  0.30,   0.35,  0.40, 0.40]];
+
+      var scale_x_legend = d3.scaleLinear()
+        .domain([-0.1, 1.1])
+        .range([0, 0.5*legend_geom.width]);
+      var scale_y_legend = d3.scaleLinear()
+        .domain([-0.1, 1.1])
+        .range([legend_geom.height, 0]);
+
+      var legend_gen_line = d3.line()
+        .x(function(d) { return scale_x_legend(d[0]); })
+        .y(function(d) { return scale_y_legend(d[1]); });
+
+      legend_lines.selectAll(".legend-line-best")
+        .data([d3.zip(legend_x, legend_best)])
+          .enter()
+        .append("path")
+          .attr("class", "line best-line")
+          .attr("d", legend_gen_line);
+
+      legend_lines.selectAll(".legend-line-sample")
+        .data(pack_data(legend_x, legend_samples))
+          .enter()
+        .append("path")
+          .attr("class", "line sample-line")
+          .attr("d", legend_gen_line);
+    };
+
+    add_legend_lines();
+
+    // Reliable distance range
+    var dm_panel_width = (function() {
+      var dm_close = query_data.min_reliable_distmod || 0;
+      var dm_far = query_data.max_reliable_distmod || 0;
+      if ((dm_far === 0) || (dm_close === 0) || (dm_close > dm_far)) {
+        return [plot_width, 0];
       }
-    }, dt);
+      return [scale_x(dm_close), plot_width - scale_x(dm_far)];
+    })();
+
+    var dm_close_panel = d3.select("#reliable-dist-group")
+      .selectAll("#DM-close-panel").data([null]);
+
+    dm_close_panel.enter()
+      .append("rect")
+        .attr("id", "DM-close-panel")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", dm_panel_width[0])
+        .attr("height", plot_height);
+
+    dm_close_panel.transition().duration(dt)
+      .attr("width", dm_panel_width[0])
+      .attr("height", plot_height);
+
+    dm_close_panel.exit().remove();
+
+    var dm_far_panel = d3.select("#reliable-dist-group")
+      .selectAll("#DM-far-panel").data([null]);
+
+    dm_far_panel.enter()
+      .append("rect")
+        .attr("id", "DM-far-panel")
+        .attr("x", plot_width - dm_panel_width[1])
+        .attr("y", 0)
+        .attr("width", dm_panel_width[1])
+        .attr("height", plot_height);
+
+    dm_far_panel.transition().duration(dt)
+      .attr("x", plot_width - dm_panel_width[1])
+      .attr("width", dm_panel_width[1])
+      .attr("height", plot_height);
+
+    dm_far_panel.exit().remove();
+
+    // Diagonal hatch pattern
+    var pattern_scale = 2,
+        stroke_scale = 3;
+    var path_str = function(cx, cy) {
+      return pattern_scale*cx + "," + pattern_scale*cy;
+    }
+
+    svg.select("defs").selectAll("#diagonal-hatch").data([null])
+        .enter()
+      .append("pattern")
+        .attr("id", "diagonal-hatch")
+        .attr("patternUnits", "userSpaceOnUse")
+        .attr("width", 4*pattern_scale)
+        .attr("height", 4*pattern_scale)
+      .append("path")
+        .attr("d", "M" + path_str(-1,1) +
+                   " l" + path_str(2,-2) +
+                   " M" + path_str(0,4) +
+                   " l" + path_str(4,-4) +
+                   " M" + path_str(3,5) +
+                   " l" + path_str(2,-2))
+        .attr("stroke", "#000")
+        .attr("stroke-width", stroke_scale);
+
+    // Label on top of reliable distance indicators
+
+    // Background for text that hollows-out hatch pattern
+    var dm_label_data = [
+      ["close", "No Stars"],
+      ["far", "No MS Stars"]
+    ];
+
+    var rel_dist_masks = svg.select("defs")
+      .selectAll(".rel-dist-mask")
+      .data(dm_label_data);
+
+    var rel_dist_masks_enter = rel_dist_masks.enter()
+      .append("mask")
+        .attr("id", function(d) { return d[0] + "-label-mask"; })
+        .attr("class", "rel-dist-mask");
+
+    rel_dist_masks_enter.append("rect")
+      .attr("id", function(d) { return d[0] + "-label-bkgd"; })
+      .attr("class", "rel-dist-label-bkgd")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", "100%")
+      .attr("height", "100%");
+
+    // Text to hollow-out hatch pattern
+    var get_dm_label_transform = function(d) {
+      var dx = null,
+          dy = plot_height/2;
+      if (d[0] === "close") {
+        dx = dm_panel_width[0]/2;
+      } else if (d[0] === "far") {
+        dx = 1.02 * plot_width - dm_panel_width[1];
+        if (dm_panel_width[1] === 0) {
+          dx += plot_width;
+        }
+      }
+      return "translate("+dx+","+dy+") "+"rotate(-90)";
+    };
+
+    rel_dist_masks_enter.append("text")
+      .attr("id", function(d) { return d[0] + "-label-txt"; })
+      .attr("class", "rel-dist-label")
+      .attr("x", 0)
+      .attr("y", 0)
+      .text(function(d) { return d[1]; })
+      .attr("transform", get_dm_label_transform);
+
+    rel_dist_masks.transition().duration(dt)
+        .select(".rel-dist-label")
+      .attr("transform", get_dm_label_transform);
+
+    // Stroke reliable distance labels
+    var rel_dist_stroke = d3.select("#reliable-dist-group")
+      .selectAll(".rel-dist-label-stroke").data(dm_label_data);
+
+    // console.log()
+    rel_dist_stroke.enter()
+      .append("text")
+        .attr("class", "rel-dist-label rel-dist-label-stroke")
+        .attr("id", function(d) { return d[0] + "-label-stroke"; })
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("transform", get_dm_label_transform)
+        .text(function(d) { return d[1]; });
+
+    rel_dist_stroke.transition().duration(dt)
+      .attr("transform", get_dm_label_transform);
+
+    // Convergence flag
+    d3.select("#plot-main-group")
+      .classed("non-converged", !query_data.converged);
+
+    var convergence_warning = d3.selectAll("#plot-main-group")
+      .selectAll("#convergence-warning").data([null]);
+
+    convergence_warning.enter()
+      .append("text")
+        .attr("id", "convergence-warning")
+        .attr("transform", "translate(-8, -12)")
+        .text("Fit did not converge!");
+
+    d3.select("#convergence-warning")
+      .attr("x", margins.left + plot_width)
+      .attr("y", margins.top + plot_height);
+
+    // convergence_warning.exit().remove();
+
+    // No data
+    d3.select("#plot-main-group")
+      .classed("no-data", !query_data.success);
+
+    // DM, reddening indicator
+    // var reddening_focus = svg.select("#plot-area")
+    //   .selectAll("#reddening-focus").data([null])
+    //     .enter()
+    var reddening_focus = plot_area_group.append("g")
+      .attr("id", "reddening-focus")
+      .attr("class", "no-display");
+      // .attr("transform",
+      //   "translate(" + margins.left + "," + margins.top + ")"
+      // );
+
+    // Lines indicating reddening at x-position of mouse on plot
+    reddening_focus.append("line")
+      .attr("id", "plot-x-indicator")
+      .attr("class", "plot-indicator");
+
+    reddening_focus.append("line")
+      .attr("id", "plot-y-indicator")
+      .attr("class", "plot-indicator");
+
+    reddening_focus.append("rect")
+      .attr("id", "plot-y-spread-indicator");
+
+    // Label displaying reddening at x-position of mouse
+    var focus_label_gp = reddening_focus.append("g")
+      .attr("id", "plot-focus-label")
+      .attr("transform",
+        "translate(" +
+        (0.02*plot_width) + "," +
+        (0.02*plot_width) + ")"
+      );
+
+    var focus_label = focus_label_gp.append("text")
+      .attr("dominant-baseline", "hanging");
+
+    focus_label.append("tspan")
+      .text("d = ");
+    focus_label.append("tspan")
+      .attr("id", "mouse-kpc")
+      .text("1.5");
+    focus_label.append("tspan")
+      .text(" kpc");
+
+    focus_label.append("tspan")
+      .attr("x", 0)
+      .attr("dy", "1.2em")
+      .text("E(B-V) = ");
+
+    focus_label.append("tspan")
+      .attr("id", "mouse-reddening")
+      .text("3.0");
+
+    focus_label.append("tspan")
+      .attr("id", "mouse-reddening-plus")
+      .attr("dx", "0.2em")
+      .attr("dy", "-0.4em")
+      .attr("font-size", "65%")
+      .text("+0.5");
+
+    focus_label.append("tspan")
+      .attr("id", "mouse-reddening-minus")
+      .attr("dy", "+1.2em")
+      .attr("font-size", "65%")
+      .text("-0.5");
+
+    // Update reddening label on mouse move
+    var mouse_move = function(obj) {
+      var x_mouse = d3.mouse(obj)[0];
+      var dm_mouse = scale_x.invert(x_mouse);
+      var bin_high = d3.bisectLeft(query_data.distmod, dm_mouse);
+
+      var dm_high = query_data.distmod[bin_high];
+      var dm_low = query_data.distmod[bin_high-1];
+      var a = (dm_high - dm_mouse) / (dm_high - dm_low);
+
+      // Calculate samples of reddening at this distance
+      var reddening_samp = query_data.samples.map(function(row) {
+        return a * row[bin_high-1] + (1. - a) * row[bin_high];
+      }).sort(d3.ascending);
+
+      // Calculate percentiles of reddening at this distance
+      var reddening_low = d3.quantile(reddening_samp, 0.1587);
+      var reddening_med = d3.median(reddening_samp);
+      var reddening_high = d3.quantile(reddening_samp, 0.8413);
+
+      // Calculate how much to inflate uncertainty
+      var sigma = 0.5 * (reddening_high - reddening_low);
+      var sigma_floor = 0.03;
+      var delta_sigma = (
+        Math.sqrt(sigma*sigma + sigma_floor*sigma_floor)
+        - sigma
+      );
+
+      // Inflate uncertainty evenly on upper and lower end
+      reddening_low = d3.max([0, reddening_low - 0.5*delta_sigma]);
+      reddening_high = reddening_high + 0.5*delta_sigma;
+
+      d3.select("#plot-x-indicator")
+        .attr("x1", x_mouse)
+        .attr("x2", x_mouse)
+        .attr("y1", scale_y(0))
+        .attr("y2", scale_y(reddening_med));
+
+      d3.select("#plot-y-indicator")
+        .attr("x1", 0)
+        .attr("x2", x_mouse)
+        .attr("y1", scale_y(reddening_med))
+        .attr("y2", scale_y(reddening_med));
+
+      d3.select("#plot-y-spread-indicator")
+        .attr("x", 0)
+        .attr("y", scale_y(reddening_high))
+        .attr("width", x_mouse)
+        .attr("height", scale_y(reddening_low) - scale_y(reddening_high));
+
+      var kpc_mouse = Math.pow(10, dm_mouse/5.0 - 2.0);
+
+      d3.select("#mouse-kpc")
+        .text(d3.format(".2f")(kpc_mouse));
+
+      d3.select("#mouse-reddening")
+        .text(d3.format(".2f")(reddening_med));
+
+      d3.select("#mouse-reddening-plus")
+        .text("+" + d3.format(".2f")(reddening_high - reddening_med));
+
+      var plus_label_length = d3.select("#mouse-reddening-plus")
+        .node().getComputedTextLength();
+
+      d3.select("#mouse-reddening-minus")
+        .attr("dx", "-" + plus_label_length)
+        .text("-" + d3.format(".2f")(reddening_med - reddening_low));
+    };
+
+    // Mouse overlay (must be last element in SVG, so on top)
+    var overlay = svg.selectAll("#plot-mouse-overlay").data([null]);
+
+    overlay.enter()
+      .append("rect")
+      .attr("id", "plot-mouse-overlay");
+
+    svg.select("#plot-mouse-overlay")
+      .attr("width", plot_width)
+      .attr("height", plot_height)
+      .attr("transform",
+        "translate(" + margins.left + "," + margins.top + ")"
+      )
+      .on("mouseover", function() {
+        d3.select("#reddening-focus")
+          .classed("no-display", false);
+      })
+      .on("mouseout", function() {
+        d3.select("#reddening-focus")
+          .classed("no-display", true);
+      })
+      .on("mousemove", function() { return mouse_move(this); });
+  };
+
+  /*
+   * Postage stamps
+   */
+
+  var show_image_div = function(callback) {
+    if (callback) {
+      $("#download-div").on("shown.bs.collapse", function() {
+        callback();
+      });
+    }
+    $("#postage-stamp-div").on("shown.bs.collapse", function() {
+      $("#download-div").collapse("show");
+    });
+    $("#postage-stamp-div").collapse("show");
+  };
+
+  var place_images = function(data) {
+    $("#postage-stamp-1").attr("src", data.image1);
+    $("#postage-stamp-2").attr("src", data.image2);
+    $("#postage-stamp-3").attr("src", data.image3);
+    $("#ps-label-1").text(data.label1);
+    $("#ps-label-2").text(data.label2);
+    $("#ps-label-3").text(data.label3);
+  };
+
+  var update_ps_dimensions = function() {
+    console.log("Resizing postage-stamp overlays.");
+    var img_dim = utils.get_obj_dimensions(
+      d3.select(".ps-img").node()
+    );
+    d3.selectAll(".ps-overlay")
+      .attr("width", img_dim.width + "px")
+      .attr("height", img_dim.height + "px")
+      .style("left", img_dim.left + "px")
+      .style("top", img_dim.top + "px");
+  };
+
+  var get_ps_lb = function(obj, query_data) {
+    // var obj_dim = utils.get_obj_dimensions(obj);
+    var x_max_proj = astrocoords.proj_gnomonic(
+      astrocoords.deg2rad(query_data.radius),
+      0, 0, 1, 0
+    ).x;
+    var mouse_xy = d3.mouse(obj);
+    var lon0 = astrocoords.deg2rad(query_data.l),
+        lat0 = astrocoords.deg2rad(query_data.b);
+    var width = d3.select(obj).attr("width");
+
+    var x = -2 * (mouse_xy[0] / width - 0.5) * x_max_proj;
+    var y = -2 * (mouse_xy[1] / width - 0.5) * x_max_proj;
+
+    // console.log(
+    //   "(x, y) = ("
+    //   + d3.format(".4f")(x)
+    //   + ", "
+    //   + d3.format(".4f")(y)
+    //   + ")"
+    // );
+    // console.log("x_max_proj = " + x_max_proj);
+    // console.log("mouse_xy = " + mouse_xy);
+    // console.log("obj_dim:");
+    // console.log(obj_dim);
+
+    var coords = astrocoords.proj_gnomonic_inv(
+      x, y, lon0, Math.cos(lat0), Math.sin(lat0)
+    );
+
+    return {
+      "l": astrocoords.rad2deg(coords.lon),
+      "b": astrocoords.rad2deg(coords.lat)
+    };
+  };
+
+  // Gets coordinates when user clicks on postage stamp,
+  // and converts to whatever coordinate system the toggle
+  // indicates.
+  var get_ps_coords = function(obj, query_data) {
+    var coords_gal = get_ps_lb(obj, query_data);
+    var target_coord_sys = get_coord_sys();
+    var coords = convert_coord_sys(
+      package_gal_coords(coords_gal),
+      target_coord_sys
+    );
+    return coords;
   }
 
-  var debouncedDrawPlot = debounce(function() {
-    drawPlotSafe(false, linePlotContainer, 200, distmod, best, samples, converged, noData, DMReliableMin, DMReliableMax);
-  }, 125);
+  var set_ps_labels = function(coords) {
+    if (coords.coord_sys === "equ") {
+      d3.selectAll(".ps-focus-gal")
+        .classed("no-display", true);
+      d3.selectAll(".ps-focus-equ")
+        .classed("no-display", false);
+      var fmt = d3.format("02d");
+      var hms = astrocoords.deg2hms(coords.lon.val);
+      d3.selectAll(".RA-hh")
+        .text(fmt(hms.h));
+      d3.selectAll(".RA-mm")
+        .text(fmt(hms.m));
+      d3.selectAll(".RA-ss")
+        .text(fmt(hms.s));
+      d3.selectAll(".Dec-deg")
+        .text(d3.format(".2f")(coords.lat.val));
+    } else if (coords.coord_sys === "gal" ){
+      d3.selectAll(".ps-focus-equ")
+        .classed("no-display", true);
+      d3.selectAll(".ps-focus-gal")
+        .classed("no-display", false);
+      var fmt = d3.format(".2f");
+      d3.selectAll(".gal-l-deg")
+        .text(fmt(coords.lon.val));
+      d3.selectAll(".gal-b-deg")
+        .text(fmt(coords.lat.val));
+    } else {
+      console.log("set_ps_labels: Invalid coordsys:");
+      console.log(coords.coord_sys);
+    }
+  };
 
-  var debouncedDrawPSOverlays = debounce(function() {
-    drawPSOverlays();
-  }, 250);
+  // var set_ps_labels_gal = function(coords_gal) {
+  //   d3.selectAll(".ps-focus-equ")
+  //     .classed("no-display", true);
+  //   d3.selectAll(".ps-focus-gal")
+  //     .classed("no-display", false);
+  //   var fmt = d3.format(".2f");
+  //   d3.selectAll(".gal-l-deg")
+  //     .text(fmt(coords_gal.l));
+  //   d3.selectAll(".gal-b-deg")
+  //     .text(fmt(coords_gal.b));
+  // };
+  //
+  // var set_ps_labels_equ = function(coords_equ) {
+  //   d3.selectAll(".ps-focus-gal")
+  //     .classed("no-display", true);
+  //   d3.selectAll(".ps-focus-equ")
+  //     .classed("no-display", false);
+  //   var fmt = d3.format("02d");
+  //   var hms = astrocoords.deg2hms(coords_equ.a);
+  //   d3.selectAll(".RA-hh")
+  //     .text(fmt(hms.h));
+  //   d3.selectAll(".RA-mm")
+  //     .text(fmt(hms.m));
+  //   d3.selectAll(".RA-ss")
+  //     .text(fmt(hms.s));
+  //   d3.selectAll(".Dec-deg")
+  //     .text(d3.format(".2f")(coords_equ.d));
+  // };
 
-  $(window).resize(function() {
-    //setCoordToggleText();
-    debouncedDrawPlot();
+  // var set_ps_labels = function(coords_gal) {
+  //   var coord_sys = get_coord_sys();
+  //   if(coord_sys === "gal") {
+  //     set_ps_labels_gal(coords_gal);
+  //   } else if (coord_sys === "equ") {
+  //     var coords_equ = astrocoords.gal2equ_J2000(
+  //       coords_gal.l,
+  //       coords_gal.b
+  //     );
+  //     set_ps_labels_equ(coords_equ);
+  //   }
+  // };
+
+  /*
+   * Update UI elements
+   */
+
+  var coords2qstring = function(coords, map_name) {
+    var qstring = "?lon=" + coords.lon.val +
+                  "&lat=" + coords.lat.val +
+                  "&coordsys=" + coords.coord_sys;
+    if (map_name) {
+      qstring += "&mapname=" + map_name;
+    }
+    return qstring;
+  };
+
+  // Update button to access ASCII table
+  var update_table_btn = function(coords, map_name) {
+    var href = "/api/v2/interactive/" + map_name + "/lostable"
+               + coords2qstring(coords);
+    d3.select("#table-btn")
+      .attr("href", href)
+      .classed("disabled", false);
+  };
+
+  var disable_table_btn = function() {
+    d3.select("#table-btn")
+      .attr("href", "#")
+      .classed("disabled", false);
+  };
+
+  // Converts coordinates to the specified target coordinate system.
+  var convert_coord_sys = function(coords, target_coord_sys) {
+    if (coords.coord_sys === target_coord_sys) {
+      return coords;
+    }
+    if ((coords.coord_sys === "gal")
+     && (target_coord_sys === "equ")) {
+      var c_target = astrocoords.gal2equ_J2000(
+        coords.lon.val,
+        coords.lat.val
+      );
+      return package_equ_coords(c_target);
+    } else if ((coords.coord_sys === "equ")
+            && (target_coord_sys === "gal")) {
+      var c_target = astrocoords.equ2gal_J2000(
+        coords.lon.val,
+        coords.lat.val
+      );
+      return package_gal_coords(c_target);
+    }
+    return null; // Something wrong with either coords.coord_sys or
+                 // target_coord_sys.
+  };
+
+  // Sets lon/lat input boxes to the specified coordinates, and flips
+  // the coordinate system toggle to the correct setting.
+  var update_input_boxes = function(coords, preserve_coordsys_toggle) {
+    var do_update = function(c) {
+      $('input[name="gal-l"]').val(c.lon.val);
+      $('input[name="gal-b"]').val(c.lat.val);
+      if (c.coord_sys === "gal") {
+        $("#coord-toggle").bootstrapToggle("on");
+      } else if (c.coord_sys === "equ") {
+        $("#coord-toggle").bootstrapToggle("off");
+      }
+    };
+
+    if (preserve_coordsys_toggle) { // Do not flip the coordsys toggle
+      console.log("Preserving coordsys toggle.");
+      var target_coord_sys = get_coord_sys();
+      console.log("Target coordsys: " + target_coord_sys);
+      var c = convert_coord_sys(coords, target_coord_sys);
+      console.log("Setting input boxes to:");
+      console.log(c);
+      do_update(c);
+    } else {  // Flip the coordsys toggle to whatever is in "coords"
+      do_update(coords);
+    }
+  };
+
+  // Sets the URL query string to represent the given coordinates.
+  var set_qstring = function(coords, map_name) {
+    var qstring = coords2qstring(coords, map_name);
+    console.log(qstring);
+    window.history.pushState("", "", qstring);
+  };
+
+  /*
+   * Query server
+   */
+
+  var query_server = function(coords, map_name, f_success, f_error) {
+    $.ajax({
+      type: "GET",
+      url: "/api/v2/interactive/" + map_name + "/losdata",
+      data: {
+        "lon": coords.lon.val,
+        "lat": coords.lat.val,
+        "coordsys": coords.coord_sys
+      },
+      dataType: "json",
+      success: function(data) {
+        console.log("Data received:");
+        console.log(data);
+        f_success(data);
+      },
+      error: function(xhr, status, err) {
+        console.log("Error.");
+        console.log('Message from server: ' + xhr.responseText);
+        f_error(xhr, status, err);
+      }
+    });
+  };
+
+  /*
+   * Full update methods (click query, click postage stamp)
+   */
+
+  var package_gal_coords = function(coords_gal) {
+    return {
+      "lon": {
+        "val": coords_gal.l,
+        "format": "deg"
+      },
+      "lat": {
+        "val": coords_gal.b,
+        "format": "deg"
+      },
+      "coord_sys": "gal"
+    };
+  };
+
+  var package_equ_coords = function(coords_equ) {
+    return {
+      "lon": {
+        "val": coords_equ.a,
+        "format": "deg"
+      },
+      "lat": {
+        "val": coords_equ.d,
+        "format": "deg"
+      },
+      "coord_sys": "equ"
+    };
+  };
+
+  var update_full = function(coords, map_name) {
+    console.log("update_full");
+
+    // Animate query button
+    $("#submit-btn-icon").attr(
+      "class",
+      "fa fa-spinner fa-spin fa-lg"
+    );
+
+    // On query success
+    var success = function(data) {
+      // Update the URL query string
+      set_qstring(coords, map_name);
+
+      // Update link to ASCII table
+      update_table_btn(coords, map_name);
+
+      // Hide any custom message
+      hide_custom_alert(); // TODO: Create special warning div for this
+
+      // Update line plot
+      show_plot_div(function() {
+        console.log("shown");
+        plot_distance_reddening(data);
+      });
+
+      // Set the images
+      place_images(data);
+      show_image_div(update_ps_dimensions);
+
+      // Reset the query button
+      $("#submit-btn-icon").attr(
+        "class",
+        "glyphicon glyphicon-search"
+      );
+
+      // Hide the "Enter query coords" message
+      $("#enter-coords-alert").alert("close");
+
+      // Mouse over postage stamp
+      d3.selectAll(".overlay").on("mousemove", function() {
+        var coords = get_ps_coords(this, data);
+        set_ps_labels(coords);
+      });
+
+      // Click on postage stamp
+      d3.selectAll(".overlay").on("click", function() {
+        console.log("clicked");
+        // Get clicked coordinates
+        var coords = get_ps_coords(this, data);
+        console.log(coords);
+
+        // Which map to query?
+        var map_name = get_map_name();
+
+        update_input_boxes(coords);
+
+        // Launch query
+        update_full(coords, map_name);
+      });
+    }
+
+    var error = function(xhr, status, err) {
+      // Reset the query button
+      $("#submit-btn-icon").attr(
+        "class",
+        "glyphicon glyphicon-search"
+      );
+
+      disable_table_btn();
+
+      show_custom_alert("Query failed."); // TODO: Create special warning div for this
+    };
+
+    // Get data from server
+    console.log("querying");
+    query_server(coords, map_name, success, error);
+  };
+
+  var update_from_submit = function() {
+    // Get coordinates
+    var coords = get_coordinates();
+    console.log(coords);
+    if(!issue_coord_warnings(coords)) { return; }
+
+    // Which map to query?
+    var map_name = get_map_name();
+
+    // Launch query
+    update_full(coords, map_name);
+  };
+
+  // Converts the query string into coordinates.
+  // Returns null if query string is invalid.
+  var get_coords_from_qstring = function() {
+    var url_params = new URLSearchParams(window.location.search);
+
+    var expected_keys = {
+      "lon": "lon",
+      "lat": "lat",
+      "coordsys": "coord_sys",
+      "mapname": "map_name"
+    };
+    var coords = {};
+
+    for (var key in expected_keys) {
+      if (!url_params.has(key)) { return null; }
+      coords[expected_keys[key]] = url_params.get(key);
+      console.log(key + " = " + url_params.get(key));
+    }
+
+    console.log(coords);
+
+    if((coords["coord_sys"] !== "gal")
+       && (coords["coord_sys"] !== "equ")) {
+      return null;
+    }
+    var lon = astrocoords.parse_angle(coords["lon"], true);
+    var lat = astrocoords.parse_angle(coords["lat"], false);
+
+    // if ((lon === null) || (lat === null)) {
+    //   return null;
+    // }
+
+    var ret_coords = {
+      "lon": lon,
+      "lat": lat,
+      "coord_sys": coords["coord_sys"]
+    };
+
+    return {
+      "coords": ret_coords,
+      "map_name": coords["map_name"]
+    };
+    // if(urlParams.has("lon") && urlParams.has("lat") && urlParams.has("coordsys")) {
+    //
+    // }
+  };
+
+  var update_from_qstring = function() {
+    // Get coordinates and map name
+    var qstring = get_coords_from_qstring();
+    if (!qstring) { return; }
+    console.log(qstring.coords);
+    update_input_boxes(qstring.coords);
+    if(!issue_coord_warnings(qstring.coords)) { return; }
+
+    update_full(qstring.coords, qstring.map_name);
+  };
+
+
+  /*
+   * User event listeners
+   */
+
+  // Submit query
+  $("#submit-btn").click(function() { update_from_submit(); });
+  var submit_if_enter = function(e) {
+    var key = e.which;
+    if (key == 13) { update_from_submit(); }
+  };
+  $("#gal-l-input").keypress(submit_if_enter);
+  $("#gal-b-input").keypress(submit_if_enter);
+
+  // Toggle coordinates
+  $("#coord-toggle").change(function() {
+    if($(this).prop("checked")) {
+      set_coordsys("gal");
+    } else {
+      set_coordsys("equ");
+    }
+  });
+  $("#coord-toggle").bootstrapToggle("on");
+
+  // Window resize
+  $(window).resize(utils.debounce(update_ps_dimensions, 50));
+
+  // Mouse over postage stamp
+  d3.selectAll(".overlay").on("mouseover", function() {
+    // console.log(this.parentNode);
+    d3.select(this.parentNode).select(".ps-focus")
+      .classed("no-display", false);
+  });
+  d3.selectAll(".overlay").on("mouseout", function() {
+    // console.log(this.parentNode);
+    d3.select(this.parentNode).select(".ps-focus")
+      .classed("no-display", true);
   });
 
-  listenResize(d3.select(".ps-container")[0][0], drawPSOverlays, 500);
+  // Execute query from query string
+  update_from_qstring();
+}
 
-  //setCoordToggleText();
+$(document).ready(function() { create_plot(); });
 
-});
+})();
