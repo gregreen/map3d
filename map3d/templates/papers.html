@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% set active_page = "usage" %}
+
+{% block content %}
+
+<div class="jumbotron">
+  <h1>Published Papers</h1>
+</div>
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
+      <h2 class="page-header">Latest version of the map</h2>
+      <p><a href="http://adsabs.harvard.edu/abs/2018arXiv180103555G">Green et al. (2018)</a> describes the latest version of the Bayestar dust map, which we refer to as "Bayestar17."</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
+      <h2 class="page-header">First version of the map</h2>
+      <p><a href="http://adsabs.harvard.edu/abs/2015arXiv150701005G">Green et al. (2015)</a> describes the original Bayestar dust map, which we refer to as "Bayestar15."</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
+      <h2 class="page-header">Method paper</h2>
+      <p><a href="http://adsabs.harvard.edu/abs/2014ApJ...783..114G">Green et al. (2014)</a> describes the method used to create the Bayestar dust maps.</p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
