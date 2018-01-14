@@ -52,6 +52,11 @@ def usage():
 def query():
     return render_template('query.html')
 
+@app.route('/papers')
+def papers():
+    return render_template('papers.html')
+
+
 ############################################################################
 # API v2
 ############################################################################

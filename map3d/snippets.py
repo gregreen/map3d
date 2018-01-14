@@ -2,25 +2,25 @@
 # -*- coding: utf-8 -*-
 #
 #  snippets.py
-#  
+#
 #  Copyright 2015 greg <greg@greg-UX301LAA>
-#  
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
 #  (at your option) any later version.
-#  
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#  
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
-#  
-#  
+#
+#
 
 from pygments import highlight
 from pygments.lexers.python import PythonLexer, PythonConsoleLexer
@@ -39,12 +39,12 @@ import json, requests
 def query(lon, lat, coordsys='gal', mode='full'):
     '''
     Send a line-of-sight reddening query to the Argonaut web server.
-    
+
     Inputs:
       lon, lat: longitude and latitude, in degrees.
       coordsys: 'gal' for Galactic, 'equ' for Equatorial (J2000).
       mode: 'full', 'lite' or 'sfd'
-    
+
     In 'full' mode, outputs a dictionary containing, among other things:
       'distmod':    The distance moduli that define the distance bins.
       'best':       The best-fit (maximum proability density)
@@ -60,15 +60,15 @@ def query(lon, lat, coordsys='gal', mode='full'):
       'n_stars':    # of stars used to fit the line-of-sight reddening.
       'DM_reliable_min':  Minimum reliable distance modulus in pixel.
       'DM_reliable_max':  Maximum reliable distance modulus in pixel.
-    
+
     Less information is returned in 'lite' mode, while in 'sfd' mode,
     the Schlegel, Finkbeiner & Davis (1998) E(B-V) is returned.
     '''
-    
+
     url = 'http://argonaut.skymaps.info/gal-lb-query-light'
-    
+
     payload = {'mode': mode}
-    
+
     if coordsys.lower() in ['gal', 'g']:
         payload['l'] = lon
         payload['b'] = lat
@@ -77,18 +77,18 @@ def query(lon, lat, coordsys='gal', mode='full'):
         payload['dec'] = lat
     else:
         raise ValueError("coordsys '{0}' not understood.".format(coordsys))
-    
+
     headers = {'content-type': 'application/json'}
-    
+
     r = requests.post(url, data=json.dumps(payload), headers=headers)
-    
+
     try:
         r.raise_for_status()
     except requests.exceptions.HTTPError as e:
         print('Response received from Argonaut:')
         print(r.text)
         raise e
-    
+
     return json.loads(r.text)
 """,
 PythonLexer(),
@@ -114,7 +114,7 @@ map_query_API['IDL'] = highlight(
 ;   mode      : 'full', 'lite', or 'sfd'.  Default to 'full'
 ;   structure : set this keyword to return structure instead of hash
 ;   debug     : set to return timing information
-;   
+;
 ; OUTPUTS:
 ;   qresult   : a hash (or structure, if /structure set) containing
 ;  'distmod':    The distance moduli that define the distance bins.
@@ -154,14 +154,14 @@ map_query_API['IDL'] = highlight(
 ;      SAMPLES         DOUBLE    Array[20, 31]
 ;
 ; COMMENTS:
-;   - Any keywords other than "struct" or "debug" go into the 
-;       coords structure.  
+;   - Any keywords other than "struct" or "debug" go into the
+;       coords structure.
 ;   - Must call either with ra=, dec= or l=, b=.
 ;   - Angles are in degrees and can be arrays.
 ;   - JSON support introduced in IDL 8.2 (Jan, 2013) is required.
 ;
 ;   - THIS CODE RETURNS SFD-EQUIVALENT E(B-V)!
-;       See Schlafly & Finkbeiner 2011) for conversion factors. 
+;       See Schlafly & Finkbeiner 2011) for conversion factors.
 ;       E(B-V)_Landolt is approximately 0.86*E(B-V)_SFD.
 ;
 ; REVISION HISTORY:
@@ -174,10 +174,10 @@ function argo_json_serialize, struc
   key = tag_names(struc)
   val = strarr(ntags)
 
-  for i=0L, ntags-1 do begin 
+  for i=0L, ntags-1 do begin
      if size(struc.(i), /tname) EQ 'STRING' then $
         val[i] = '"'+key[i]+'":"'+struc.(i)+'"' $
-     else begin 
+     else begin
         arr = string(struc.(i), format='(F12.7)')+','
         arr[0]='['+arr[0]
         arr[-1] = repstr(arr[-1], ',', '')+']'
@@ -194,27 +194,27 @@ end
 
 
 function query_argonaut, struct=struct, debug=debug, _extra=coords
-  
+
 ; -------- Check IDL version
-  if !version.release lt 8.2 then begin 
+  if !version.release lt 8.2 then begin
      message, 'IDL '+!version.release+' may lack JSON support', /info
      return, 0
-  endif 
+  endif
 
   t0=systime(1)
 ; -------- Check inputs
   verb = keyword_set(debug)
   if n_tags(coords) GE 2 then tags = tag_names(coords) else tags=['', '']
   if ~((total((tags eq 'RA')+(tags eq 'DEC')) eq 2) or $
-       (total((tags eq 'L') +(tags eq 'B')) eq 2)) then begin 
+       (total((tags eq 'L') +(tags eq 'B')) eq 2)) then begin
      print, 'Must call with coordinates, e.g.'
      print, 'qresult = query_argonaut(ra=3.25, dec=4.5) or '
      print, 'qresult = query_argonaut(l=90, b=10)'
      return, 0
-  endif 
+  endif
   ncoords = n_elements(coords.(0)) > n_elements(coords.(1))
 
-; -------- Convert input parameters to lower case JSON string  
+; -------- Convert input parameters to lower case JSON string
   data = strlowcase(argo_json_serialize(coords))
   if verb then print, 'JSON serialize   :', systime(1)-t0, ' sec', format='(A,F8.3,A)'
 
@@ -225,7 +225,7 @@ function query_argonaut, struct=struct, debug=debug, _extra=coords
   oUrl = OBJ_NEW('IDLnetUrl')
   oUrl.SetProperty, HEADER = 'Content-Type: application/json'
   oUrl.SetProperty, encode=2            ; request gzipped response
-  
+
 ; -------- Query Argonaut, send output to tmpfile
   tmpfile = filepath('argo-'+string(randomu(iseed,/double)*1D9,$
                                     format='(I9.9)'), /tmp)
@@ -282,25 +282,25 @@ formatter)
 
 map_query_API_example_single['IDL'] = highlight(
 """
-IDL> qresult = argonaut_query(l=90, b=10)                                         
-IDL> print, qresult.keys()                         
-GR                                                
-success                                           
-n_stars                                           
-dec                                               
-DM_reliable_max                                   
-converged                                         
-distmod                                           
-l                                                 
-b                                                 
-ra                                                
-best                                              
-DM_reliable_min                                   
-samples                                           
-IDL> print, qresult['n_stars']                  
-                   750                         
-IDL> print, qresult['converged']         
-                     1                  
+IDL> qresult = argonaut_query(l=90, b=10)
+IDL> print, qresult.keys()
+GR
+success
+n_stars
+dec
+DM_reliable_max
+converged
+distmod
+l
+b
+ra
+best
+DM_reliable_min
+samples
+IDL> print, qresult['n_stars']
+                   750
+IDL> print, qresult['converged']
+                     1
 IDL> print, qresult['best'].toarray()
     0.0042600000    0.0067800000    0.0074000000    0.0094800000     0.012020000
      0.016230000     0.018150000     0.024500000     0.088700000     0.095760000
@@ -559,14 +559,14 @@ reindex_example = [highlight(txt, PythonConsoleLexer(), formatter) for txt in ([
 >>> for nside in np.unique(pix_info['nside']):
 ...     # Get indices of all pixels at current nside level
 ...     idx = pix_info['nside'] == nside
-...     
+... 
 ...     # Extract E(B-V) of each selected pixel
 ...     pix_val_n = EBV_far_median[idx]
-...     
+... 
 ...     # Determine nested index of each selected pixel in upsampled map
 ...     mult_factor = (nside_max/nside)**2
 ...     pix_idx_n = pix_info['healpix_index'][idx] * mult_factor
-...     
+... 
 ...     # Write the selected pixels into the upsampled map
 ...     for offset in range(mult_factor):
 ...         pix_val[pix_idx_n+offset] = pix_val_n[:]
@@ -584,19 +584,95 @@ reindex_example = [highlight(txt, PythonConsoleLexer(), formatter) for txt in ([
 ])]
 
 
+#
+# dustmaps package
+#
+
+dustmaps_local_API = highlight(
+"""
+>>> from astropy.coordinates import SkyCoord
+>>> import astropy.units as units
+>>> from dustmaps.bayestar import BayestarQuery
+>>> 
+>>> bayestar = BayestarQuery(version='bayestar2017') # Bayestar2017 is the default
+>>> coords = SkyCoord(90.*units.deg, 30.*units.deg,
+...                   distance=100.*units.pc, frame='galactic')
+>>> 
+>>> reddening = bayestar(coords, mode='median')
+>>> print(reddening)
+0.00621500005946
+""",
+PythonConsoleLexer(),
+formatter)
+
+dustmaps_remote_API = highlight(
+"""
+>>> from astropy.coordinates import SkyCoord
+>>> import astropy.units as units
+>>> from dustmaps.bayestar import BayestarWebQuery
+>>> 
+>>> bayestar = BayestarWebQuery(version='bayestar2017')
+>>> coords = SkyCoord(90.*units.deg, 30.*units.deg,
+...                   distance=100.*units.pc, frame='galactic')
+>>> 
+>>> reddening = bayestar(coords, mode='random_sample')
+>>> print(reddening)
+0.00590000022203
+""",
+PythonConsoleLexer(),
+formatter)
+
+dustmaps_SFD_API = highlight(
+"""
+>>> from astropy.coordinates import SkyCoord
+>>> import astropy.units as units
+>>> from dustmaps.sfd import SFDWebQuery
+>>> 
+>>> sfd = SFDWebQuery()
+>>> coords = SkyCoord(45.*units.deg, 45.*units.deg, frame='icrs') # Equatorial
+>>> 
+>>> ebv_sfd = sfd(coords)
+>>> print(ebv_sfd)
+0.22122733295
+""",
+PythonConsoleLexer(),
+formatter)
+
+dustmaps_array_API = highlight(
+"""
+>>> import numpy as np
+>>> from astropy.coordinates import SkyCoord
+>>> import astropy.units as units
+>>> from dustmaps.bayestar import BayestarWebQuery
+>>> 
+>>> bayestar = BayestarWebQuery() # Uses Bayestar2017 by default.
+>>> 
+>>> l = np.array([30., 60., 90.])
+>>> b = np.array([-15., 10., 70.])
+>>> d = np.array([0.1, 3., 0.5])
+>>> coords = SkyCoord(l*units.deg, b*units.deg,
+...                   distance=d*units.kpc, frame='galactic')
+>>> 
+>>> reddening = bayestar(coords, mode='percentile', pct=90.)
+>>> print(reddening)
+[ 0.085303    0.22474321  0.03297591]
+""",
+PythonConsoleLexer(),
+formatter)
+
+
 def main():
     import os
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    
+
     css = formatter.get_style_defs('.highlight').replace('.highlight', '.highlight pre')
     print css
-    
+
     f = open(os.path.join(script_dir, 'static/css/pygment-highlight.css'), 'w')
     f.write(css)
     f.close()
-    
+
     return 0
 
 if __name__ == '__main__':
     main()
-

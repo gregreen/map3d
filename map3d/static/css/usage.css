@@ -103,7 +103,7 @@ div[class^="col-"] {
   background-color: rgba(92,135,153, 0.6);
   padding: 5px 5px 5px 5px;
   margin-right: 5px;
-  
+
   color: #B6E0F2;
   font-weight: bold;
 }
@@ -139,6 +139,37 @@ div[class^="col-"] {
 }
 
 
+p.equation, .equation > p, .equation > table {
+  margin-left: 2em;
+}
+
+/*
+ * Tables
+ */
+
+table {
+  border-spacing: 1em;
+  border-collapse: collapse;
+  font-size: 12pt;
+  margin-bottom: 1em;
+  border: 1pt solid rgba(0,0,0,0.25);
+}
+
+table th {
+  text-align: center;
+  padding-bottom: 3pt;
+  border-bottom: 1pt solid rgba(0,0,0,0.25);
+}
+
+table td {
+  padding-left: 0.5em;
+  padding-right: 0.5em;
+}
+
+table.no-border {
+  border: none;
+}
+
 
 /*
 html {
@@ -161,48 +192,48 @@ div {
     padding-left: 15px;
     padding-right: 15px;
   }
-  
+
   .padding-xs-10 {
     padding-left: 10px;
     padding-right: 10px;
   }
-  
+
   .padding-xs-5 {
     padding-left: 5px;
     padding-right: 5px;
   }
-  
+
   .padding-xs-0 {
     padding-left: 0px;
     padding-right: 0px;
   }
-  
+
   .padding-xs-left-0 {
     padding-left: 0px;
   }
-  
+
   .padding-xs-right-0 {
     padding-right: 0px;
   }
-  
+
   .padding-xs-left-5 {
     padding-left: 5px;
   }
-  
+
   .padding-xs-right-5 {
     padding-right: 5px;
   }
-  
+
   .popover-title {
     font-family: "Lora", serif;
     font-size: 14pt;
   }
-  
+
   .popover-content {
     font-family: "Lora", serif;
     font-size: 10pt;
   }
-  
+
   .highlight pre {
     max-height: 250px;
   }
@@ -214,44 +245,44 @@ div {
     padding-left: 15px;
     padding-right: 15px;
   }
-  
+
   .padding-sm-10 {
     padding-left: 10px;
     padding-right: 10px;
   }
-  
+
   .padding-sm-5 {
     padding-left: 5px;
     padding-right: 5px;
   }
-  
+
   .padding-sm-0 {
     padding-left: 0px;
     padding-right: 0px;
   }
-  
+
   .padding-sm-right-5 {
     padding-right: 5px;
   }
-  
+
   .padding-sm-right-15 {
     padding-right: 15px;
   }
-  
+
   .popover-title {
     font-family: "Lora", serif;
     font-size: 16pt;
   }
-  
+
   .popover-content {
     font-family: "Lora", serif;
     font-size: 12pt;
   }
-  
+
   .popover {
     max-width: 300px;
   }
-  
+
   .highlight pre {
     max-height: 300px;
   }
@@ -263,36 +294,36 @@ div {
     padding-left: 15px;
     padding-right: 15px;
   }
-  
+
   .padding-md-10 {
     padding-left: 10px;
     padding-right: 10px;
   }
-  
+
   .padding-md-5 {
     padding-left: 5px;
     padding-right: 5px;
   }
-  
+
   .padding-md-0 {
     padding-left: 0px;
     padding-right: 0px;
   }
-  
+
   .popover-title {
     font-family: "Lora", serif;
     font-size: 18pt;
   }
-  
+
   .popover-content {
     font-family: "Lora", serif;
     font-size: 14pt;
   }
-  
+
   .popover {
     max-width: 450px;
   }
-  
+
   .highlight pre {
     max-height: 400px;
   }
@@ -305,36 +336,36 @@ div {
     padding-left: 15px;
     padding-right: 15px;
   }
-  
+
   .padding-lg-10 {
     padding-left: 10px;
     padding-right: 10px;
   }
-  
+
   .padding-lg-5 {
     padding-left: 5px;
     padding-right: 5px;
   }
-  
+
   .padding-lg-0 {
     padding-left: 0px;
     padding-right: 0px;
   }
-  
+
   .popover-title {
     font-family: "Lora", serif;
     font-size: 20pt;
   }
-  
+
   .popover-content {
     font-family: "Lora", serif;
     font-size: 15pt;
   }
-  
+
   .popover {
     max-width: 500px;
   }
-  
+
   .highlight pre {
     max-height: 500px;
   }

@@ -13,11 +13,14 @@
     <div class="row">
       <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
         <ul class="nav navbar extra-margin-top">
-          
+
           <li class="nav-section">
             <a href="#intro">Introductory Notes</a>
           </li>
-          
+
+          <li class="nav-subsection">
+            <a href="#versions">Versions</a>
+          </li>
           <li class="nav-subsection">
             <a href="#units">Units</a>
           </li>
@@ -27,29 +30,33 @@
           <li class="nav-subsection">
             <a href="#QA">Quality Assurance</a>
           </li>
-          
+
           <li class="nav-section">
-            <a href="#API">Querying the Server</a>
+            <a href="#accessing">Accessing the Map</a>
           </li>
-          
+
+          <li class="nav-section">
+            <a href="#API">Legacy Query Code</a>
+          </li>
+
           <li class="nav-subsection">
             <a href="#function-call">Function Call</a>
           </li>
           <li class="nav-subsection">
             <a href="#API-example">Example Usage</a>
           </li>
-          
+
           <li class="nav-section">
             <a href="#download">Downloading the Data</a>
           </li>
-          
+
           <li class="nav-subsection">
             <a href="#datacube-reading">Reading HDF5 Data Cube</a>
           </li>
           <li class="nav-subsection">
             <a href="#datacube-example">Example Usage</a>
           </li>
-          
+
         </ul>
       </div>
     </div>
@@ -62,44 +69,142 @@
       <div class="page-header" id="intro">
         <h1>Introductory Notes</h1>
       </div>
-      
-      <p>Before diving into how you can access the 3D dust map, we'd like to make you aware of a few important points about the dataset. <b>For a detailed discussion of the map, please read <a href="#">Green <i>et al.</i> (2015)</a></b>.</p>
-      
+
+      <p>Before diving into how you can access the 3D dust map, we'd like to make you aware of a few important points about the dataset.
+
+      <div class="page-header" id="versions">
+        <h2>Versions</h2>
+      </div>
+
+      <p>There are two versions of the 3D dust map, which we refer to as <b>Bayestar17</b> (<a href="http://adsabs.harvard.edu/abs/2018arXiv180103555G">Green <i>et al.</i> 2018</a>) and <b>Bayestar15</b> (<a href="http://adsabs.harvard.edu/abs/2015arXiv150701005G">Green <i>et al.</i> 2015</a>). Please refer to the papers for detailed differences between the maps. <b>Bayestar17 supersedes Bayestar15</b>.</p>
+
       <div class="page-header" id="units">
         <h2>Units</h2>
       </div>
-      
-      <p>We use the same definition of <b class="small-space">E(<i>B-V</i> )</b> as the <a href="http://adsabs.harvard.edu/abs/1998ApJ...500..525S">Schlegel, Finkbeiner &#38 Davis (1998)</a> dust map. Although this was originally supposed to be the excess <b class="small-space"><i>B-V</i></b> in the Landolt filter system, <a href="http://adsabs.harvard.edu/abs/2011ApJ...737..103S">Schlafly &#38 Finkbeiner (2011)</a> found that it differs somewhat from the true stellar <b class="small-space"><i>B-V</i></b> excess. Therefore, in order to convert our values of <b class="small-space">E(<i>B-V</i> )</b> to extinction in various filter systems, consult <a href="http://iopscience.iop.org/0004-637X/737/2/103/article#apj398709t6">Table 6 of Schlafly &#38 Finkbeiner (2011)</a> (use the values in the <b>R<sub>V</sub> = 3.1</b> column).</p>
-      
+
+      <p>The units of Bayestar17 and Bayestar15 differ.</p>
+
+      <h3>Bayestar17</h3>
+
+      <p>In order to convert <b>Bayestar17</b> to extinction in Pan-STARRS 1 or 2MASS passbands, multiply the value reported by the map by the following coefficients:</p>
+
+      <table>
+        <tr>
+          <th>g</th>
+          <th>r</th>
+          <th>i</th>
+          <th>z</th>
+          <th>y</th>
+          <th>J</th>
+          <th>H</th>
+          <th>K<sub>s</sub></th>
+        </tr>
+        <tr>
+          <td>3.384</td>
+          <td>2.483</td>
+          <td>1.838</td>
+          <td>1.414</td>
+          <td>1.126</td>
+          <td>0.650</td>
+          <td>0.327</td>
+          <td>0.161</td>
+        </tr>
+      </table>
+      <!-- <p>Bayestar17 extinction coefficients.<p> -->
+
+      <p>In order to convert to extinction or reddening in other passbands, one must assume some relation between extinction in Pan-STARRS 1 or 2MASS passbands and other passbands. For example, applying the <b>R<sub>V</sub> = 3.1</b> Fitzpatrick (1999) reddening law to a 7000 K source spectrum, as done in Table 6 of Schlafly & Finkbeiner (2011), one obtains the relations</p>
+
+      <div class="equation">
+        <table class="no-border">
+          <tr>
+            <td>E(<i>B-V</i> ) = 0.981 E(<i>g-r</i> )<sub>P1</sub>,</td>
+            <td>(1)</td>
+          </tr>
+          <tr>
+            <td>E(<i>B-V</i> ) = 0.932 E(<i>r-z</i> )<sub>P1</sub>.</td>
+            <td>(2)</td>
+          </tr>
+        </table>
+        <!-- <p>E(<i>B-V</i> ) = 0.981 E(<i>g-r</i> ), (1)</p>
+        <p>E(<i>B-V</i> ) = 0.932 E(<i>r-z</i> ). (2)</p> -->
+      </div>
+
+      <p>Because the Fitzpatrick (1999) reddening law is different from the reddening law we assumed when producing Bayestar17, the two above relations give slightly different conversions between the values reported by Bayestar17 and E(<i>B-V</i> ). Using Eq. (1), we find that E(<i>B-V</i> ) = 0.884 × (Bayestar17). Using Eq. (2), we find that E(<i>B-V</i> ) = 0.996 × (Bayestar17).
+
+      <h3>Bayestar15</h3>
+
+      <p>In contrast, <b>Bayestar15</b> reports uses the same units as <a href="http://adsabs.harvard.edu/abs/1998ApJ...500..525S">Schlegel, Finkbeiner &#38 Davis (1998)</a> reddenings. Although this was originally supposed to be the excess <b class="small-space"><i>B-V</i></b> in the Landolt filter system, <a href="http://adsabs.harvard.edu/abs/2011ApJ...737..103S">Schlafly &#38 Finkbeiner (2011)</a> found that it differs somewhat from the true stellar <b class="small-space"><i>B-V</i></b> excess. Therefore, in order to convert our values of <b class="small-space">E(<i>B-V</i> )</b> to extinction in various filter systems, consult <a href="http://iopscience.iop.org/0004-637X/737/2/103/article#apj398709t6">Table 6 of Schlafly &#38 Finkbeiner (2011)</a> (use the values in the <b>R<sub>V</sub> = 3.1</b> column).</p>
+
       <div class="page-header" id="samples">
         <h2>Samples</h2>
       </div>
-      
+
       <p>For each sightline, we provide multiple estimates of the distance vs. reddening relationship. Alongside the maximum-probability density estimate (essentially, the best-fit) distance-reddening curve, we also provide samples of the distance-reddening curve, which are representative of the formal uncertainty in the relation. Most statistics you may wish to derive, like the median reddening to a given distance, are best determined by using the representative samples, rather than the best-fit relation.</p>
-      
+
       <div class="page-header" id="QA">
         <h2>Quality Assurance</h2>
       </div>
-      
+
       <p>We include a number of pieces of information on the reliability of each pixel. A <b>convergence flag</b> marks whether our fit to the line-of-sight reddening curve converged. This is a formal indicator, meaning that we correctly sampled the spread of possible distance-reddening relations, given our model assumptions. It does not, however, indicate that our model assumptions were correct for that pixel. This convergence flag is based on the <a href="http://dx.doi.org/10.1214/ss/1177011136">Gelman-Rubin diagnostic</a>, a method of flagging Markov Chain Monte Carlo non-convergence.</p>
-      
+
       <p>Additionally, <b>minimum and maximum reliable distances</b> are provided for each pixel, based on the distribution of stars along the sightline. Because we determine the presence of dust by observing differential reddening of foreground and background stars, we cannot trace dust beyond the farthest stars in a given pixel. Our estimates of dust reddening closer than the nearest observed stars in a pixel are similarly uncertain. We therefore urge caution in using our maps outside of the distance range indicated for each pixel.</p>
     </div>
   </div>
-  
+
   <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-10 -col-md-offset-1 col-lg-8 col-lg-offset-2">
-      
-      <div class="page-header" id="API">
-        <h1>Query Server Directly from Your Code</h1>
+
+      <h1 class="page-header" id="accessing">Accessing the Map</h1>
+
+      <p>The Python package <a href="//dustmaps.readthedocs.io/en/latest/">dustmaps</a> provides functions both for querying Bayestar15/17 and for downloading the maps. The <i>dustmaps</i> package also makes a number of additional 3D and 2D dust maps available through a uniform framework. For users who do not wish to download the entire Bayestar15/17 maps, <i>dustmaps</i> provides functions for querying these maps remotely.</p>
+
+      <p>After installing <i>dustmaps</i> and fetching the Bayestar data cubes, one can query it as follows:</p>
+
+      <div class="extra-margin-top">
+        <div class="API-python-2x">
+          {{snippets.dustmaps_local_API|safe}}
+        </div>
       </div>
-      
-      <p>You can query the Argonaut web server directly from your code, without having to download the full map to your local disk. If you're not interested in playing around with the entire map, this is the way we recommend you access it.</p>
-      
+
+      <p id="dustmaps-remote">If you prefer not to download the full Bayestar data cubes, you can query the map remotely:</p>
+
+      <div class="extra-margin-top">
+        <div class="API-python-2x">
+          {{snippets.dustmaps_remote_API|safe}}
+        </div>
+      </div>
+
+      <p>The above code will contact our server to retrieve only the coordinates you're interested in. If you're interested in only a few - or even a few thousand - coordinates, this is the most efficient way to query the map.</p>
+
+      <p>Using <i>dustmaps</i>, you can also query multiple coordinates at once. For example, the following snippet of code remotely queries the 90ᵗʰ percentile of reddening in the Bayestar17 map at an array of coordinates:</p>
+
+      <div class="extra-margin-top">
+        <div class="API-python-2x">
+          {{snippets.dustmaps_array_API|safe}}
+        </div>
+      </div>
+
+      <p>The <i>dustmaps</i> package can be used to query a number of dust maps beyond Bayestar15/17. For example, you can query  Schlegel, Finkbeiner & Davis (1998), either from a version stored on local disk or remotely:
+
+      <div class="extra-margin-top">
+        <div class="API-python-2x">
+          {{snippets.dustmaps_SFD_API|safe}}
+        </div>
+      </div>
+
+      <p>See the <i>dustmaps</i> <a href="//dustmaps.readthedocs.io/en/latest/">documentation</a> for more information.</p>
+
+
+      <div class="page-header" id="API">
+        <h1>Legacy Query Code</h1>
+      </div>
+
+      <p>If you prefer not to download the <i>dustmaps</i> Python package, or if you don't use Python, you can still remotely query the older version of our map, <i>Bayestar15</i>, with the following function, given in both Python and IDL. We strongly recommend the <i>dustmaps</i> package, but the following code is an alternative way to access the older <i>Bayestar15</i> map.</p>
+
       <div class="page-header" id="function-call">
         <h2>Function Call</h2>
       </div>
-      
+
       <span class="fontsize-normal">In</span>
       <div class="dropdown language-dropdown">
         <button class="btn btn-success dropdown-toggle" type="button" data-toggle="dropdown" href="#" id="language-dropdown">
@@ -112,7 +217,7 @@
         </ul>
       </div>
       <span class="fontsize-normal">, the following function will call the Argonaut server and return the line-of-sight reddening for any coordinates, or set of coordinates, on the sky:</span>
-      
+
       <div class="extra-margin-top language-toggle-parent">
         <div class="API-python-2x language-toggle add-click-select">
           {{snippets.map_query_API['python-2.x']|safe}}
@@ -121,15 +226,15 @@
           {{snippets.map_query_API['IDL']|safe}}
         </div>
       </div>
-      
+
       <p>This code can be adapted for any programming language that can issue HTTP POST requests. The code can also be found on <a href="https://gist.github.com/gregreen/20291d238bc398d9df84">GitHub</a>.</p>
-      
+
       <div class="page-header" id="API-example">
         <h2>Example Usage</h2>
       </div>
-      
+
       <p>To query one sightline, say, Galactic coordinates (&#8467, <i>b</i>) = (90&#176, 10&#176), you would call</p>
-      
+
       <div class="extra-margin-top language-toggle-parent">
         <div class="API-python-2x language-toggle">
           {{snippets.map_query_API_example_single['python-2.x']|safe}}
@@ -138,9 +243,9 @@
           {{snippets.map_query_API_example_single['IDL']|safe}}
         </div>
       </div>
-      
+
       <p>You can also query multiple sightlines simultaneously, simply by passing longitude and latitude as lists:</p>
-      
+
       <div class="extra-margin-top language-toggle-parent">
         <div class="API-python-2x language-toggle">
           {{snippets.map_query_API_example_multiple['python-2.x']|safe}}
@@ -149,11 +254,11 @@
           {{snippets.map_query_API_example_multiple['IDL']|safe}}
         </div>
       </div>
-      
+
       <p>If you are going to be querying large numbers of sightlines at once, we kindly request that you use this batch syntax, rather than calling <code>query()</code> in a loop. It will be faster, because you only have to contact the server once, and it will reduce the load on the Argonaut server.</p>
-      
+
       <p>Two additional query modes are provided, beyond the default <code>'full'</code> mode. If <code>mode = 'lite'</code> is passed to the <code>query()</code> function, then less information is returned per sightline:</p>
-      
+
       <div class="extra-margin-top language-toggle-parent">
         <div class="API-python-2x language-toggle">
           {{snippets.map_query_API_example_lite['python-2.x']|safe}}
@@ -162,10 +267,10 @@
           {{snippets.map_query_API_example_lite['IDL']|safe}}
         </div>
       </div>
-      
+
       <p>Finally, for the convenience of many users who also want to query the two-dimensional <a href="http://adsabs.harvard.edu/abs/1998ApJ...500..525S">Schlegel, Finkbeiner &#38 Davis (1998)</a> map of dust reddening, the option <code>mode = 'sfd'</code> is also provided:</p>
-      
-      
+
+
       <div class="extra-margin-top language-toggle-parent">
         <div class="API-python-2x language-toggle">
           {{snippets.map_query_API_example_SFD['python-2.x']|safe}}
@@ -176,24 +281,24 @@
       </div>
     </div>
   </div>
-  
+
   <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-10 -col-md-offset-1 col-lg-8 col-lg-offset-2">
-      
+
       <div class="page-header" id="download">
         <h1>Download Data Cube</h1>
       </div>
-      
-      <p>The entire 3D map can be downloaded in either HDF5 or FITS format from <a href="http://dx.doi.org/10.7910/DVN/40C44C">the Harvard Dataverse</a>.</p>
-      
-      <p>The full map comes to over 4.5 GB in compressed HDF5 format, so if you're only interested in individual sightlines, we strongly recommend you use <a href="#API">our web API</a>, which you can include directly as a function call in a number of programming languages.</p>
-      
+
+      <p>If you prefer to work with the entire 3D map directly, rather than using the Python package <i>dustmaps</i>, you can obtain the data cube in either HDF5 or FITS format from the Harvard Dataverse: <a href="http://dx.doi.org/10.7910/DVN/LCYHJG">Bayestar17</a> and <a href="http://dx.doi.org/10.7910/DVN/40C44C">Bayestar15</a>.</p>
+
+      <p>The full map comes to over 4.5 GB in compressed HDF5 format, so if you're only interested in individual sightlines, we strongly recommend you use <a href="#dustmaps-remote">the remote query API in the <i>dustmaps</i> package</a>.</p>
+
       <div class="page-header" id="datacube-reading">
         <h2>Reading HDF5 Data Cube</h2>
       </div>
-      
+
       <p>The <a href="https://en.wikipedia.org/wiki/Hierarchical_Data_Format">HDF5 format</a> is a self-documenting, highly flexible format for scientific data. It has a number of powerful features, such as internal compression and compound datatypes (similar to <a href="http://docs.scipy.org/doc/numpy/user/basics.rec.html">numpy structured arrays</a>), and has bindings in many different programming languages, including C, Python, Fortran and IDL.</p>
-      
+
       <p>The HDF5 file we provide has four datasets:</p>
       <ul>
         <li><b>&#47pixel_info</b> : pixel locations and metadata.</li>
@@ -201,49 +306,49 @@
         <li><b>&#47best_fit</b> : best-fit distance vs. reddening profile in each pixel.</li>
         <li><b>&#47GRDiagnostic</b> : Gelman-Rubin convergence diagnostic in each pixel.</li>
       </ul>
-      
+
       <p>All four datasets are ordered in the same way, so that the n<sup>th</sup> element of the <b>&#47samples</b> dataset corresponds to the same pixel as described by the n<sup>th</sup> entry in <b>&#47pixel_info</b>. As our 3D dust map contains pixels of different sizes, <b>&#47pixel_info</b> specifies each pixel by a HEALPix <code>nside</code> and nested pixel index.
-      
+
       <p>An example in Python will help illustrate the structure of the file:</p>
-      
+
       {{snippets.h5_open_example|safe}}
-      
+
       <div class="page-header" id="datacube-example">
         <h2>Example Usage</h2>
       </div>
-      
+
       <p>As a simple example of how to work with the full data cube, we will plot the median reddening in the farthest distance bin. We begin by opening the HDF5 file and extracting the information we need:</p>
-      
+
       {{snippets.reindex_example[0]|safe}}
-      
+
       <p>The variable <code>pix_info</code> specifies the location of each pixel (by <code>nside</code> and <code>healpix_index</code>), while <code>EBV_far_median</code> contains the median reddening in each pixel in the farthest distance bin. We want to construct a single-resolution HEALPix map, which we can use standard library routines to plot.</p>
-      
+
       <p>We find the maximum <code>nside</code> present in the map, and create an empty array, <code>pix_val</code>, to house the upsampled map:</p>
-      
+
       {{snippets.reindex_example[1]|safe}}
-      
+
       <p>Now, we have to fill the upsampled map, by putting every pixel in the original map into the correct location(s) in the upsampled map. Because our original map has multiple resolutions, pixels that are below the maximum resolution correspond to multiple pixels in the upsampled map. We loop through the <code>nside</code> resolutions present in the original map, placing all the pixels of the same resolution into the upsampled map at once:</p>
-      
+
       {{snippets.reindex_example[2]|safe}}
-      
+
       <p>Now we have an array, <code>pix_val</code>, that represents reddening in the farthest distance bin. We can use one of <a href="http://healpy.readthedocs.org/en/latest/index.html">healpy's</a> built-in visualization functions to plot the map:</p>
-      
+
       {{snippets.reindex_example[3]|safe}}
-      
+
       <p>Here's the resulting map. Note that it's centered on (&#8467, <i>b</i>) = (130&#176, 0&#176):</p>
       <div class="thumbnail">
         <img src="{{ url_for('static', filename='media/healpy-plot-example-1800.jpg') }}" class="img-responsive" />
       </div>
     </div>
   </div>
-  
+
   <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-10 -col-md-offset-1 col-lg-8 col-lg-offset-2">
-      
+
       <div class="page-header" id="license">
         <h1>License</h1>
       </div>
-      
+
       <p>All code snippets included on this page are covered by the <a href="{{ url_for('static', filename='snippet-license.txt') }}">MIT License</a>. In other words, feel free to use the code provided here in your own work.</p>
     </div>
   </div>
