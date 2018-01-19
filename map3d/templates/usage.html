@@ -82,7 +82,7 @@
         <h2>Units</h2>
       </div>
 
-      <p>The units of Bayestar17 and Bayestar15 differ.</p>
+      <p>The units of Bayestar17 and Bayestar15 differ. This is primarily due to the different extinction laws assumed by the two versions of the dust map. While Bayestar17 assumes the extinction law derived by <a href="http://adsabs.harvard.edu/abs/2016ApJ...821...78S">Schlafly et al. (2016)</a>, Bayestar15 relies on the extinction laws of <a href="http://adsabs.harvard.edu/abs/1999PASP..111...63F">Fitzpatrick et al. (1999)</a> and <a href="http://adsabs.harvard.edu/abs/1989ApJ...345..245C">Cardelli et al. (1989)</a>. Both Bayestar17 and Bayestar15 are intended to provide reddening in a similar unit as SFD (<a href="http://adsabs.harvard.edu/abs/1998ApJ...500..525S">Schlegel et al. 1998</a>), which is not quite equal to E(<i>B-V</i> ) (see the recalibration of SFD undertaken in <a href="http://adsabs.harvard.edu/abs/2011ApJ...737..103S">Schlafly & Finkbeiner 2011</a>).</p>
 
       <h3>Bayestar17</h3>
 
@@ -112,7 +112,7 @@
       </table>
       <!-- <p>Bayestar17 extinction coefficients.<p> -->
 
-      <p>In order to convert to extinction or reddening in other passbands, one must assume some relation between extinction in Pan-STARRS 1 or 2MASS passbands and other passbands. For example, applying the <b>R<sub>V</sub> = 3.1</b> Fitzpatrick (1999) reddening law to a 7000 K source spectrum, as done in Table 6 of Schlafly & Finkbeiner (2011), one obtains the relations</p>
+      <p>In order to convert to extinction or reddening in other passbands, one must assume some relation between extinction in Pan-STARRS 1 or 2MASS passbands and other passbands. For example, applying the <b>R<sub>V</sub> = 3.1</b> Fitzpatrick (1999) reddening law to a 7000 K source spectrum, as done in <a href="http://iopscience.iop.org/0004-637X/737/2/103/article#apj398709t6">Table 6 of Schlafly & Finkbeiner (2011)</a>, one obtains the relations</p>
 
       <div class="equation">
         <table class="no-border">
@@ -129,7 +129,9 @@
         <p>E(<i>B-V</i> ) = 0.932 E(<i>r-z</i> ). (2)</p> -->
       </div>
 
-      <p>Because the Fitzpatrick (1999) reddening law is different from the reddening law we assumed when producing Bayestar17, the two above relations give slightly different conversions between the values reported by Bayestar17 and E(<i>B-V</i> ). Using Eq. (1), we find that E(<i>B-V</i> ) = 0.884 × (Bayestar17). Using Eq. (2), we find that E(<i>B-V</i> ) = 0.996 × (Bayestar17).
+      <p>Because the Fitzpatrick (1999) reddening law is different from the reddening law we assumed when producing Bayestar17, the two above relations give slightly different conversions between the values reported by Bayestar17 and E(<i>B-V</i> ). Using Eq. (1), we find that E(<i>B-V</i> ) = 0.884 × (Bayestar17). Using Eq. (2), we find that E(<i>B-V</i> ) = 0.996 × (Bayestar17).</p>
+
+      <p>The overall normalization of Bayestar17 was chosen so that one unit of Bayestar17 reddening predicts the same E(<i>g-r</i> ) as one unit of the original SFD reddening map. That means that if one assumes Eq. (1) to hold, then Bayestar17 is equivalent to SFD, and reddening in non-PS1 passbands can be obtained by multiplying Bayestar17 by the coefficients in <a href="http://iopscience.iop.org/0004-637X/737/2/103/article#apj398709t6">Table 6 of Schlafly & Finkbeiner (2011)</a>.</p>
 
       <h3>Bayestar15</h3>
 
