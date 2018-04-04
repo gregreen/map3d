@@ -135,7 +135,33 @@
 
       <h3>Bayestar15</h3>
 
-      <p>In contrast, <b>Bayestar15</b> reports uses the same units as <a href="http://adsabs.harvard.edu/abs/1998ApJ...500..525S">Schlegel, Finkbeiner &#38 Davis (1998)</a> reddenings. Although this was originally supposed to be the excess <b class="small-space"><i>B-V</i></b> in the Landolt filter system, <a href="http://adsabs.harvard.edu/abs/2011ApJ...737..103S">Schlafly &#38 Finkbeiner (2011)</a> found that it differs somewhat from the true stellar <b class="small-space"><i>B-V</i></b> excess. Therefore, in order to convert our values of <b class="small-space">E(<i>B-V</i> )</b> to extinction in various filter systems, consult <a href="http://iopscience.iop.org/0004-637X/737/2/103/article#apj398709t6">Table 6 of Schlafly &#38 Finkbeiner (2011)</a> (use the values in the <b>R<sub>V</sub> = 3.1</b> column).</p>
+      <p>In contrast, <b>Bayestar15</b> reports uses the same units as <a href="http://adsabs.harvard.edu/abs/1998ApJ...500..525S">Schlegel, Finkbeiner &#38 Davis (1998)</a> reddenings. Although this was originally supposed to be the excess <b class="small-space"><i>B-V</i></b> in the Landolt filter system, <a href="http://adsabs.harvard.edu/abs/2011ApJ...737..103S">Schlafly &#38 Finkbeiner (2011)</a> found that it differs somewhat from the true stellar <b class="small-space"><i>B-V</i></b> excess. Therefore, in order to convert our values of <b class="small-space">E(<i>B-V</i> )</b> to extinction in various filter systems, consult <a href="http://iopscience.iop.org/0004-637X/737/2/103/article#apj398709t6">Table 6 of Schlafly &#38 Finkbeiner (2011)</a> (use the values in the <b>R<sub>V</sub> = 3.1</b> column), which are based on the <a href="http://adsabs.harvard.edu/abs/1999PASP..111...63F">Fitzpatrick (1999)</a> reddening law. For 2MASS passbands, Bayestar15 assumes a <a href="http://adsabs.harvard.edu/abs/1989ApJ...345..245C">Cardelli et al. (1989)</a> reddening law.</p>
+
+      <p>The extinction coefficients assumed by Bayestar15 are as follows:
+      <table>
+        <tr>
+          <th>g</th>
+          <th>r</th>
+          <th>i</th>
+          <th>z</th>
+          <th>y</th>
+          <th>J</th>
+          <th>H</th>
+          <th>K<sub>s</sub></th>
+        </tr>
+        <tr>
+          <td>3.172</td>
+          <td>2.172</td>
+          <td>1.682</td>
+          <td>1.322</td>
+          <td>1.087</td>
+          <td>0.786</td>
+          <td>0.508</td>
+          <td>0.320</td>
+        </tr>
+      </table>
+
+      <p>Note that these extinction coefficients differ more from those used by Bayestar17 in the near-infrared than in the optical. This is due to the uncertainty in the gray component of extinction (corresponding to an overall additive change to all extinction coefficients), which is not as well constrained as the ratios of reddenings in different filter combinations. For example, the ratio of <b class="small-space">E(<i>g-r</i> )</b> to <b class="small-space">E(<i>J-K</i> )</b> is better constrained than <b>A<sub>g</sub></b>, <b>A<sub>r</sub></b>, <b>A<sub>J</sub></b> or <b>A<sub>Ks</sub></b> individually. Because the near-infrared extinction coefficients are smaller than those at optical wavelengths, near-infrared extinction estimates are more affected (percentually) by uncertainty in the gray component than optical extinctions.</p>
 
       <div class="page-header" id="samples">
         <h2>Samples</h2>
