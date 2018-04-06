@@ -150,9 +150,11 @@ p.equation, .equation > p, .equation > table {
 table {
   border-spacing: 1em;
   border-collapse: collapse;
-  font-size: 12pt;
+  /*font-size: 12pt;*/
   margin-bottom: 1em;
   border: 1pt solid rgba(0,0,0,0.25);
+  caption-side: top;
+  /*margin-left: 2em;*/
 }
 
 table th {
@@ -168,6 +170,12 @@ table td {
 
 table.no-border {
   border: none;
+}
+
+table caption {
+  text-align: center;
+  font-weight: bold;
+  /*font-size: 12pt;*/
 }
 
 
@@ -237,6 +245,14 @@ div {
   .highlight pre {
     max-height: 250px;
   }
+
+  table {
+    font-size: 9pt;
+    margin-left: 1em;
+  }
+  table caption {
+    font-size: 11pt;
+  }
 }
 
 /* sm */
@@ -286,6 +302,14 @@ div {
   .highlight pre {
     max-height: 300px;
   }
+  
+  table {
+    font-size: 11pt;
+    margin-left: 2em;
+  }
+  table caption {
+    font-size: 12pt;
+  }
 }
 
 /* md */
@@ -326,6 +350,14 @@ div {
 
   .highlight pre {
     max-height: 400px;
+  }
+  
+  table {
+    font-size: 12pt;
+    margin-left: 3em;
+  }
+  table caption {
+    font-size: 13pt;
   }
 }
 
@@ -368,6 +400,14 @@ div {
 
   .highlight pre {
     max-height: 500px;
+  }
+  
+  table {
+    font-size: 12pt;
+    margin-left: 3em;
+  }
+  table caption {
+    font-size: 13pt;
   }
 }
 
