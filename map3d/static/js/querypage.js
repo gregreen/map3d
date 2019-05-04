@@ -152,7 +152,7 @@ function create_plot() {
   };
 
   var issue_map_warnings = function(map_name) {
-    var available_maps = ["bayestar2017", "bayestar2015"];
+    var available_maps = ["bayestar2019", "bayestar2017", "bayestar2015"];
     if (available_maps.indexOf(map_name) < 0) {
       show_custom_alert("Invalid map name.");
       return false;
@@ -209,7 +209,7 @@ function create_plot() {
   };
 
   var get_map_name = function() {
-    return $("#map-toggle").prop("checked") ? "bayestar2017" : "bayestar2015";
+    return $("#map-selector").prop("value");
   };
 
   // Read the input boxes to get the coordinates
@@ -1046,11 +1046,7 @@ function create_plot() {
   };
 
   var update_map_toggle = function(map_name) {
-    if (map_name === "bayestar2015") {
-      $("#map-toggle").bootstrapToggle("off");
-    } else {
-      $("#map-toggle").bootstrapToggle("on");
-    }
+    $("#map-selector").val(map_name);
   };
 
   // Sets the URL query string to represent the given coordinates.

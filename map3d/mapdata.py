@@ -15,15 +15,14 @@ import validators
 script_dir = os.path.dirname(os.path.realpath(__file__))
 data_path = os.path.join(script_dir, 'static', 'data')
 
-def load_images(map_name):
-    slice_idx = [7, 12, 19]
 
-    fname = os.path.join(data_path, 'images_{:s}.h5'.format(map_name))
-    with h5py.File(fname, 'r') as f:
-        nside = f['reddening'].attrs['nside']
-        reddening_slices = f['reddening'][:,slice_idx]
-
-    return nside, reddening_slices
+def gen_images(q, nside, dists, **kwargs):
+    import healpy as hp
+    n_pix = hp.pixelfunc.nside2npix(nside)
+    l,b = hp.pixelfunc.pix2ang(nside, np.arange(n_pix),
+                               lonlat=True, nest=True)
+    img = np.vstack([q.query_gal(l, b, d=d, **kwargs) for d in dists])
+    return nside, img.T
 
 
 print('Loading Bayestar2015 ...')
@@ -34,12 +33,19 @@ print('Loading Bayestar2017 ...')
 bayestar2017 = BayestarQuery(
     map_fname=os.path.join(data_path, 'bayestar2017.h5'),
     max_samples=10)
+print('Loading Bayestar2019 ...')
+bayestar2019 = BayestarQuery(
+    map_fname=os.path.join(data_path, 'bayestar2019.h5'),
+    max_samples=5)
 print('Loading SFD ...')
 sfd = SFDQuery(map_dir=data_path)
 # planck = PlanckQuery()
 # marshall = MarshallQuery()
-print('Loading map images ...')
-image_data = {n: load_images(n) for n in ['bayestar2015', 'bayestar2017']}
+print('Generating map images ...')
+image_data = {
+    'bayestar'+n: gen_images(q, 1024, (0.3, 1., 5.), mode='mean')
+    for n,q in (('2015',bayestar2015),('2017',bayestar2017),('2019',bayestar2019))
+}
 print('Done loading data.')
 
 
@@ -141,6 +147,13 @@ handlers = {
         'size_checker': get_size_checker(
             1.e6,
             f_size=bayestar_query_size_calculator(bayestar2017))
+    },
+    'bayestar2019': {
+        'q': bayestar2019,
+        'schema': bayestar_schema,
+        'size_checker': get_size_checker(
+            1.e6,
+            f_size=bayestar_query_size_calculator(bayestar2019))
     },
     'sfd': {
         'q': sfd,

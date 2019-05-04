@@ -49,7 +49,7 @@ def get_view_rate_limit():
     return getattr(g, '_view_rate_limit', None)
 
 def on_over_limit(rlimit):
-    return 'You have hit the rate limit for this resource.', 400
+    return 'You have hit the rate limit for this resource.', 429
 
 def ratelimit(limit, per=300, send_x_headers=False,
               over_limit=on_over_limit,

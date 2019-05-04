@@ -61,8 +61,18 @@ def papers():
 # API v2
 ############################################################################
 
+def over_limit_message(rlimit):
+    msg = (
+        'You are issuing too many queries in a short period of time. '
+        'You can reduce the number of queries required by requesting '
+        'multiple coordinates with each call.'
+    )
+    return msg, 429
+
 @app.route('/api/v2/<map_name>/query', methods=['POST'])
-@ratelimit(limit=1000, per=5*60, send_x_headers=True)
+@ratelimit(limit=300, per=5*60,
+           send_x_headers=True,
+           over_limit=over_limit_message)
 @gzipped(6)
 @validate_json('skycoord', 'gal', 'equ',
                'distance', 'equ-frame',
@@ -137,7 +147,7 @@ def interactive_data(coords, map_name):
     t0 = time.time()
 
     # Check map name
-    if map_name not in ['bayestar2015', 'bayestar2017']:
+    if map_name not in ['bayestar2015', 'bayestar2017', 'bayestar2019']:
         msg = 'Invalid map name: "{}".'.format(map_name)
         return msg, 400
 
