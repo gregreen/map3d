@@ -28,11 +28,11 @@ def gen_images(q, nside, dists, **kwargs):
 print('Loading Bayestar2015 ...')
 bayestar2015 = BayestarQuery(
     map_fname=os.path.join(data_path, 'bayestar2015.h5'),
-    max_samples=10)
+    max_samples=5)
 print('Loading Bayestar2017 ...')
 bayestar2017 = BayestarQuery(
     map_fname=os.path.join(data_path, 'bayestar2017.h5'),
-    max_samples=10)
+    max_samples=5)
 print('Loading Bayestar2019 ...')
 bayestar2019 = BayestarQuery(
     map_fname=os.path.join(data_path, 'bayestar2019.h5'),
