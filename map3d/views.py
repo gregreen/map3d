@@ -167,6 +167,9 @@ def interactive_data(coords, map_name):
 
     best = query_obj(coords, mode='best')
     distmod = (query_obj.distmods/units.mag).decompose().value
+    
+    min_rel_dm = np.min([flags['min_reliable_distmod'], 999.])
+    max_rel_dm = np.max([flags['max_reliable_distmod'], -999.])
 
     t3 = time.time()
 
@@ -199,8 +202,8 @@ def interactive_data(coords, map_name):
         'best': best.tolist(),
         'distmod': distmod.tolist(),
         'converged': flags['converged'],
-        'min_reliable_distmod': flags['min_reliable_distmod'],
-        'max_reliable_distmod': flags['max_reliable_distmod']})
+        'min_reliable_distmod': min_rel_dm,
+        'max_reliable_distmod': max_rel_dm})
 
     for k,(i,l) in enumerate(zip(img, label)):
         res['label{:d}'.format(k+1)] = l
