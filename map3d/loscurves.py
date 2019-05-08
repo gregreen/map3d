@@ -57,18 +57,17 @@ def los_ascii_summary(coords, samples, best, flags,
     # Explanation
     explanation = (
         "#\n"
-        "# The table contains E(B-V) in magnitudes out to the specified distance moduli.\n"
+        "# The table contains E(g-r) in magnitudes out to the specified distance moduli.\n"
         "# Each column corresponds to a different distance modulus, and each row\n"
         "# corresponds to a different sample. The first sample is the best fit, while\n"
         "# the following samples are drawn from the posterior distribution of\n"
         "# distance-reddening profiles.\n"
         "#\n"
-        "# See Green et al. (2014) & Green et al. (2015) for a detailed description\n"
-        "# of how the line-of-sight reddening is computed.\n"
-        "#\n"
-        "# Use coefficients in Table 6 of Schlafly & Finkbeiner (2011) to convert to\n"
-        "# extinction in various bands (note that A_B - A_V != 1 for E(B-V) = 1; E(B-V)\n"
-        "# is strictly a parameter name here).\n"
+        "# See Green et al. (2014, 2015, 2018, 2019) for a detailed description\n"
+        "# of how the line-of-sight reddening is computed, and for coefficients\n"
+        "# to convert E(g-r) into extinction in different bands. To convert to\n"
+        "# extinction in other bands, use coefficients in Table 6\n"
+        "# of Schlafly & Finkbeiner (2011).\n"
         "#\n")
 
     # Table column headings

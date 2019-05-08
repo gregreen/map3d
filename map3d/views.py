@@ -168,6 +168,10 @@ def interactive_data(coords, map_name):
     best = query_obj(coords, mode='best')
     distmod = (query_obj.distmods/units.mag).decompose().value
     
+    # Convert to E(g-r)
+    samples *= 0.901
+    best *= 0.901
+    
     min_rel_dm = np.min([flags['min_reliable_distmod'], 999.])
     max_rel_dm = np.max([flags['max_reliable_distmod'], -999.])
 
@@ -230,7 +234,7 @@ def interactive_table(coords, map_name):
     t0 = time.time()
 
     # Check map name
-    if map_name not in ['bayestar2015', 'bayestar2017']:
+    if map_name not in ['bayestar2015', 'bayestar2017', 'bayestar2019']:
         msg = 'Invalid map name: "{}".'.format(map_name)
         return msg, 400
 
@@ -250,7 +254,11 @@ def interactive_table(coords, map_name):
 
     best = query_obj(coords, mode='best')
     distmod = (query_obj.distmods/units.mag).decompose().value
-
+    
+    # Convert to E(g-r)
+    samples *= 0.901
+    best *= 0.901
+    
     t3 = time.time()
 
     # ASCII table

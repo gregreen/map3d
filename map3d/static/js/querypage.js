@@ -232,7 +232,7 @@ function create_plot() {
 
 
   /*
-   * Distance - E(B-V) plot
+   * Distance - E(g-r) plot
    */
 
   var show_plot_div = function(callback) {
@@ -363,7 +363,7 @@ function create_plot() {
         .attr("y", 0)
         .attr("dy", "-52pt")
         .attr("transform", "rotate(-90)")
-        .text("E(B-V) (mag)");
+        .text("E(g-r) (mag)");
 
     y_axis.transition().duration(dt)
       .call(d3.axisLeft(scale_y));
@@ -694,7 +694,7 @@ function create_plot() {
     focus_label.append("tspan")
       .attr("x", 0)
       .attr("dy", "1.2em")
-      .text("E(B-V) = ");
+      .text("E(g-r) = ");
 
     focus_label.append("tspan")
       .attr("id", "mouse-reddening")
