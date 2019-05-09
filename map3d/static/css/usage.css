@@ -143,6 +143,11 @@ p.equation, .equation > p, .equation > table {
   margin-left: 2em;
 }
 
+
+span.inline-eq {
+  white-space:nowrap;
+}
+
 /*
  * Tables
  */
