@@ -76,20 +76,67 @@
         <h2>Versions</h2>
       </div>
 
-      <p>There are two versions of the 3D dust map, which we refer to as <b>Bayestar17</b> (<a href="http://adsabs.harvard.edu/abs/2018arXiv180103555G">Green <i>et al.</i> 2018</a>) and <b>Bayestar15</b> (<a href="http://adsabs.harvard.edu/abs/2015arXiv150701005G">Green <i>et al.</i> 2015</a>). Please refer to the papers for detailed differences between the maps. <b>Bayestar17 supersedes Bayestar15</b>.</p>
+      <p>There are three versions of the 3D dust map, which we refer to as <b>Bayestar19</b> (<a href="https://arxiv.org/abs/1905.02734">Green <i>et al.</i> 2019</a>), <b>Bayestar17</b> (<a href="http://adsabs.harvard.edu/abs/2018arXiv180103555G">Green <i>et al.</i> 2018</a>) and <b>Bayestar15</b> (<a href="http://adsabs.harvard.edu/abs/2015arXiv150701005G">Green <i>et al.</i> 2015</a>). Please refer to the papers for detailed differences between the maps.
 
       <div class="page-header" id="units">
         <h2>Units</h2>
       </div>
 
-      <p>The units of Bayestar17 and Bayestar15 differ. This is primarily due to the different extinction laws assumed by the two versions of the dust map. While Bayestar17 assumes the extinction law derived by <a href="http://adsabs.harvard.edu/abs/2016ApJ...821...78S">Schlafly et al. (2016)</a>, Bayestar15 relies on the extinction laws of <a href="http://adsabs.harvard.edu/abs/1999PASP..111...63F">Fitzpatrick (1999)</a> and <a href="http://adsabs.harvard.edu/abs/1989ApJ...345..245C">Cardelli et al. (1989)</a>. Both Bayestar17 and Bayestar15 are intended to provide reddening in a similar unit as SFD (<a href="http://adsabs.harvard.edu/abs/1998ApJ...500..525S">Schlegel et al. 1998</a>), which is not quite equal to E(<i>B-V</i> ) (see the recalibration of SFD undertaken in <a href="http://adsabs.harvard.edu/abs/2011ApJ...737..103S">Schlafly & Finkbeiner 2011</a>).</p>
+      <p>The units of Bayestar19, Bayestar17 and Bayestar15 differ. This is primarily due to the different extinction laws assumed by the three versions of the dust map. While Bayestar19 and Bayestar17 assume the slightly different versions of the reddening vector derived by <a href="http://adsabs.harvard.edu/abs/2016ApJ...821...78S">Schlafly et al. (2016)</a>, Bayestar15 relies on the extinction relations of <a href="http://adsabs.harvard.edu/abs/1999PASP..111...63F">Fitzpatrick (1999)</a> and <a href="http://adsabs.harvard.edu/abs/1989ApJ...345..245C">Cardelli et al. (1989)</a>. All three versions of the map are intended to provide reddening in a similar unit as SFD (<a href="http://adsabs.harvard.edu/abs/1998ApJ...500..525S">Schlegel et al. 1998</a>), which is not quite equal to E(<i>B-V</i> ) (see the recalibration of SFD undertaken in <a href="http://adsabs.harvard.edu/abs/2011ApJ...737..103S">Schlafly & Finkbeiner 2011</a>).</p>
 
+      <h3>Bayestar19</h3>
+
+      <p>In order to convert <b>Bayestar19</b> to extinction in Pan-STARRS 1 or 2MASS passbands, multiply the value reported by the map by the following coefficients:</p>
+
+      <table id="Bayestar19-coefficients">
+	<caption>Table 1: Bayestar19 extinction coefficients (<i>R </i>)</caption>
+        <tr>
+          <th>g</th>
+          <th>r</th>
+          <th>i</th>
+          <th>z</th>
+          <th>y</th>
+          <th>J</th>
+          <th>H</th>
+          <th>K<sub>s</sub></th>
+        </tr>
+        <tr>
+          <td>3.518</td>
+          <td>2.617</td>
+          <td>1.971</td>
+          <td>1.549</td>
+          <td>1.263</td>
+          <td>0.7927</td>
+          <td>0.4690</td>
+          <td>0.3026</td>
+        </tr>
+      </table>
+      
+      <p>In order to convert to extinction or reddening in other passbands, one must assume some relation between extinction in Pan-STARRS 1 or 2MASS passbands and other passbands. For example, applying the <b>R<sub>V</sub> = 3.1</b> Fitzpatrick (1999) reddening law to a 7000 K source spectrum, as done in <a href="http://iopscience.iop.org/0004-637X/737/2/103/article#apj398709t6">Table 6 of Schlafly & Finkbeiner (2011)</a>, one obtains the relations</p>
+
+      <div class="equation">
+        <table class="no-border">
+          <tr>
+            <td>E(<i>B-V</i> ) = 0.981 E(<i>g-r</i> )<sub>P1</sub>,</td>
+            <td>(1)</td>
+          </tr>
+          <tr>
+            <td>E(<i>B-V</i> ) = 0.932 E(<i>r-z</i> )<sub>P1</sub>.</td>
+            <td>(2)</td>
+          </tr>
+        </table>
+      </div>
+
+      <p>Because the Fitzpatrick (1999) reddening law is different from the reddening law we assumed when producing Bayestar19, the two above relations give slightly different conversions between the values reported by Bayestar19 and E(<i>B-V</i> ). Using Eq. (1), we find that E(<i>B-V</i> ) = 0.884 × (Bayestar19). Using Eq. (2), we find that E(<i>B-V</i> ) = 0.996 × (Bayestar19).</p>
+      
+      <p>The overall normalization of Bayestar19 was chosen so that one unit of Bayestar19 reddening predicts the same E(<i>g-r</i> ) as one unit of the original SFD reddening map. That means that if one assumes Eq. (1) to hold, then Bayestar19 is equivalent to SFD, and reddening in non-PS1 passbands can be obtained by multiplying Bayestar19 by the coefficients in <a href="http://iopscience.iop.org/0004-637X/737/2/103/article#apj398709t6">Table 6 of Schlafly & Finkbeiner (2011)</a>.</p>
+      
       <h3>Bayestar17</h3>
 
       <p>In order to convert <b>Bayestar17</b> to extinction in Pan-STARRS 1 or 2MASS passbands, multiply the value reported by the map by the following coefficients:</p>
 
-      <table>
-	<caption>Table 1: Bayestar17 extinction coefficients (<i>R </i>)</caption>
+      <table id="Bayestar17-coefficients">
+	<caption>Table 2: Bayestar17 extinction coefficients (<i>R </i>)</caption>
         <tr>
           <th>g</th>
           <th>r</th>
@@ -111,36 +158,16 @@
           <td>0.161</td>
         </tr>
       </table>
-      <!-- <p>Bayestar17 extinction coefficients.<p> -->
 
-      <p>In order to convert to extinction or reddening in other passbands, one must assume some relation between extinction in Pan-STARRS 1 or 2MASS passbands and other passbands. For example, applying the <b>R<sub>V</sub> = 3.1</b> Fitzpatrick (1999) reddening law to a 7000 K source spectrum, as done in <a href="http://iopscience.iop.org/0004-637X/737/2/103/article#apj398709t6">Table 6 of Schlafly & Finkbeiner (2011)</a>, one obtains the relations</p>
-
-      <div class="equation">
-        <table class="no-border">
-          <tr>
-            <td>E(<i>B-V</i> ) = 0.981 E(<i>g-r</i> )<sub>P1</sub>,</td>
-            <td>(1)</td>
-          </tr>
-          <tr>
-            <td>E(<i>B-V</i> ) = 0.932 E(<i>r-z</i> )<sub>P1</sub>.</td>
-            <td>(2)</td>
-          </tr>
-        </table>
-        <!-- <p>E(<i>B-V</i> ) = 0.981 E(<i>g-r</i> ), (1)</p>
-        <p>E(<i>B-V</i> ) = 0.932 E(<i>r-z</i> ). (2)</p> -->
-      </div>
-
-      <p>Because the Fitzpatrick (1999) reddening law is different from the reddening law we assumed when producing Bayestar17, the two above relations give slightly different conversions between the values reported by Bayestar17 and E(<i>B-V</i> ). Using Eq. (1), we find that E(<i>B-V</i> ) = 0.884 × (Bayestar17). Using Eq. (2), we find that E(<i>B-V</i> ) = 0.996 × (Bayestar17).</p>
-
-      <p>The overall normalization of Bayestar17 was chosen so that one unit of Bayestar17 reddening predicts the same E(<i>g-r</i> ) as one unit of the original SFD reddening map. That means that if one assumes Eq. (1) to hold, then Bayestar17 is equivalent to SFD, and reddening in non-PS1 passbands can be obtained by multiplying Bayestar17 by the coefficients in <a href="http://iopscience.iop.org/0004-637X/737/2/103/article#apj398709t6">Table 6 of Schlafly & Finkbeiner (2011)</a>.</p>
+      <p>Just as with Bayestar19, the normalization of Bayestar17 was chosen to predict the same E(<i>g-r</i>) as one unit of the original SFD reddening map, so Eqs. (1) and (2) above also hold for Bayestar17, and reddening in non-PS1 passbands can be obtained by multiplying Bayestar17 by the coefficients in <a href="http://iopscience.iop.org/0004-637X/737/2/103/article#apj398709t6">Table 6 of Schlafly & Finkbeiner (2011)</a>.</p>
 
       <h3>Bayestar15</h3>
 
       <p>In contrast, <b>Bayestar15</b> reports uses the same units as <a href="http://adsabs.harvard.edu/abs/1998ApJ...500..525S">Schlegel, Finkbeiner &#38 Davis (1998)</a> reddenings. Although this was originally supposed to be the excess <b class="small-space"><i>B-V</i></b> in the Landolt filter system, <a href="http://adsabs.harvard.edu/abs/2011ApJ...737..103S">Schlafly &#38 Finkbeiner (2011)</a> found that it differs somewhat from the true stellar <b class="small-space"><i>B-V</i></b> excess. Therefore, in order to convert our values of <b class="small-space">E(<i>B-V</i> )</b> to extinction in various filter systems, consult <a href="http://iopscience.iop.org/0004-637X/737/2/103/article#apj398709t6">Table 6 of Schlafly &#38 Finkbeiner (2011)</a> (use the values in the <b>R<sub>V</sub> = 3.1</b> column), which are based on the <a href="http://adsabs.harvard.edu/abs/1999PASP..111...63F">Fitzpatrick (1999)</a> reddening law. For 2MASS passbands, Bayestar15 assumes a <a href="http://adsabs.harvard.edu/abs/1989ApJ...345..245C">Cardelli et al. (1989)</a> reddening law.</p>
 
       <p>The extinction coefficients assumed by Bayestar15 are as follows:
-      <table>
-	<caption>Table 2: Bayestar15 extinction coefficients (<i>R </i>)</caption>
+      <table id="Bayestar15-coefficients">
+	<caption>Table 3: Bayestar15 extinction coefficients (<i>R </i>)</caption>
         <tr>
           <th>g</th>
           <th>r</th>
@@ -167,6 +194,8 @@
       <p>Note that the Bayestar15 extinction coefficients differ more from those used by Bayestar17 in the near-infrared than in the optical. This is due to the uncertainty in the gray component of the extinction vector (corresponding to an overall additive change to all extinction coefficients), which is not as well constrained as the ratios of reddenings in different filter combinations. For example, the ratio of <b class="small-space">E(<i>g-r</i> )</b> to <b class="small-space">E(<i>J-K</i> )</b> is better constrained than <b>A<sub>g</sub></b>, <b>A<sub>r</sub></b>, <b>A<sub>J</sub></b> or <b>A<sub>Ks</sub></b> individually. Because the near-infrared extinction coefficients are smaller than those at optical wavelengths, near-infrared extinction estimates are more affected (percentually) by uncertainty in the gray component than optical extinctions.</p>
 
       <p>The Bayestar17 extinction coefficients were derived under the assumption of zero reddening in the <a href="http://adsabs.harvard.edu/abs/2010AJ....140.1868W"><i>WISE</i></a> <b>W<sub>2</b> passband. This necessarily produces an underestimate of the gray component of the extinction vector. If one instead assumes that <b>A<sub>H</sub></b> / <b>A<sub>K</sub></b> = 1.55 (<a href="http://adsabs.harvard.edu/abs/2005ApJ...619..931I">Indebetouw et al. 2005</a>), then an additional 0.141 should be added to all of the Bayestar17 extinction coefficients. If one assumes that <b>A<sub>H</sub></b> / <b>A<sub>K</sub></b> = 1.74 (<a href="http://adsabs.harvard.edu/abs/2006astro.ph..1174N">Nishiyama et al. 2006</a>), then one should add in 0.063 to all of the Bayestar17 extinction coefficients. The gray component that should be added into the Bayestar17 extinction coefficients is therefore in the range 0 ≲ <i>ΔR</i> ≲ 0.141.</p>
+      
+      <p>The differences between the extinction vectors assumed by Bayestar19 and Bayestar17 are due in part to their use of slightly different reddening vectors, but are dominated by their different choice in normalization of the gray component of the extinction vector. While Bayestar19 assumes that <b>A<sub>H</sub></b> / <b>A<sub>K</sub></b> = 1.55 (<a href="http://adsabs.harvard.edu/abs/2005ApJ...619..931I">Indebetouw et al. 2005</a>), Bayestar17 assumes that there is zero extinction in the <i>WISE</i> <b>W<sub>2</b> passband.
 
       <div class="page-header" id="samples">
         <h2>Samples</h2>
@@ -322,9 +351,9 @@
         <h1>Download Data Cube</h1>
       </div>
 
-      <p>If you prefer to work with the entire 3D map directly, rather than using the Python package <i>dustmaps</i>, you can obtain the data cube in either HDF5 or FITS format from the Harvard Dataverse: <a href="http://dx.doi.org/10.7910/DVN/LCYHJG">Bayestar17</a> and <a href="http://dx.doi.org/10.7910/DVN/40C44C">Bayestar15</a>.</p>
+      <p>If you prefer to work with the entire 3D map directly, rather than using the Python package <i>dustmaps</i>, you can obtain the data cube in either HDF5 or FITS format from the Harvard Dataverse: <a href="https://dx.doi.org/10.7910/DVN/2EJ9TX">Bayestar19</a>, <a href="https://dx.doi.org/10.7910/DVN/LCYHJG">Bayestar17</a> and <a href="https://dx.doi.org/10.7910/DVN/40C44C">Bayestar15</a>.</p>
 
-      <p>The full map comes to over 4.5 GB in compressed HDF5 format, so if you're only interested in individual sightlines, we strongly recommend you use <a href="#dustmaps-remote">the remote query API in the <i>dustmaps</i> package</a>.</p>
+      <p>Each map comes to several Gigabytes in compressed HDF5 format, so if you're only interested in individual (or even a few thousand) sightlines, we strongly recommend you use <a href="#dustmaps-remote">the remote query API in the <i>dustmaps</i> package</a>.</p>
 
       <div class="page-header" id="datacube-reading">
         <h2>Reading HDF5 Data Cube</h2>
@@ -337,7 +366,7 @@
         <li><b>&#47pixel_info</b> : pixel locations and metadata.</li>
         <li><b>&#47samples</b> : samples of distance vs. reddening profile in each pixel.</li>
         <li><b>&#47best_fit</b> : best-fit distance vs. reddening profile in each pixel.</li>
-        <li><b>&#47GRDiagnostic</b> : Gelman-Rubin convergence diagnostic in each pixel.</li>
+        <li><b>&#47GRDiagnostic</b> : Gelman-Rubin convergence diagnostic in each pixel (only in Bayestar15/17).</li>
       </ul>
 
       <p>All four datasets are ordered in the same way, so that the n<sup>th</sup> element of the <b>&#47samples</b> dataset corresponds to the same pixel as described by the n<sup>th</sup> entry in <b>&#47pixel_info</b>. As our 3D dust map contains pixels of different sizes, <b>&#47pixel_info</b> specifies each pixel by a HEALPix <code>nside</code> and nested pixel index.
