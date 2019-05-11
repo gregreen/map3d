@@ -594,7 +594,7 @@ dustmaps_local_API = highlight(
 >>> import astropy.units as units
 >>> from dustmaps.bayestar import BayestarQuery
 >>> 
->>> bayestar = BayestarQuery(version='bayestar2017') # Bayestar2017 is the default
+>>> bayestar = BayestarQuery(version='bayestar2017') # 'bayestar2019' is the default
 >>> coords = SkyCoord(90.*units.deg, 30.*units.deg,
 ...                   distance=100.*units.pc, frame='galactic')
 >>> 
