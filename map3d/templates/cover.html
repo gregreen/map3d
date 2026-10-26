@@ -1,60 +1,40 @@
 {% extends "layout.html" %}
 {% set active_page = "cover" %}
 
-{% block content %}
+{% block title %}3D Dust Mapping · Argonaut{% endblock %}
 
-<div class="container cover-banner centered">
-  <div class="row no-lr-margin">
-    <div class="col-xs-12 col-xs-offset-0 no-padding-xs col-sm-10 col-sm-offset-1 col-md-6 col-md-offset-3">
-      
-      <div class="v-spacer"></div>
-      
-      <h1 class="centered white">3D Dust Mapping</h1>
-      <h2 class="centered white">with Pan-STARRS 1</h2>
-      
-      <div class="v-spacer"></div>
-      
-      <ul class="centered white">
-        <li><a href="/query">
-          <div class="underlay-frame">
-            <div class="semi-transparent">
-              Query<br class="visible-xs"> <span class="hidden-xs"> </span>Map<br>
-            </div>
-            <span class="fa-stack fa-3x underlay-centered">
-              <i class="fa fa-square fa-stack-2x"></i>
-              <i class="fa fa-search fa-stack-1x"></i>
-            </span>
-          </div>
-        </a></li>
-        
-        <li><a href="/usage">
-          <div class="underlay-frame">
-            <div class="semi-transparent">
-              Download<br class="visible-xs"> <span class="hidden-xs"> </span>Data<br>
-            </div>
-            <span class="fa-stack fa-3x underlay-centered">
-              <i class="fa fa-square fa-stack-2x"></i>
-              <i class="fa fa-cloud-download fa-stack-1x"></i>
-            </span>
-          </div>
-        </a></li>
-        
-        <li><a href="#">
-          <div class="underlay-frame">
-            <div class="semi-transparent">
-              Read<br class="visible-xs"> <span class="hidden-xs"> </span>Paper<br>
-            </div>
-            <span class="fa-stack fa-3x underlay-centered">
-              <i class="fa fa-square fa-stack-2x"></i>
-              <i class="fa fa-file fa-stack-1x"></i>
-            </span>
-          </div>
-        </a></li>
+{% block styles %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cover.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="cover-banner">
+  <div class="container">
+    <div class="cover-inner">
+      <h1 class="cover-title">3D Dust Mapping</h1>
+      <h2 class="cover-subtitle">with Pan-STARRS 1, 2MASS and Gaia</h2>
+
+      <ul class="cover-links">
+        <li>
+          <a href="/query">
+            <span class="cover-link-label">Interactive query</span>
+            <span class="cover-link-hint">Reddening along any line of sight</span>
+          </a>
+        </li>
+        <li>
+          <a href="/usage">
+            <span class="cover-link-label">Access data</span>
+            <span class="cover-link-hint">Python, Query API and downloads</span>
+          </a>
+        </li>
+        <li>
+          <a href="/papers">
+            <span class="cover-link-label">Read papers</span>
+            <span class="cover-link-hint">Methods, data releases and citations</span>
+          </a>
+        </li>
       </ul>
-    
-      <div class="v-spacer"></div>
     </div>
   </div>
 </div>
-
 {% endblock %}

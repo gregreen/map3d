@@ -1,61 +1,58 @@
 {% extends "layout.html" %}
 {% set active_page = "expo" %}
 
+{% block title %}3D dust mapping with Pan-STARRS 1, 2MASS and Gaia · Argonaut{% endblock %}
+
 {% block content %}
 
 <div class="jumbotron banner-image padding-xs-0">
   <h1>3D Dust Mapping</h1>
   <h2>with Pan-STARRS 1, 2MASS and Gaia</h2>
 
-  <div class="container-fluid">
-    <div class="row v-margins-extra padding-xs-0">
-      <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
+  <nav class="cover-actions" aria-label="Main sections">
+    <a class="cover-action" href="/query">
+      <svg class="cover-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="10.5" cy="10.5" r="6.5"/>
+        <line x1="15.4" y1="15.4" x2="21" y2="21"/>
+      </svg>
+      <span>Interactive query</span>
+    </a>
 
-        <div class="row">
-          <div class="col-xs-4 padding-xs-5 col-sm-4 col-md-4 h-center">
-            <a href="/query" class="top-link">
-              <h2>Query Map</h2>
-              <i class="fa fa-search fa-3x"></i>
-            </a>
-          </div>
+    <a class="cover-action" href="/usage">
+      <svg class="cover-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+      <span>Documentation</span>
+    </a>
 
-          <div class="col-xs-4 padding-xs-5 col-sm-4 col-md-4 h-center">
-            <a href="/usage" class="top-link">
-              <h2>Usage Notes</h2>
-              <i class="fa fa-cloud-download fa-3x"></i>
-            </a>
-          </div>
-
-          <div class="col-xs-4 padding-xs-5 col-sm-4 col-md-4 h-center">
-            <a href="/papers" class="top-link">
-              <h2>Read Papers</h2>
-              <i class="fa fa-file fa-3x"></i>
-            </a>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
+    <a class="cover-action" href="/papers">
+      <svg class="cover-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M13.5 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z"/>
+        <path d="M13.5 3v5.5H19"/>
+      </svg>
+      <span>Read Papers</span>
+    </a>
+  </nav>
 </div>
 
 <div class="container-fluid block-color">
   <div class="row">
-    <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
+    <div class="col-12 col-sm-12 col-md-10 offset-md-1 col-lg-8 offset-lg-2">
       <div class="page-header">
         <h1>The Map</h1>
       </div>
 
-      <p class="h-center">Interstellar dust attenuates ultraviolet, optical and near-infrared light. Because the extent of this attenuation is wavelength-dependent, dust both dims and reddens the light of stars and galaxies before it can reach our telescopes. In many areas of astrophysics, an accurate correction for the effects of interstellar extinction and reddening is critical. Historically, the most widely used maps of dust have been two-dimensional, tracing integrated dust reddening out to infinite distance. Here, we describe three-dimensional maps of interstellar dust reddening, which trace dust reddening both as a function of angular position on the sky and distance. These dust maps are based on <a href="http://pan-starrs.ifa.hawaii.edu/public/">Pan-STARRS 1</a> photometry of 800 million stars, <a href="http://www.ipac.caltech.edu/2mass/">2MASS</a> photometry of 200 million stars, and <a href="http://sci.esa.int/gaia/">Gaia</a> parallaxes of 500 million stars.</p>
+      <p class="h-center">Interstellar dust attenuates ultraviolet, optical and near-infrared light. Because the extent of this attenuation is wavelength-dependent, dust both dims and reddens the light of stars and galaxies before it can reach our telescopes. In many areas of astrophysics, an accurate correction for the effects of interstellar extinction and reddening is critical. Historically, the most widely used maps of dust have been two-dimensional, tracing integrated dust reddening out to infinite distance. Here, we describe three-dimensional maps of interstellar dust reddening, which trace dust reddening both as a function of angular position on the sky and distance. These dust maps are based on <a href="https://pan-starrs.ifa.hawaii.edu/public/">Pan-STARRS 1</a> photometry of 800 million stars, <a href="https://www.ipac.caltech.edu/2mass/">2MASS</a> photometry of 200 million stars, and <a href="https://sci.esa.int/web/gaia">Gaia</a> parallaxes of 500 million stars.</p>
 
-      <p class="h-center">To read about how to download the map, or how to query it remotely, read our <a href="/usage">usage notes</a>. To explore our map in the browser, see our <a href="/usage">interactive query page</a>. To read in detail about our map, read our <a href="/papers">published papers</a>.</p>
+      <p class="h-center">To read about how to download the map, or how to query it remotely, read our <a href="/usage">documentation</a>. To explore our map in the browser, see our <a href="/query">interactive query page</a>. To read in detail about our map, read our <a href="/papers">published papers</a>.</p>
 
       <div class="bottom-line"></div>
     </div>
   </div>
 
   <div class="row">
-    <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
+    <div class="col-12 col-sm-12 col-md-10 offset-md-1 col-lg-8 offset-lg-2">
       <div class="page-header">
         <h1>Volume Renderings</h1>
       </div>
@@ -64,8 +61,8 @@
       <div class="bottom-line"></div>
     </div>
 
-    <div class="col-xs-12 col-sm-12 col-lg-12">
-      <div class="row hidden-xs hidden-sm hidden-md">
+    <div class="col-12 col-sm-12 col-lg-12">
+      <div class="row only-lg">
         <div class="col-lg-4 h-center">
           <h2>Orbiting the Sun</h2>
           <p>A 25-pc loop around the Sun.</p>
@@ -73,7 +70,7 @@
 
         <div class="col-lg-4 h-center">
           <h2>Tour of the Milky Way</h2>
-          <p>Passing through Orion, above the Galactic plane and towards the Galactic center, and returning to the Sun.</p>
+          <p>Passing through Orion, above the Galactic plane and toward the Galactic center, and returning to the Sun.</p>
         </div>
 
         <div class="col-lg-4 h-center">
@@ -83,50 +80,50 @@
       </div>
 
       <div class="row" id="videos-bayestar19">
-        <div class="col-xs-12 col-sm-12 col-md-12 hidden-lg h-center">
+        <div class="col-12 col-sm-12 col-md-12 d-lg-none h-center">
           <h2>Orbiting the Sun</h2>
           <p>A 25-pc loop around the Sun.</p>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
-          <div class="embed-responsive embed-responsive-4by3">
-            <iframe class="embed-responsive-item" src="https://player.vimeo.com/video/335071954?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+        <div class="col-12 col-sm-12 col-md-12 col-lg-4 h-center">
+          <div class="ratio ratio-4x3">
+            <iframe src="https://player.vimeo.com/video/335071954?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
           </div>
         </div>
 
-        <div class="col-xs-12 col-sm-12 col-md-12 hidden-lg h-center">
+        <div class="col-12 col-sm-12 col-md-12 d-lg-none h-center">
           <h2>Tour of the Milky Way</h2>
-          <p>Passing through Orion, above the Galactic plane and towards the Galactic center, and returning to the Sun.</p>
+          <p>Passing through Orion, above the Galactic plane and toward the Galactic center, and returning to the Sun.</p>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
-          <div class="embed-responsive embed-responsive-4by3">
-            <iframe class="embed-responsive-item" src="https://player.vimeo.com/video/335613126?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+        <div class="col-12 col-sm-12 col-md-12 col-lg-4 h-center">
+          <div class="ratio ratio-4x3">
+            <iframe src="https://player.vimeo.com/video/335613126?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
           </div>
         </div>
 
-        <div class="col-xs-12 col-sm-12 col-md-12 hidden-lg h-center">
+        <div class="col-12 col-sm-12 col-md-12 d-lg-none h-center">
           <h2>Bobbing through the Galactic plane</h2>
           <p>Rising 500 pc above and below the Galactic plane.</p>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
-          <div class="embed-responsive embed-responsive-4by3">
-            <iframe class="embed-responsive-item" src="https://player.vimeo.com/video/335071965?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+        <div class="col-12 col-sm-12 col-md-12 col-lg-4 h-center">
+          <div class="ratio ratio-4x3">
+            <iframe src="https://player.vimeo.com/video/335071965?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
           </div>
         </div>
 
       </div>
 
       <div class="row" id="videos-bayestar19-2">
-        <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-4 col-lg-offset-4 h-center">
+        <div class="col-12 col-sm-12 col-md-10 offset-md-1 col-lg-4 offset-lg-4 h-center">
           <h2>Bobbing high above the Galactic plane</h2>
           <p>Rising 1.5 kpc above and below the Galactic plane.</p>
-          <div class="embed-responsive embed-responsive-4by3">
-            <iframe class="embed-responsive-item" src="https://player.vimeo.com/video/335071988?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+          <div class="ratio ratio-4x3">
+            <iframe src="https://player.vimeo.com/video/335071988?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
+    <div class="col-12 col-sm-12 col-md-10 offset-md-1 col-lg-8 offset-lg-2">
       <div class="page-header">
         <h1>Volume Renderings of Previous Versions</h1>
       </div>
@@ -134,11 +131,11 @@
       <div class="bottom-line"></div>
     </div>
 
-    <div class="col-xs-12 col-sm-12 col-lg-12">
-      <div class="row hidden-xs hidden-sm hidden-md">
+    <div class="col-12 col-sm-12 col-lg-12">
+      <div class="row only-lg">
         <div class="col-lg-4 h-center">
           <h2>Local Dust</h2>
-          <p>Looking towards the Galactic anticenter.</p>
+          <p>Looking toward the Galactic anticenter.</p>
         </div>
 
         <div class="col-lg-4 h-center">
@@ -153,35 +150,35 @@
       </div>
 
       <div class="row" id="videos-bayestar15">
-        <div class="col-xs-12 col-sm-12 col-md-12 hidden-lg h-center">
+        <div class="col-12 col-sm-12 col-md-12 d-lg-none h-center">
           <h2>Local Dust</h2>
-          <p>Looking towards the Galactic anticenter.</p>
+          <p>Looking toward the Galactic anticenter.</p>
         </div>
 
-        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
-          <div class="embed-responsive embed-responsive-4by3">
-            <iframe class="embed-responsive-item" src="https://player.vimeo.com/video/335252623?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+        <div class="col-12 col-sm-12 col-md-12 col-lg-4 h-center">
+          <div class="ratio ratio-4x3">
+            <iframe src="https://player.vimeo.com/video/335252623?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
           </div>
         </div>
 
-        <div class="col-xs-12 col-sm-12 col-md-12 hidden-lg h-center">
+        <div class="col-12 col-sm-12 col-md-12 d-lg-none h-center">
           <h2>Orbiting the Sun</h2>
           <p>A 50-pc loop around the Sun.</p>
         </div>
 
-        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
-          <div class="embed-responsive embed-responsive-4by3">
-            <iframe class="embed-responsive-item" src="https://player.vimeo.com/video/335252636?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+        <div class="col-12 col-sm-12 col-md-12 col-lg-4 h-center">
+          <div class="ratio ratio-4x3">
+            <iframe src="https://player.vimeo.com/video/335252636?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
           </div>
         </div>
 
-        <div class="col-xs-12 col-sm-12 col-md-12 hidden-lg h-center">
+        <div class="col-12 col-sm-12 col-md-12 d-lg-none h-center">
           <h2>A Tour of the Galaxy</h2>
           <p>A several-kpc loop through and out of the Galactic plane.</p>
         </div>
-        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
-          <div class="embed-responsive embed-responsive-4by3">
-            <iframe class="embed-responsive-item" src="https://player.vimeo.com/video/335252611?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+        <div class="col-12 col-sm-12 col-md-12 col-lg-4 h-center">
+          <div class="ratio ratio-4x3">
+            <iframe src="https://player.vimeo.com/video/335252611?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
           </div>
         </div>
       </div>
@@ -190,7 +187,7 @@
   </div>
 
   <div id="trigger-appear" class="row">
-    <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
+    <div class="col-12 col-sm-12 col-md-10 offset-md-1 col-lg-8 offset-lg-2">
       <div class="page-header">
         <h1>Cumulative Reddening vs. Distance</h1>
       </div>
@@ -199,8 +196,8 @@
       <div class="bottom-line"></div>
     </div>
 
-    <div class="col-xs-12 col-sm-12 col-lg-12">
-      <div class="row hidden-xs hidden-sm hidden-md">
+    <div class="col-12 col-sm-12 col-lg-12">
+      <div class="row only-lg">
         <div class="col-lg-4 h-center">
           <h2>Aquila South</h2>
         </div>
@@ -215,33 +212,33 @@
       </div>
 
       <div class="row" id="videos-bayestar15-2d">
-        <div class="col-xs-12 col-sm-12 col-md-12 hidden-lg h-center">
+        <div class="col-12 col-sm-12 col-md-12 d-lg-none h-center">
           <h2>Aquila South</h2>
         </div>
 
-        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
-          <div class="embed-responsive embed-responsive-4by3">
-            <iframe class="embed-responsive-item" src="https://player.vimeo.com/video/335252603?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+        <div class="col-12 col-sm-12 col-md-12 col-lg-4 h-center">
+          <div class="ratio ratio-4x3">
+            <iframe src="https://player.vimeo.com/video/335252603?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
           </div>
         </div>
 
-        <div class="col-xs-12 col-sm-12 col-md-12 hidden-lg h-center">
+        <div class="col-12 col-sm-12 col-md-12 d-lg-none h-center">
           <h2>Galactic Plane</h2>
         </div>
 
-        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
-          <div class="embed-responsive embed-responsive-4by3">
-            <iframe class="embed-responsive-item" src="https://player.vimeo.com/video/335252586?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+        <div class="col-12 col-sm-12 col-md-12 col-lg-4 h-center">
+          <div class="ratio ratio-4x3">
+            <iframe src="https://player.vimeo.com/video/335252586?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
           </div>
         </div>
 
-        <div class="col-xs-12 col-sm-12 col-md-12 hidden-lg h-center">
+        <div class="col-12 col-sm-12 col-md-12 d-lg-none h-center">
           <h2>Galactic Anticenter</h2>
         </div>
 
-        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 h-center">
-          <div class="embed-responsive embed-responsive-4by3">
-            <iframe class="embed-responsive-item" src="https://player.vimeo.com/video/335252596?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+        <div class="col-12 col-sm-12 col-md-12 col-lg-4 h-center">
+          <div class="ratio ratio-4x3">
+            <iframe src="https://player.vimeo.com/video/335252596?autoplay=1&loop=1&autopause=0&byline=0&title=0" width="500" height="281" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
           </div>
         </div>
       </div>
@@ -249,30 +246,30 @@
   </div>
 
   <div class="row">
-    <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-10 col-lg-offset-1 h-center">
+    <div class="col-12 col-sm-12 col-md-10 offset-md-1 col-lg-10 offset-lg-1 h-center">
       <div class="page-header">
         <h1>The Authors</h1>
       </div>
 
       <div class="row">
-        <div class="col-xs-12 col-sm-4 col-md-4 col-lg-2 col-lg-offset-1 h-center author-col">
-          <img id="banner-image" src="{{ url_for('static', filename='media/Greg.jpg') }}" class="img-circle img-responsive author-image">
+        <div class="col-12 col-sm-4 col-md-4 col-lg-2 offset-lg-1 h-center author-col">
+          <img src="{{ url_for('static', filename='media/Greg.jpg') }}" class="rounded-circle img-fluid author-image">
           <a href="http://greg.ory.gr/een"><h3>Gregory Green</h3></a>
         </div>
-        <div class="col-xs-12 col-sm-4 col-md-4 col-lg-2 h-center author-col">
-          <img id="banner-image" src="{{ url_for('static', filename='media/Eddie.jpg') }}" class="img-circle img-responsive author-image">
+        <div class="col-12 col-sm-4 col-md-4 col-lg-2 h-center author-col">
+          <img src="{{ url_for('static', filename='media/Eddie.jpg') }}" class="rounded-circle img-fluid author-image">
           <a href="http://e.schlaf.ly/"><h3>Eddie Schlafly</h3></a>
         </div>
-        <div class="col-xs-12 col-sm-4 col-md-4 col-lg-2 h-center author-col">
-          <img id="banner-image" src="{{ url_for('static', filename='media/Doug.jpg') }}" class="img-circle img-responsive author-image">
+        <div class="col-12 col-sm-4 col-md-4 col-lg-2 h-center author-col">
+          <img src="{{ url_for('static', filename='media/Doug.jpg') }}" class="rounded-circle img-fluid author-image">
           <a href="http://nebel.rc.fas.harvard.edu/dfink/"><h3>Douglas Finkbeiner</h3></a>
         </div>
-        <div class="col-xs-12 col-sm-4 col-sm-offset-2 col-md-4 col-md-offset-2 col-lg-2 col-lg-offset-0 h-center author-col">
-          <img id="banner-image" src="{{ url_for('static', filename='media/CatherineZucker.jpg') }}" class="img-circle img-responsive author-image">
+        <div class="col-12 col-sm-4 offset-sm-2 col-md-4 offset-md-2 col-lg-2 offset-lg-0 h-center author-col">
+          <img src="{{ url_for('static', filename='media/CatherineZucker.jpg') }}" class="rounded-circle img-fluid author-image">
           <a href="https://catherinezucker.github.io/"><h3>Catherine Zucker</h3></a>
         </div>
-        <div class="col-xs-12 col-sm-4 col-md-4 col-lg-2 h-center author-col">
-          <img id="banner-image" src="{{ url_for('static', filename='media/JoshSpeagle.jpg') }}" class="img-circle img-responsive author-image">
+        <div class="col-12 col-sm-4 col-md-4 col-lg-2 h-center author-col">
+          <img src="{{ url_for('static', filename='media/JoshSpeagle.jpg') }}" class="rounded-circle img-fluid author-image">
           <a href="https://joshspeagle.github.io/"><h3>Josh Speagle</h3></a>
         </div>
       </div>
@@ -282,19 +279,10 @@
   </div>
 
   <div class="row v-padding-extra">
-    <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2 h-center">
-      <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/80x15.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/MovingImage" property="dct:title" rel="dct:type">The above videos of Milky Way dust</span> by <a xmlns:cc="http://creativecommons.org/ns#" href="http://greg.ory.gr/een" property="cc:attributionName" rel="cc:attributionURL">Gregory M. Green</a> are licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
+    <div class="col-12 col-sm-12 col-md-10 offset-md-1 col-lg-8 offset-lg-2 h-center">
+      <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="{{ url_for('static', filename='media/cc-by-sa-80x15.png') }}" /></a><br /><span xmlns:dct="https://purl.org/dc/terms/" href="https://purl.org/dc/dcmitype/MovingImage" property="dct:title" rel="dct:type">The above videos of Milky Way dust</span> by <a xmlns:cc="https://creativecommons.org/ns#" href="http://greg.ory.gr/een" property="cc:attributionName" rel="cc:attributionURL">Gregory M. Green</a> are licensed under a <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
     </div>
   </div>
 </div>
-
-<!--
-<link href="//vjs.zencdn.net/4.12/video-js.css" rel="stylesheet">
-<script src="//vjs.zencdn.net/4.12/video.js"></script>
--->
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.appear/0.3.3/jquery.appear.min.js"></script>
-
-<script src="{{ url_for('static', filename='js/expopage.js')  }}"></script>
 
 {% endblock %}

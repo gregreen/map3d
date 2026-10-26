@@ -1,0 +1,63 @@
+services:
+  web:
+    image: ${MAP3D_IMAGE:-map3d:latest}
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        DUSTMAPS_REF: ${DUSTMAPS_REF:-master}
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      MAP3D_STATE_DIR: /var/lib/map3d
+      MAP3D_DATA_DIR: /data
+      MAP3D_GEOIP_DB: /var/lib/map3d/dbip-city-lite.mmdb
+      MAP3D_TRUSTED_PROXY_HOPS: "1"
+      MAP3D_LOG_LEVEL: ${MAP3D_LOG_LEVEL:-INFO}
+      DUSTMAPS_CONFIG_FNAME: /etc/dustmapsrc
+    volumes:
+      # Map data and derived stamp images: read-only for the service.
+      - ${MAP3D_DATA_HOST_DIR:-/srv/map3d/data}:/data:${MAP3D_DATA_MODE:-ro}
+      - map3d-state:/var/lib/map3d
+      - ./dustmapsrc:/etc/dustmapsrc:ro
+    expose:
+      - "8000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+
+  caddy:
+    image: caddy:2.8
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    env_file:
+      - ../.env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  map3d-state:
+  caddy-data:
+  caddy-config:

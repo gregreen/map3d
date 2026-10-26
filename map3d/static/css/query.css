@@ -1,569 +1,188 @@
+/* Interactive query page */
 
-body {
-  padding-bottom: 0px;
+.query-hero {
+  max-width: 52rem;
 }
 
-html {
-  background-color:#EDF2F7;
+.query-hero .lead {
+  color: var(--site-muted);
 }
 
-div {
-  background:#EDF2F7;
+.query-form {
+  background: #fff;
+  border: 1px solid var(--site-rule);
 }
 
-/*
-.red {
-  background: #f00;
+.query-form .card-body {
+  padding: 1.25rem;
 }
 
-.green {
-  background: #0f0;
+#map-select {
+  text-transform: none;
 }
 
-.blue {
-  background: #00f;
-}
-
-.gray {
-  background: #888;
-}
-
-.black {
-  background: #000;
-}
-
-.brown {
-  background: #a52;
-}
-
-.cyan {
-  background: #0ff;
-}
-*/
-
-.ps-img {
-  background-color: rgb(202,222,219);
-}
-
-h1, h2, h3, h4 {
-  font-family: "Lora", serif;
-}
-
-h1 {
-  text-align: center;
-  font-size: 20pt;
-}
-
-#map-selector {
-  text-transform: capitalize;
-}
-
-.alert h3 {
-  margin: 0 0 0 0;
-  padding: 0 0 0 0;
-}
-
-.alert h4 {
-  margin: 0 0 0 0;
-  padding: 0 0 0 0;
-}
-
-.alert {
-  margin-top: 10px;
-}
-
-.ps-label {
-  text-align: center;
-  font-family: "Lora", serif;
-}
-
-.fancy-serif {
-  font-family: "Lora", serif;
-}
-
-.bottom-spacer {
-  margin-bottom: 20px;
-}
-
-.indent-small, .alert .indent-small {
-  padding-left: 10px;
-}
-
-/*
- * Container divs
- */
-
-.line-plot-container{
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-}
-
-.box-aspect-2-1 {
+.plot-wrap {
   position: relative;
   width: 100%;
 }
 
-.box-aspect-2-1:before{
-  content: "";
+#los-plot {
+  width: 100%;
+  height: auto;
   display: block;
-  padding-top: 50%; /* initial ratio of 2:1*/
+  overflow: visible;
 }
 
-.expand-left {
-  width: 50%;
-  overflow: hidden;
-  padding-right: 5px;
-}
-
-.fixed-right {
-  float: right;
-  width: 50%;
-  padding-left: 5px;
-}
-
-
-/* d3 Properties */
-
-.axis path,
-.axis line {
-  fill: none;
-  stroke: #000;
+#los-plot .axis path,
+#los-plot .axis line {
+  stroke: #9fb0ba;
   shape-rendering: crispEdges;
-  stroke-width: 2.5px;
 }
 
-.line {
+#los-plot .axis text {
+  fill: var(--site-muted);
+  font-size: 13px;
+}
+
+#los-plot .axis-label {
+  fill: var(--site-ink);
+  font-size: 15px;
+}
+
+#los-plot .best-line {
   fill: none;
+  stroke: #1b4f72;
+  stroke-width: 2.4;
 }
 
-.overlay {
+#los-plot .sample-line {
   fill: none;
-  pointer-events: all;
+  stroke: #1b4f72;
+  stroke-opacity: 0.12;
+  stroke-width: 1;
 }
 
-.ps-text {
-  font-family: "Cousine";
-  font-weight: 400;
-  fill: #C2E3FF; /* #C2E3FF; */
-  stroke: white;
-  stroke-width: 0.05pt;
+#los-plot .band {
+  fill: #2f6f5e;
+  fill-opacity: 0.22;
 }
 
-.ps-gal-indicator,
-.ps-equ-indicator {
-  text-anchor: start;
-  font-size: 16pt;
-}
-
-.ps-equ-indicator .RA-hms {
-  font-size: 8pt;
-}
-
-.ps-a-label {
-  white-space: nowrap;
-}
-
-.ps-text-bg {
-  fill: black;
-  stroke: #C2E3FF;
-  stroke-width: 1.5pt;
-  opacity: 0.5;
-}
-
-.ps-overlay {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-}
-
-.ps-bullseye {
-  opacity: 0.5;
-}
-
-.ps-bullseye-outer {
-  stroke: #ffd35c;
-  stroke-width: 2px;
+#los-plot .median-line {
   fill: none;
-}
-
-.ps-bullseye-inner {
-  stroke: none;
-  fill: #ffd35c;
-}
-
-.ps-focus {
-  opacity: 1;
-}
-
-#closeLabelStroke, #farLabelStroke {
-  fill: steelblue;
-  fill-opacity: 0.1;
-  stroke-opacity: 0.0;
-  paint-order: stroke;
-  stroke: #000000;
-  stroke-width: 1px;
-  stroke-linecap: butt;
-  stroke-linejoin: miter;
-}
-
-.no-display {
-  display: none;
-}
-
-.no-bg {
-  background: none;
-}
-
-/*
- * Line plot
- */
-
-.line {
-  stroke: steelblue;
-}
-
-.non-converged .line {
-  stroke: red;
-}
-
-.no-data .line {
-  display: none;
-}
-
-.line.best-line {
-  /*stroke: steelblue;*/
-  stroke-width: 2.5px;
-}
-
-.sample-line {
-  /*stroke: steelblue;*/
-  stroke-width: 1.5px;
-  opacity: 0.2;
-}
-
-/*.axis {
-  stroke: black;
-  stroke-width: 1px;
-}*/
-
-.axis .domain {
-  stroke: black;
-}
-
-.axis .tick line {
-  stroke: black;
-}
-
-.axis text {
-  font-family: "Lora", serif;
-  fill: black;
-}
-
-.axis .tick text {
-  font-size: 14pt;
-}
-
-.axis-label {
-  text-anchor: middle;
-  font-size: 20pt;
-}
-
-#DM-close-panel,
-#DM-far-panel {
-  fill: url(#diagonal-hatch);
-  fill-opacity: 0.035;
-}
-
-#DM-close-panel {
-  mask: url(#close-label-mask);
-}
-
-#DM-far-panel {
-  mask: url(#far-label-mask);
-}
-
-.rel-dist-label-bkgd {
-  fill: white;
-}
-
-.rel-dist-label {
-  font-size: 28pt;
-  font-family: "Droid Sans";
-  font-weight: 600;
-  text-anchor: middle;
-  stroke: black;
-}
-
-#far-label-txt,
-#far-label-stroke {
-  dominant-baseline: hanging;
-}
-
-.rel-dist-label.rel-dist-label-stroke {
+  stroke: #145a32;
   stroke-width: 2;
-  fill: none;
-  opacity: 0.15;
+  stroke-dasharray: 6 4;
 }
 
-#convergence-warning {
-  font-family: "Cousine";
-  font-size: 18pt;
-  text-anchor: end;
-  /*dominant-baseline: hanging;*/
-  fill: red;
-  stroke: white;
-  stroke-width: 5;
-  stroke-opacity: 0.5;
-  paint-order: stroke;
-  display: none;
+#los-plot .reliable-range {
+  fill: #f2c14e;
+  fill-opacity: 0.14;
 }
 
-.non-converged #convergence-warning {
+#los-plot .reliable-edge {
+  stroke: #b8860b;
+  stroke-dasharray: 4 4;
+  stroke-width: 1;
+}
+
+#los-plot .hover-line {
+  stroke: #5b6770;
+  stroke-dasharray: 3 3;
+}
+
+#los-plot .hover-dot {
+  fill: #1b4f72;
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+#los-plot .legend-frame {
+  fill: #fff;
+  stroke: var(--site-rule);
+}
+
+.readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  border-top: 1px solid var(--site-rule);
+  padding-top: 0.6rem;
+  margin-top: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.readout-item strong {
+  font-weight: 600;
+}
+
+/* Postage stamps */
+
+.stamp-card {
+  background: #fff;
+  border: 1px solid var(--site-rule);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  height: 100%;
+}
+
+.stamp-card .stamp-frame {
+  position: relative;
+  background: rgb(202, 222, 219);
+  cursor: crosshair;
+}
+
+.stamp-card img {
   display: block;
+  width: 100%;
+  height: auto;
 }
 
-/*This rule has to be more specific than the non-converged rule*/
-svg .no-data #convergence-warning {
-  display: none;
+.stamp-card .crosshair {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
-#plot-mouse-overlay {
-  opacity: 0;
+.stamp-card .crosshair::before,
+.stamp-card .crosshair::after {
+  content: "";
+  position: absolute;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.65);
 }
 
-.plot-indicator {
-  stroke: black;
-  stroke-width: 2px;
-  stroke-opacity: 0.25;
+.stamp-card .crosshair::before {
+  left: 50%;
+  top: 46%;
+  width: 1px;
+  height: 9%;
+  transform: translateX(-0.5px);
 }
 
-.no-data g#reddening-focus {
-  display: none;
+.stamp-card .crosshair::after {
+  top: 50%;
+  left: 46%;
+  height: 1px;
+  width: 9%;
+  transform: translateY(-0.5px);
 }
 
-#plot-y-spread-indicator {
-  fill: black;
-  fill-opacity: 0.10;
+.stamp-card .stamp-label {
+  padding: 0.5rem 0.65rem;
+  font-family: var(--serif);
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.95rem;
 }
 
-g#plot-focus-label text {
-  font-size: 18pt;
-  font-family: "Cousine";
-  font-weight: 300;
-  fill: steelblue;
+.stamp-card .stamp-coords {
+  color: var(--site-muted);
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
 }
 
-g#legend-group text {
-  font-size: 14pt;
-  font-family: "Droid Sans";
-  fill: steelblue;
-  dominant-baseline: hanging;
-}
-
-.non-converged g#legend-group text {
-  fill: red;
-}
-
-g#legend-group rect#legend-frame {
-  fill: black;
-  fill-opacity: 0.02;
-  stroke: black;
-  stroke-width: 2px;
-  stroke-opacity: 0.04;
-}
-
-.no-data g#legend-group {
-  display: none;
-}
-
-
-.input-row div[class^="col-"] {
-  padding-left: 5px;
-  padding-right: 5px;
-  padding-top: 5px;
-}
-
-div.input-row div.toggle {
-  width: 100% !important;
-}
-
-div.input-row {
-  padding-left: 10px;
-  padding-right: 10px;
-}
-
-/*
- * Media queries
- */
-
-/* xs */
-@media (max-width: 767px) {
-  .padding-xs-15 {
-    padding-left: 15px;
-    padding-right: 15px;
-  }
-
-  .padding-xs-10 {
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-
-  .padding-xs-5 {
-    padding-left: 5px;
-    padding-right: 5px;
-  }
-
-  .padding-xs-0 {
-    padding-left: 0px;
-    padding-right: 0px;
-  }
-
-  .padding-xs-left-0 {
-    padding-left: 0px;
-  }
-
-  .padding-xs-right-0 {
-    padding-right: 0px;
-  }
-
-  .padding-xs-left-5 {
-    padding-left: 5px;
-  }
-
-  .padding-xs-right-5 {
-    padding-right: 5px;
-  }
-
-  .popover-title {
-    font-family: "Lora", serif;
-    font-size: 14pt;
-  }
-
-  .popover-content {
-    font-family: "Lora", serif;
-    font-size: 10pt;
-  }
-}
-
-/* sm */
-@media (min-width: 768px) {
-  .padding-sm-15 {
-    padding-left: 15px;
-    padding-right: 15px;
-  }
-
-  .padding-sm-10 {
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-
-  .padding-sm-5 {
-    padding-left: 5px;
-    padding-right: 5px;
-  }
-
-  .padding-sm-0 {
-    padding-left: 0px;
-    padding-right: 0px;
-  }
-
-  .padding-sm-right-5 {
-    padding-right: 5px;
-  }
-
-  .padding-sm-right-15 {
-    padding-right: 15px;
-  }
-
-  .popover-title {
-    font-family: "Lora", serif;
-    font-size: 16pt;
-  }
-
-  .popover-content {
-    font-family: "Lora", serif;
-    font-size: 12pt;
-  }
-
-  .popover {
-    max-width: 300px;
-  }
-}
-
-/* md */
-@media (min-width: 992px) {
-  .padding-md-15 {
-    padding-left: 15px;
-    padding-right: 15px;
-  }
-
-  .padding-md-10 {
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-
-  .padding-md-5 {
-    padding-left: 5px;
-    padding-right: 5px;
-  }
-
-  .padding-md-0 {
-    padding-left: 0px;
-    padding-right: 0px;
-  }
-
-  .popover-title {
-    font-family: "Lora", serif;
-    font-size: 18pt;
-  }
-
-  .popover-content {
-    font-family: "Lora", serif;
-    font-size: 14pt;
-  }
-
-  .popover {
-    max-width: 450px;
-  }
-}
-
-
-/* lg */
-@media (min-width: 1200px) {
-  .padding-lg-15 {
-    padding-left: 15px;
-    padding-right: 15px;
-  }
-
-  .padding-lg-10 {
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-
-  .padding-lg-5 {
-    padding-left: 5px;
-    padding-right: 5px;
-  }
-
-  .padding-lg-0 {
-    padding-left: 0px;
-    padding-right: 0px;
-  }
-
-  .popover-title {
-    font-family: "Lora", serif;
-    font-size: 20pt;
-  }
-
-  .popover-content {
-    font-family: "Lora", serif;
-    font-size: 15pt;
-  }
-
-  .popover {
-    max-width: 500px;
-  }
+#api-link {
+  text-decoration: none;
 }

@@ -1,8 +1,22 @@
-*.pyc
-*.py~
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
 
-*.png
-*.jpg
-
+.venv/
 venv/
+
+var/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+
+.env
+log/*.log
+
+# Map data and derived images are never committed
 map3d/static/data/
+
+# Editor settings
+.vscode/

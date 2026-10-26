@@ -1,0 +1,46 @@
+# Caddy terminates TLS (automatic Let's Encrypt certificates), enforces HTTPS
+# and sets the security headers. Set SITE_ADDRESS and ACME_EMAIL in .env.
+{
+	email {$ACME_EMAIL:admin@example.com}
+	admin off
+}
+
+{$SITE_ADDRESS:localhost} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), microphone=(), camera=(), interest-cohort=()"
+		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; font-src 'self'; frame-src https://player.vimeo.com; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+		-Server
+		-X-Powered-By
+	}
+
+	request_body {
+		max_size 10MB
+	}
+
+	# Hashed/large static assets: cache aggressively.
+	@static path /static/*
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	# HTML and JSON must not be cached by intermediaries.
+	@dynamic path / /query /usage /papers /privacy /cover /api/*
+	header @dynamic Cache-Control "no-store"
+
+	reverse_proxy web:8000 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote_host}
+	}
+
+	log {
+		output stdout
+		format json
+		# Client IPs are deliberately not logged: the app logs request ids,
+		# endpoints, maps and timings instead (see PRIVACY.md).
+		level INFO
+	}
+}

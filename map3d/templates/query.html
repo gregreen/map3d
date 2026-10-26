@@ -1,156 +1,117 @@
 {% extends "layout.html" %}
 {% set active_page = "query" %}
 
+{% block title %}Interactively query the dust maps · Argonaut{% endblock %}
+{% block description %}Query 3D interstellar dust reddening along any line of sight, with posterior samples from the Bayestar, DECaPS and Edenhofer maps.{% endblock %}
+
+{% block styles %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/query.css') }}">
+{% endblock %}
+
 {% block content %}
+<div class="container py-4">
+  <header class="query-hero mb-4">
+    <h1>Interactively query the dust maps</h1>
+  </header>
 
-<div class="container-fluid">
-  <div class="row">
-    <div class="col-xs-12 col-sm-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
-
-      <div class="row blue">
-        <div class="col-xs-12 col-sm-12">
-          <div class="alert alert-success fade in" role="alert" id="enter-coords-alert">
-            <h3>Enter query coordinates.</h3>
-            <h4>Toggle Galactic/Equatorial, Bayestar2015/2017 at right.</h4>
+  <form id="query-form" class="card query-form mb-4" novalidate>
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-lg-3">
+          <span class="form-label d-block">Coordinate system</span>
+          <div class="btn-group w-100" role="group" aria-label="Coordinate system">
+            <input type="radio" class="btn-check" name="coordsys" id="coordsys-gal" value="gal" checked>
+            <label class="btn btn-outline-success" for="coordsys-gal">Galactic</label>
+            <input type="radio" class="btn-check" name="coordsys" id="coordsys-equ" value="equ">
+            <label class="btn btn-outline-primary" for="coordsys-equ">Equatorial</label>
           </div>
         </div>
-      </div>
 
-      <div class="row input-row brown">
+        <div class="col-6 col-lg-3">
+          <label class="form-label" for="lon-input"><span id="lon-symbol">&#8467;</span> (deg)</label>
+          <input id="lon-input" name="lon" type="text" inputmode="decimal"
+                 class="form-control" placeholder="82.57" autocomplete="off">
+        </div>
 
-        <div class="col-xs-6 col-sm-4 col-md-4 col-lg-4 green">
+        <div class="col-6 col-lg-3">
+          <label class="form-label" for="lat-input"><span id="lat-symbol">b</span> (deg)</label>
+          <input id="lat-input" name="lat" type="text" inputmode="decimal"
+                 class="form-control" placeholder="-15.5" autocomplete="off">
+        </div>
+
+        <div class="col-12 col-lg-3">
+          <label class="form-label" for="map-select">Dust map</label>
           <div class="input-group">
-            <span class="input-group-addon"><i id="gal-l-symbol">&#x2113</i></span>
-            <input id="gal-l-input" name="gal-l" type="text" class="form-control" placeholder="lon. (&deg)" autofocus="autofocus">
-          </div>
-        </div>
-
-        <div class="col-xs-6 col-sm-4 col-md-4 col-lg-4 blue">
-          <div class="input-group">
-            <span class="input-group-addon"><i id="gal-b-symbol">b</i></span>
-            <input id="gal-b-input" name="gal-b" type="text" class="form-control" placeholder="lat. (&deg)">
-            <span class="input-group-btn">
-              <button class="btn btn-success" type="submit" id="submit-btn">
-                <span class="glyphicon glyphicon-search" id="submit-btn-icon"></span>
-              </button>
-            </span>
-          </div>
-        </div>
-
-        <!-- <div class="col-xs-4 hidden-sm hidden-md hidden-lg hidden-xl"></div> -->
-
-        <div class="col-xs-offset-4 col-sm-offset-0 col-xs-8 col-sm-4 col-md-4 col-lg-4 blue">
-          <div class="fixed-right">
-            <select id="map-selector" class="form-control">
-              <option>bayestar2019</option>
-              <option>bayestar2017</option>
-              <option>bayestar2015</option>
+            <select id="map-select" class="form-select">
+              {% for name, entry in maps.items() %}
+                <option value="{{ name }}"{% if name == default_map %} selected{% endif %}>{{ name }}</option>
+              {% endfor %}
             </select>
-          </div>
-          <div class="expand-left">
-            <input id="coord-toggle" type="checkbox" checked data-toggle="toggle" data-on="Galactic" data-off="Equatorial" data-onstyle="success" data-offstyle="primary" data-width="50%">
-          </div>
-        </div>
-
-        <!-- <div class="col-xs-2 hidden-sm hidden-md hidden-lg hidden-xl"></div> -->
-      </div>
-
-      <div class="row cyan collapse" id="bad-coords-div">
-        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-          <div class="alert alert-danger" role="alert" id="bad-coords-alert">
-            <h3>Invalid coordinates. Please enter valid coordinates.</h3>
-            <div id="lon-examples" class="no-bg">
-              <h4>Examples:</h4>
-              <h4 class="indent-small">82.57</h4>
-              <h4 class="indent-small">05h30m17s</h4>
-            </div>
-            <div id="lat-examples" class="no-bg">
-              <h4>Examples:</h4>
-              <h4 class="indent-small">-15.505</h4>
-              <h4 class="indent-small">-15d 30' 17"</h4>
-            </div>
+            <button class="btn btn-success" type="submit" id="submit-btn">
+              <span id="submit-label">Query</span>
+              <span id="submit-spinner" class="spinner-border spinner-border-sm ms-1 d-none"
+                    role="status" aria-hidden="true"></span>
+            </button>
           </div>
         </div>
       </div>
 
-      <div class="row cyan collapse" id="custom-alert-div">
-        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-          <div class="alert alert-warning" role="alert">
-            <h4>Nothing here.</h4>
-          </div>
-        </div>
-      </div>
-
+      <p class="form-text mt-3 mb-0" id="map-note"></p>
     </div>
+  </form>
+
+  <div id="error-alert" class="alert alert-danger d-none" role="alert" aria-live="assertive">
+    <h2 class="h6 mb-1" id="error-title">Something went wrong</h2>
+    <p class="mb-0" id="error-message"></p>
+    <p class="mb-0 mt-1 small" id="error-examples"></p>
   </div>
 
-  <div class="row black">
-
-    <div class="col-xs-12 col-sm-12 padding-xs-5 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2 collapse brown" id="line-plot-div">
-      <h1>Reddening vs. Distance</h1>
-      <div class="box-aspect-2-1">
-        <div class="line-plot-container">
-          <svg id="distance-reddening-plot" viewbox="0 0 1000 500"></svg>
+  <div id="results" class="d-none">
+    <section class="card mb-4" aria-labelledby="plot-heading">
+      <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-baseline gap-2">
+          <h2 id="plot-heading" class="h4 mb-0">Reddening vs. distance</h2>
+          <p class="text-muted mb-0 small" id="plot-caption"></p>
         </div>
+        <div class="plot-wrap mt-3">
+          <svg id="los-plot" viewBox="0 0 1000 500" role="img"
+               aria-label="Reddening as a function of distance along the line of sight"></svg>
+        </div>
+        <div class="readout" id="hover-readout" aria-live="polite">
+          <span class="readout-item">Distance&nbsp;=&nbsp;<strong id="readout-kpc">&ndash;</strong></span>
+          <span class="readout-item"><span id="readout-units">Reddening</span>&nbsp;=&nbsp;<strong id="readout-ebv">&ndash;</strong></span>
+          <span class="readout-item text-muted" id="readout-range"></span>
+        </div>
+        <p class="alert alert-warning d-none mt-3 mb-0" id="convergence-warning">
+          The line-of-sight fit did not converge in this direction; treat the values with caution.
+        </p>
       </div>
-    </div>
+    </section>
 
-    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-10 col-lg-offset-1 collapse cyan" id="postage-stamp-div">
-      <h1>Cumulative Reddening</h1>
-
-      <div class="row">
-        {% for n in range(3) %}
-          <div class="thumbnail col-xs-12 col-sm-4 col-md-4 ps-container red">
-            <img id="postage-stamp-{{ n+1 }}" src="" class="img-responsive ps-img" />
-            <h4 id="ps-label-{{ n+1 }}" class="ps-label"></h4>
-
-            <svg class="ps-overlay" viewbox="0 0 300 300">
-              <g class="ps-bullseye" transform="translate(150,150)">
-                <circle class="ps-bullseye-outer" r="9"></circle>
-                <circle class="ps-bullseye-inner" r="3"></circle>
-              </g>
-              <g class="ps-focus no-display" transform="translate(8,8)">
-                <rect class="ps-text-bg" width="145" height="50"></rect>
-                <g class="ps-focus-gal no-display">
-                  <text class="ps-text ps-gal-indicator">
-                    <tspan class="ps-l-label" x="4pt" y="16pt">
-                      <tspan>l</tspan><tspan dx="0.25em"</span>=</tspan><tspan class="gal-l-deg" dx="0.25em">30</tspan><tspan>°</tspan>
-                    </tspan>
-                    <tspan class="ps-b-label" x="4pt" dy="16pt">
-                      <tspan>b</tspan><tspan dx="0.25em"</span>=</tspan><tspan class="gal-b-deg" dx="0.25em">30</tspan><tspan>°</tspan>
-                    </tspan>
-                  </text>
-                </g>
-                <g class="ps-focus-equ no-display">
-                  <text class="ps-text ps-equ-indicator">
-                    <tspan class="ps-a-label" x="4pt" y="16pt">
-                      <tspan>α</tspan><tspan dx="0.25em"</span>=</tspan><tspan class="RA-hh" dx="0.25em">15</tspan><tspan class="RA-hh-sup RA-hms" dx="0em" dy="-8pt">h</tspan><tspan class="RA-mm" dy="8pt">17</tspan><tspan class="RA-mm-sup RA-hms" dy="-8pt">m</tspan><tspan class="RA-ss" dy="8pt">35</tspan><tspan class="RA-ss-sup RA-hms" dy="-8pt">s</tspan><tspan class="RA-end" dy="8pt"> </tspan>
-                    </tspan>
-                    <tspan class="ps-d-label" x="4pt" dy="16pt">
-                      <tspan>δ</tspan><tspan dx="0.25em">=</tspan><tspan class="Dec-deg" dx="0.25em">-40.3</tspan><tspan>°</tspan>
-                    </tspan>
-                  </text>
-                </g>
-              </g>
-              <rect class="overlay" width="300", height="300"></rect>
-            </svg>
-          </div>
-        {% endfor %}
+    <section class="card mb-4" aria-labelledby="stamps-heading" id="stamps-section">
+      <div class="card-body">
+        <h2 id="stamps-heading" class="h4">Cumulative reddening <span id="stamps-units" class="text-muted"></span></h2>
+        <p class="text-muted small">
+          Each panel is a 15&deg; field centered on the query direction. Hover to read coordinates;
+          click to move the query there.
+        </p>
+        <div class="row g-3" id="stamps"></div>
+        <p class="text-muted small mb-0 d-none" id="stamps-unavailable">
+          Pre-computed images are not available for this map.
+        </p>
       </div>
-    </div>
+    </section>
 
-  </div>
-
-  <div class="row collapse" id="download-div">
-    <h1>Download Results</h1>
-    <div class="col-xs-8 col-xs-offset-2 col-sm-4 col-sm-offset-4 col-lg-4 col-lg-offset-4 bottom-spacer brown">
-      <a class="btn btn-default btn-lg fancy-serif center-block disabled" href="#" target="_blank" id="table-btn">
-        <span class="fa fa-table fa-lg"></span> &nbsp View ASCII Table
-      </a>
-    </div>
+    <section class="d-flex flex-wrap gap-2 mb-4">
+      <a class="btn btn-outline-secondary" id="download-table" href="#" download>View ASCII table</a>
+      <a class="btn btn-outline-secondary" id="download-json" href="#" download>Download JSON</a>
+      <a class="btn btn-link" id="api-link" href="#" target="_blank" rel="noopener">Equivalent API call</a>
+    </section>
   </div>
 </div>
+{% endblock %}
 
-<script src="{{ url_for('static', filename='js/querypage.js')  }}"></script>
-
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/d3.v7.min.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='js/query/main.js') }}"></script>
 {% endblock %}

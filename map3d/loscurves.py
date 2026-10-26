@@ -1,96 +1,108 @@
+"""ASCII line-of-sight reddening tables offered by the interactive page."""
 
-from map3d import mapdata
+from __future__ import annotations
+
+from urllib.parse import quote
 
 import numpy as np
-import healpy as hp
-
-import ujson as json
-import urllib
-
-from utils import array_like
-import hputils
 
 
-def encode_ascii(txt):
-    data = txt.encode('US-ASCII')
-    data = 'data:text/plain;charset=US-ASCII,{0}'.format(urllib.quote(data))
-
-    return data
+def encode_ascii(txt: str) -> str:
+    data = txt.encode("US-ASCII", errors="replace")
+    return f"data:text/plain;charset=US-ASCII,{quote(data)}"
 
 
-def los_ascii_summary(coords, samples, best, flags,
-                      distmod=np.linspace(4.,19.,31),
-                      colwidth=6, encode=True):
+def los_ascii_summary(
+    coords,
+    samples,
+    best,
+    flags=None,
+    distmod=np.linspace(4.0, 19.0, 31),
+    colwidth: int = 6,
+    encode: bool = True,
+    units: str = "E(g−r)",
+    best_label: str = "BestFit",
+):
+    """Build a readable table of reddening vs distance modulus.
 
-    # Coordinate description
-    if coords.frame.name == 'galactic':
+    `units` names the quantity in the table and `best_label` the row that holds
+    the single curve (a best fit where the map has one, otherwise its mean), so
+    that the header is right for every map.
+    """
+    frame = coords.frame.name
+    if frame == "galactic":
         coord_txt = (
             "# Galactic coordinates (in degrees):\n"
-            "#     l = {gal.l.deg:.4f}\n"
-            "#     b = {gal.b.deg:.4f}\n"
-            ).format(gal=coords)
-    elif coords.frame.name in ('icrs', 'fk5', 'fk4', 'fk4noeterms'):
+            f"#     l = {coords.l.deg:.4f}\n"
+            f"#     b = {coords.b.deg:.4f}\n"
+        )
+    else:
         coord_txt = (
-            "# Equatorial (J2000, {frame:s}) coordinates (in degrees):\n"
-            "#     ra = {equ.ra.deg:.4f}\n"
-            "#     dec = {equ.dec.deg:.4f}\n"
-            ).format(equ=coords, frame=str(coords.frame.name.upper()))
+            f"# Equatorial (J2000, {str(frame.upper()):s}) coordinates (in degrees):\n"
+            f"#     ra = {coords.ra.deg:.4f}\n"
+            f"#     dec = {coords.dec.deg:.4f}\n"
+        )
 
-    # Pixel header
+    if flags is not None:
+        reliable_txt = (
+            "# Reliable distance moduli:\n"
+            "#     min: {min_reliable_distmod:.2f}\n"
+            "#     max: {max_reliable_distmod:.2f}\n"
+            "# Fit converged: {converged:}\n"
+        ).format(
+            min_reliable_distmod=flags["min_reliable_distmod"],
+            max_reliable_distmod=flags["max_reliable_distmod"],
+            converged=flags["converged"],
+        )
+    else:
+        reliable_txt = (
+            "# Reliable distance moduli:\n"
+            "#     min: (not reported by this map)\n"
+            "#     max: (not reported by this map)\n"
+            "# Fit converged: (not reported by this map)\n"
+        )
+
     header = (
         "#\n"
         "# Line-of-Sight Reddening Results\n"
         "# ===============================\n"
         "#\n"
-        "# {coord_txt:s}"
+        f"# {coord_txt:s}"
         "#\n"
-        "# Reliable distance moduli:\n"
-        "#     min: {min_reliable_distmod:.2f}\n"
-        "#     max: {max_reliable_distmod:.2f}\n"
-        "# Fit converged: {converged:}\n"
-        ).format(
-            coord_txt=coord_txt,
-            min_reliable_distmod=flags['min_reliable_distmod'],
-            max_reliable_distmod=flags['max_reliable_distmod'],
-            converged=flags['converged'])
+        f"{reliable_txt:s}"
+    )
 
-    # Explanation
+    first_row = {"BestFit": "best fit", "Mean": "mean"}.get(best_label, best_label.lower())
+
     explanation = (
         "#\n"
-        "# The table contains E(g-r) in magnitudes out to the specified distance moduli.\n"
+        f"# The table contains {units:s} in magnitudes out to the specified distance moduli.\n"
         "# Each column corresponds to a different distance modulus, and each row\n"
-        "# corresponds to a different sample. The first sample is the best fit, while\n"
-        "# the following samples are drawn from the posterior distribution of\n"
+        f"# corresponds to a different sample. The first row is the {first_row:s},\n"
+        "# and the rows below it are drawn from the posterior distribution of\n"
         "# distance-reddening profiles.\n"
         "#\n"
-        "# See Green et al. (2014, 2015, 2018, 2019) for a detailed description\n"
-        "# of how the line-of-sight reddening is computed, and for coefficients\n"
-        "# to convert E(g-r) into extinction in different bands. To convert to\n"
-        "# extinction in other bands, use coefficients in Table 6\n"
-        "# of Schlafly & Finkbeiner (2011).\n"
-        "#\n")
+        "# See the papers for each map (https://argonaut.skymaps.info/papers) for\n"
+        "# how the line-of-sight reddening is computed. To convert to extinction in\n"
+        "# other bands, use the coefficients in Table 6 of Schlafly & Finkbeiner\n"
+        "# (2011), or the extinction curve published with the map.\n"
+        "#\n"
+    )
 
-    # Table column headings
-    table = 'SampleNo'.center(10) + '| DistanceModulus\n'
-    table += ''.center(10) + '|'
+    table = "SampleNo".center(10) + "| DistanceModulus\n"
+    table += "".center(10) + "|"
+    table += "".join([f"{dm:.2f}".rjust(colwidth) for dm in distmod])
+    table += "\n" + "-" * (11 + len(distmod) * colwidth) + "\n"
 
-    # Distance modulus labels
-    table += ''.join(['{:.2f}'.format(dm).rjust(colwidth) for dm in distmod])
-    table += '\n' + '-' * (11 + len(distmod)*colwidth) + '\n'
+    table += best_label.center(10) + "|"
+    table += "".join([f"{E:.3f}".rjust(colwidth) for E in np.atleast_1d(best)])
+    table += "\n"
 
-    # Best fit
-    table += 'BestFit'.center(10) + '|'
+    if samples is not None:
+        for k, samp in enumerate(np.atleast_2d(samples)):
+            table += f"{k:^10d}" + "|"
+            table += "".join([f"{E: >6.3f}" for E in samp])
+            table += "\n"
 
-    table += ''.join(['{:.3f}'.format(E).rjust(colwidth) for E in best])
-    table += '\n'
-
-    # Samples
-    for k,samp in enumerate(samples):
-        table += '{:^10d}'.format(k) + '|'
-        table += ''.join(['{: >6.3f}'.format(E) for E in samp])
-        table += '\n'
-
-    if encode:
-        return encode_ascii(header + explanation + table)
-
-    return header + explanation + table
+    text = header + explanation + table
+    return encode_ascii(text) if encode else text

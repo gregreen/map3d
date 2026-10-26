@@ -1,0 +1,336 @@
+:root {
+  --site-bg: #edf2f7;
+  --site-ink: #1f2933;
+  --site-muted: #5b6770;
+  --site-accent: #2f6f5e;
+  --site-accent-dark: #24564a;
+  --site-rule: #c9d6de;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html,
+body {
+  background: var(--site-bg);
+  color: var(--site-ink);
+}
+
+body {
+  font-family: var(--sans);
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3,
+h4,
+.fancy-serif,
+.navbar-brand {
+  font-family: var(--serif);
+}
+
+h1 {
+  font-size: clamp(1.6rem, 2.2vw + 1rem, 2.4rem);
+}
+
+a {
+  color: var(--site-accent-dark);
+}
+
+a:hover {
+  color: var(--site-accent);
+}
+
+/* Navigation */
+
+.site-nav {
+  background: #1b2a33;
+}
+
+.site-nav .navbar-brand {
+  letter-spacing: 0.02em;
+  font-weight: 600;
+}
+
+.site-nav .nav-link {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.site-nav .nav-link:hover,
+.site-nav .nav-link.active {
+  color: #fff;
+}
+
+/* Shell */
+
+main {
+  min-height: 60vh;
+  padding-bottom: 3rem;
+}
+
+.site-footer {
+  border-top: 1px solid var(--site-rule);
+  padding: 1.25rem 0 2rem;
+  font-size: 0.9rem;
+  color: var(--site-muted);
+}
+
+/* Shared building blocks used by the content pages */
+
+.jumbotron {
+  background: #dbe6ec;
+  border-bottom: 1px solid var(--site-rule);
+  padding: clamp(1.75rem, 4vw, 3rem) 1rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.jumbotron h1 {
+  margin: 0;
+}
+
+.jumbotron p {
+  margin: 0.5rem auto 0;
+  max-width: 48rem;
+  color: var(--site-muted);
+}
+
+.page-header {
+  border-bottom: 1px solid var(--site-rule);
+  margin: 2.25rem 0 1.25rem;
+  padding-bottom: 0.4rem;
+}
+
+.page-header h1,
+.page-header h2 {
+  font-size: 1.6rem;
+  margin: 0;
+}
+
+.h-center {
+  text-align: center;
+}
+
+.bottom-line {
+  border-bottom: 1px solid var(--site-rule);
+  margin: 1.5rem 0;
+}
+
+.block-color {
+  border-top: 1px solid var(--site-rule);
+  padding-top: 1rem;
+}
+
+.thumbnail {
+  background: #fff;
+  border: 1px solid var(--site-rule);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+}
+
+.alert {
+  border-radius: 0.5rem;
+}
+
+code {
+  color: #0f3d33;
+}
+
+pre {
+  background: #f7fafc;
+  border: 1px solid var(--site-rule);
+  border-radius: 0.4rem;
+  padding: 0.85rem 1rem;
+  overflow-x: auto;
+}
+
+/* Click-to-select code blocks (usage page) */
+
+.add-click-select {
+  position: relative;
+}
+
+.add-click-select .highlight {
+  position: relative;
+}
+
+.click-select {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  z-index: 2;
+  border: 0;
+  background: rgba(27, 42, 51, 0.08);
+  color: var(--site-ink);
+  border-radius: 0.3rem;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.click-select:hover {
+  background: var(--site-accent);
+  color: #fff;
+}
+
+/* Utilities */
+
+.text-muted {
+  color: var(--site-muted) !important;
+}
+
+.v-padding-extra {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.v-spacer {
+  height: 1.5rem;
+}
+
+/* Action tiles over the banner on the overview page */
+
+.cover-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  width: min(100% - 2rem, 34rem);
+  margin: 2.25rem auto 0;
+}
+
+.cover-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 1.4rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  text-decoration: none;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.cover-action:hover,
+.cover-action:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.75);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.cover-action-icon {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 575.98px) {
+  .cover-actions {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  .cover-action {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
+  }
+
+  .cover-action-icon {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.author-image {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.author-col {
+  text-align: center;
+  padding: 0.5rem;
+}
+
+@media (max-width: 575.98px) {
+  .author-image {
+    width: 72px;
+    height: 72px;
+  }
+}
+
+/* Utilities used by the content pages */
+
+.v-margins-extra {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.padding-xs-5 {
+  padding: 0.35rem;
+}
+
+.padding-xs-0 {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.banner-image {
+  background:
+    linear-gradient(rgba(20, 33, 43, 0.55), rgba(20, 33, 43, 0.55)),
+    url("/static/media/banner.png") center / cover no-repeat,
+    #14212b;
+  color: #fff;
+}
+
+.banner-image h1,
+.banner-image h2 {
+  color: #fff;
+}
+
+/* Overview page: the section headings outrank the video captions below them,
+   which the browser's default heading scale would otherwise invert. */
+.page-expo .page-header h1 {
+  font-size: 1.9rem;
+}
+
+.page-expo .banner-image h2 {
+  font-size: 1.3rem;
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+.page-expo h2 {
+  font-size: 1.1rem;
+}
+
+.page-expo .video-block {
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 575.98px) {
+  .v-margins-extra {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Responsive visibility that preserves the element's own display type
+   (Bootstrap's d-*-block would turn a flex row into a block). */
+@media (max-width: 991.98px) {
+  .only-lg {
+    display: none !important;
+  }
+}

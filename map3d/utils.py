@@ -1,62 +1,58 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
-#  utils.py
-#
-#  Copyright 2015 greg <greg@greg-UX301LAA>
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#  MA 02110-1301, USA.
-#
-#
+"""Small helpers shared by the views."""
+
+from __future__ import annotations
 
 import numpy as np
 
-def array_like(x):
-    return hasattr(x, '__len__') and not isinstance(x, basestring)
 
-def filter_dict(d, decimals=5):
-    # Round floats to requested number of decimal places
-    for key in d.keys():
-        if isinstance(d[key], np.ndarray):
-            if issubclass(d[key].dtype.type, np.integer):
-                d[key] = d[key].tolist()
+def array_like(x) -> bool:
+    return hasattr(x, "__len__") and not isinstance(x, (str, bytes))
+
+
+def filter_dict(d: dict, decimals: int = 5) -> dict:
+    """Round floats in a dict of arrays/scalars, converting to plain Python types."""
+    out = {}
+    for key, value in d.items():
+        if isinstance(value, np.ndarray):
+            if value.dtype.kind in "iu":
+                out[key] = value.tolist()
             else:
-                d[key] = np.around(d[key].tolist(), decimals=decimals).tolist()
-        elif isinstance(d[key], float) or isinstance(d[key], np.floating):
-            d[key] = np.around(np.array(d[key]).tolist(), decimals=decimals).tolist()
-            #d[key] = float(round(d[key], decimals))
-        elif isinstance(d[key], int) or isinstance(d[key], np.integer):
-            d[key] = int(d[key])
+                out[key] = np.around(value.tolist(), decimals=decimals).tolist()
+        elif isinstance(value, (float, np.floating)):
+            out[key] = round(float(value), decimals)
+        elif isinstance(value, (int, np.integer)):
+            out[key] = int(value)
+        elif isinstance(value, (bool, np.bool_)):
+            out[key] = bool(value)
         else:
-            raise TypeError('{} has type {}'.format(key, str(type(d[key]))))
+            out[key] = value
+    return out
 
 
 def filter_NaN(obj, replace=None):
-    """
-    Replace NaNs with the given replacement. The input can be a single float, a
-    list, a tuple, a dictionary, a list of dictionaries, or other similarly
-    nested objects.
-    """
+    """Recursively replace NaNs with ``replace`` inside nested containers."""
     if isinstance(obj, list):
-        return [filter_NaN(o) for o in obj]
+        return [filter_NaN(o, replace) for o in obj]
     elif isinstance(obj, tuple):
-        return (filter_NaN(o) for o in obj)
+        return tuple(filter_NaN(o, replace) for o in obj)
     elif isinstance(obj, dict):
-        return {k: filter_NaN(obj[k]) for k in obj}
-    elif (isinstance(obj, float) or isinstance(obj, np.floating)) and np.isnan(obj):
+        return {k: filter_NaN(v, replace) for k, v in obj.items()}
+    elif isinstance(obj, (float, np.floating)) and np.isnan(obj):
         return replace
-    else:
-        return obj
+    elif isinstance(obj, np.ndarray):
+        return filter_NaN(obj.tolist(), replace)
+    return obj
+
+
+def scalar(value):
+    """Convert a 0-d array / numpy scalar to a plain Python value."""
+    if isinstance(value, np.ndarray):
+        if value.ndim == 0:
+            value = value[()]
+        elif value.size == 1:
+            value = value.reshape(-1)[0]
+        else:
+            return value.tolist()
+    if isinstance(value, np.generic):
+        return value.item()
+    return value

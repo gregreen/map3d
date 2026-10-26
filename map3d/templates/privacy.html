@@ -1,0 +1,77 @@
+{% extends "layout.html" %}
+{% set active_page = "privacy" %}
+
+{% block title %}Privacy · Argonaut{% endblock %}
+{% block description %}What this service logs, why, and for how long.{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      <div class="jumbotron">
+        <h1>Privacy</h1>
+        <p>Short version: we keep anonymous aggregate counts, not visitors.</p>
+      </div>
+
+      <h2 class="page-header">What is stored</h2>
+      <p>
+        For each successful query we increment a counter. Each counter records only:
+        the UTC date, the map queried, the endpoint, the country, and the
+        one-degree grid cell of the resolved client location, together with the
+        number of queries, number of coordinates and total processing time.
+      </p>
+      <p>
+        We do <strong>not</strong> store IP addresses, user agents, cookies, session
+        identifiers, per-request records, or exact timestamps. There are no
+        third-party analytics, advertising or tracking scripts on this site, and
+        every asset (fonts, styles, JavaScript) is served from this domain.
+      </p>
+
+      <h2 class="page-header">Why we collect it</h2>
+      <p>
+        Aggregate counts tell us which maps the community relies on and whether the
+        service needs more capacity. This is our legitimate interest in operating
+        and funding the service. Rate limiting exists to keep the service
+        responsive for everyone.
+      </p>
+
+      <h2 class="page-header">IP addresses and rate limiting</h2>
+      <p>
+        IP addresses are personal data under the GDPR, so we handle them
+        conservatively. During a request the address is used in memory to count the
+        request against a budget and, if a geo database is installed, to resolve a
+        country and coarse location. The counter key is a keyed hash
+        (HMAC-SHA256) of the address prefix, using a salt that is rotated daily;
+        IPv6 addresses are grouped by /64. Counters expire after the rate-limit
+        window and are purged, and the salt is discarded after the day ends, so
+        stored hashes cannot be linked across days or back to an address.
+      </p>
+      {% if not geoip_enabled %}
+        <p class="text-muted">Geolocation is currently disabled on this deployment; country and cell fields are left blank.</p>
+      {% endif %}
+
+      <h2 class="page-header">Retention</h2>
+      <p>
+        Aggregate rows are kept for {{ retention_days }} days and then deleted.
+        Rate-limit counters are kept only for the length of their window.
+        Server logs contain request IDs, endpoints, map names, counts and timings —
+        never IP addresses.
+      </p>
+
+      <h2 class="page-header">Your rights</h2>
+      <p>
+        Because we do not hold personal data beyond short-lived pseudonymous
+        rate-limit counters, there is normally nothing to access, correct or erase.
+        If you believe a request of yours was mishandled, contact the site
+        maintainer and quote the request ID shown in the response headers.
+      </p>
+
+      <h2 class="page-header">Credits</h2>
+      <p>
+        Country/city resolution uses the free <a href="https://db-ip.com">DB-IP</a>
+        Lite database (CC BY 4.0), refreshed periodically.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
