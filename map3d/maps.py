@@ -410,7 +410,7 @@ def build_registry(config) -> MapRegistry:
         MapSpec(
             name="bayestar2019",
             description=(
-                "Bayestar 2019: A 3D dust map based on Pan-STARRS 1, 2MASS, WISE and "
+                "Bayestar 2019: A 3D dust map based on Pan-STARRS 1, 2MASS and "
                 "Gaia DR2."
             ),
             citation="Green et al. (2019)",
