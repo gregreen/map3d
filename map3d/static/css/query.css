@@ -17,6 +17,13 @@
   padding: 1.25rem;
 }
 
+/* The example values in the coordinate boxes are hints, not data, so they read
+   lighter than Bootstrap's default placeholder (a 75 % black). */
+.query-form .form-control::placeholder {
+  color: #aebac3;
+  opacity: 1;
+}
+
 #map-select {
   text-transform: none;
 }
