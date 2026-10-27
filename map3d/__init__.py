@@ -117,6 +117,8 @@ def _register_request_hooks(app: Flask) -> None:
         if limit is not None:
             response.headers["X-RateLimit-Limit"] = str(limit.limit)
             response.headers["X-RateLimit-Remaining"] = str(limit.remaining)
+            response.headers["X-RateLimit-Work-Limit"] = str(limit.work_limit)
+            response.headers["X-RateLimit-Work-Remaining"] = str(limit.work_remaining)
             response.headers["X-RateLimit-Reset"] = str(limit.reset)
             if not limit.allowed:
                 response.headers["Retry-After"] = str(limit.retry_after)

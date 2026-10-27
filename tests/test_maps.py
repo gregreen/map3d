@@ -16,6 +16,8 @@ from map3d.maps import (
     distance_moduli,
     n_coords,
     output_size,
+    size_flat_map,
+    size_probabilistic,
 )
 
 EXPECTED = {
@@ -67,6 +69,22 @@ def test_probabilistic_maps_accept_a_seed(registry):
         assert "seed_or_rng" not in registry.spec(name).schema, name
 
 
+def test_every_map_declares_a_size_estimator(registry):
+    for name, spec in registry.specs.items():
+        assert callable(spec.size_estimator), name
+        if spec.supports_flags:
+            assert getattr(spec.size_estimator, "handles_flags", False), name
+
+
+def test_a_map_with_flags_needs_a_flag_aware_estimator():
+    with pytest.raises(ValueError, match="must count them"):
+        _make_spec(
+            schema={"return_flags": {"type": "boolean"}},
+            supports_flags=True,
+            size_estimator=size_flat_map,
+        )
+
+
 def test_schemas_agree_with_capabilities(registry):
     for name, spec in registry.specs.items():
         assert ("return_flags" in spec.schema) == spec.supports_flags, name
@@ -90,6 +108,7 @@ def _make_spec(**overrides):
         "kind": "2d",
         "factory": lambda: None,
         "schema": {},
+        "size_estimator": size_flat_map,
     }
     values.update(overrides)
     return MapSpec(**values)
@@ -174,6 +193,7 @@ def test_alias_collision_rejected(registry):
         kind="2d",
         factory=lambda: None,
         schema={},
+        size_estimator=size_flat_map,
         aliases=("sfd",),
     )
     with pytest.raises(ValueError):
@@ -225,7 +245,7 @@ def test_output_size_scalar_and_samples():
         kind="3d",
         factory=lambda: None,
         schema={},
-        size_kind="probabilistic",
+        size_estimator=size_probabilistic,
         default_mode="mean",
     )
     q = FakeQuery()
@@ -242,6 +262,76 @@ def test_output_size_scalar_and_samples():
     )
     assert coords_have_distance(coords3d)
     assert output_size(q, spec, coords3d, {"mode": "samples"}) == 2 * 4
+
+
+def test_output_size_counts_flags_once_per_coordinate():
+    class FakeQuery:
+        _n_samples = 4
+        _n_distances = 10
+
+    spec = MapSpec(
+        name="f",
+        description="",
+        citation="",
+        kind="3d",
+        factory=lambda: None,
+        schema={"return_flags": {"type": "boolean"}},
+        size_estimator=size_probabilistic,
+        default_mode="mean",
+        supports_flags=True,
+    )
+    q = FakeQuery()
+    coords = SkyCoord([1.0, 2.0, 3.0] * u.deg, [0.0, 0.0, 0.0] * u.deg, frame="galactic")
+    plain = output_size(q, spec, coords, {"mode": "samples"})
+    flagged = output_size(q, spec, coords, {"mode": "samples", "return_flags": True})
+    # three flag records, not a doubling of the whole (samples x bins) array
+    assert flagged - plain == 3
+
+
+DISTANCE_BINS = {"bayestar2019", "edenhofer2023", "decaps"}
+
+
+@pytest.mark.parametrize(
+    "name,args",
+    [
+        ("bayestar2019", {"mode": "mean"}),
+        ("bayestar2019", {"mode": "best"}),
+        ("bayestar2019", {"mode": "samples"}),
+        ("bayestar2019", {"mode": "samples", "return_flags": True}),
+        ("bayestar2019", {"mode": "percentile", "pct": [16.0, 50.0, 84.0]}),
+        ("bayestar2019", {"mode": "percentile", "pct": 50.0, "return_flags": True}),
+        ("bayestar2015", {"mode": "samples"}),
+        ("decaps", {"mode": "mean", "return_flags": True}),
+        ("decaps", {"mode": "samples"}),
+        ("edenhofer2023", {"mode": "std"}),
+        ("edenhofer2023", {"mode": "samples"}),
+        ("edenhofer2023", {"mode": "random_sample"}),
+        ("sfd", {"order": 1}),
+        ("csfd", {}),
+        ("csfd", {"return_flags": True}),
+        ("planck-ebv", {}),
+        ("planck-gnilc", {}),
+    ],
+)
+def test_output_size_prediction_matches_actual(services, name, args):
+    """The estimate that drives rate limiting must track the real output size."""
+    registry = services.registry
+    spec = registry.spec(name)
+    query = registry.get(name)
+
+    lon = [120.0, 121.0, 122.0]
+    lat = [10.0, -5.0, 20.0]
+    if spec.requires_distance:
+        coords = SkyCoord(lon * u.deg, lat * u.deg, distance=[0.5, 1.0, 1.5] * u.kpc, frame="galactic")
+    else:
+        coords = SkyCoord(lon * u.deg, lat * u.deg, frame="galactic")
+
+    result = query(coords, **args)
+    items = result if isinstance(result, (tuple, list)) else (result,)
+    actual = sum(int(np.size(item)) for item in items)
+    predicted = output_size(query, spec, coords, args)
+
+    assert 0.8 <= predicted / actual <= 1.2, (name, args, predicted, actual)
 
 
 def test_distance_moduli_from_distances_quantity():

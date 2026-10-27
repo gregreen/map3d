@@ -248,7 +248,8 @@
         <h3 class="h5 mt-4">Limits</h3>
         <p>
           Requests are rate limited per client, counted both as requests and as
-          <em>work units</em> (coordinates × samples × distance bins). The response headers
+          <em>work units</em> (coordinates × samples × distance bins, plus one unit per coordinate
+          when you request <code>return_flags</code>). The response headers
           <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code> and
           <code>X-RateLimit-Reset</code> report your budget, and a <code>429</code> response includes
           <code>Retry-After</code>. Ask for many coordinates per request, and only the modes you

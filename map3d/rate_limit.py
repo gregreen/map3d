@@ -31,8 +31,22 @@ class LimitResult:
     allowed: bool
     limit: int
     remaining: int
+    work_limit: int
+    work_remaining: int
     reset: int
     retry_after: int
+
+    @property
+    def exceeded(self) -> str | None:
+        """Which budget rejected the request; ``None`` when it was allowed.
+
+        A rejected request does not spend either budget, so an exhausted request
+        count shows up as ``remaining == 0`` while an exhausted work budget
+        leaves the request count untouched.
+        """
+        if self.allowed:
+            return None
+        return "requests" if self.remaining <= 0 else "work"
 
 
 def ip_prefix(ip: str) -> str:
@@ -127,6 +141,8 @@ class RateLimiter:
             allowed=allowed,
             limit=requests_limit,
             remaining=max(0, requests_limit - used_requests),
+            work_limit=work_limit,
+            work_remaining=max(0, work_limit - used_work),
             reset=reset,
             retry_after=retry_after,
         )

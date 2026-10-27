@@ -379,3 +379,27 @@ Legend: `[x]` done · `[~]` partially done · `[ ]` not started
   accept as integers (`seed_or_rng: true` would silently become seed 1). `null` or an absent key
   keeps OS-seeded randomness. A registry invariant requires `supports_samples` for any map that
   declares the argument. The OpenAPI document and the Documentation page list the new argument.
+- [x] **Query-size estimation is now per map, and its arithmetic is verified.** `MapSpec` carries a
+  required `size_estimator`, so each map states how many values its queries return instead of one
+  function guessing from the shape of the query object: `size_flat_map` (SFD, the Planck 2014 maps,
+  GNILC — one value per coordinate), `size_flat_map_with_flags` (CSFD — a value and a flag record
+  per coordinate), `size_probabilistic` (Bayestar and DECaPS — the map's own `get_query_size`, plus
+  one flag record per coordinate when flags are asked for) and `size_edenhofer` (one value per
+  coordinate, or per stored sample). The old `size_kind` field is gone, since the estimator
+  supersedes it, and a registry invariant requires a flags-aware estimator for any map that supports
+  flags. The previous blanket "×2 when `return_flags` is set" was wrong wherever samples or distance
+  bins were involved, because flags hold one record per coordinate: Bayestar `mode=samples` without
+  a distance was overcharged about twofold (2400 predicted against 1202 actual) and with a distance
+  by two thirds (20 against 12). Measured against all eleven real maps — every mode, with and
+  without a distance, with and without flags, scalar and 2-D coordinate arrays, scalar and array
+  `d`, scalar and array `pct` — the prediction now equals the value count exactly (231/231
+  combinations at ratio 1.00), and a parametrized test holds every map to ±20%.
+- [x] **Work-unit budget is visible to clients, and a work rejection says so.** Only the request-count
+  budget had headers, so a client that exhausted `RATE_LIMIT_API_WORK` was rejected with
+  `X-RateLimit-Remaining: 92` and a body reporting `"limit": 100` — the request limit it had never
+  come near — with nothing mentioning work units at all. `LimitResult` now carries `work_limit` and
+  `work_remaining`, responses gain `X-RateLimit-Work-Limit` and `X-RateLimit-Work-Remaining`, and the
+  429 body gains `exceeded` (`"requests"` or `"work"`), `remaining`, `work_limit`, `work_remaining`
+  and `requested_work` (the cost of the rejected request), so a client can see that its query was
+  too big rather than too frequent and can shrink it to fit. `X-RateLimit-Reset` keeps its
+  epoch-seconds meaning; `Retry-After` remains the seconds-remaining field to follow.

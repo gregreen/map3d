@@ -87,13 +87,14 @@ def enforce_rate_limit(work: int, kind: str = "api") -> tuple[Response, int] | N
     """Count this request against the client's budget; returns 429 if exceeded."""
     svc = services()
     requests_limit, work_limit, window = _limit_settings(kind)
+    requested_work = max(0, int(work))
 
     key = f"{kind}:{svc.limiter.client_key(client_ip())}"
     result = svc.limiter.check(
         key,
         requests_limit=requests_limit,
         work_limit=work_limit,
-        work=max(0, int(work)),
+        work=requested_work,
         window=window,
     )
     g.rate_limit = result
@@ -101,15 +102,27 @@ def enforce_rate_limit(work: int, kind: str = "api") -> tuple[Response, int] | N
     if result.allowed:
         return None
 
-    message = (
-        "You are issuing too many queries in a short period of time. "
-        "You can reduce the number of requests by asking for multiple "
-        "coordinates (or distance bins) in a single call."
-    )
+    if result.exceeded == "work":
+        message = (
+            "This request would exceed your work-unit budget for this window "
+            "(coordinates x samples x distance bins). Ask for fewer coordinates, "
+            "a cheaper mode, or spread the queries over a longer period."
+        )
+    else:
+        message = (
+            "You are issuing too many queries in a short period of time. "
+            "You can reduce the number of requests by asking for multiple "
+            "coordinates (or distance bins) in a single call."
+        )
     return json_error(
         message,
         429,
+        exceeded=result.exceeded,
         limit=result.limit,
+        remaining=result.remaining,
+        work_limit=result.work_limit,
+        work_remaining=result.work_remaining,
+        requested_work=requested_work,
         retry_after=result.retry_after,
         reset_unix_time=result.reset,
     )

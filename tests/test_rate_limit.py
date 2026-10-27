@@ -26,6 +26,10 @@ def test_request_count_limit(client, app):
     assert int(r.headers["Retry-After"]) >= 1
     assert int(r.headers["X-RateLimit-Remaining"]) == 0
     assert "batch" in r.get_json()["error"] or "multiple" in r.get_json()["error"]
+    payload = r.get_json()
+    assert payload["exceeded"] == "requests"
+    assert payload["remaining"] == 0
+    assert payload["work_remaining"] > 0
 
 
 def test_work_budget_limits_large_requests(client, app):
@@ -36,6 +40,34 @@ def test_work_budget_limits_large_requests(client, app):
         json={"l": 10.0, "b": 10.0, "mode": "samples"},
     )
     assert r.status_code == 429
+    # The rejection is about work units, and says so, even though the request
+    # count is untouched.
+    payload = r.get_json()
+    assert payload["exceeded"] == "work"
+    assert payload["requested_work"] > payload["work_limit"]
+    assert payload["work_remaining"] == payload["work_limit"]
+    assert payload["remaining"] > 0
+    assert int(r.headers["X-RateLimit-Remaining"]) > 0
+    assert int(r.headers["X-RateLimit-Work-Remaining"]) == 10
+
+
+def test_work_headers_track_a_query_cost(client, app):
+    app.config["RATE_LIMIT_API_REQUESTS"] = 1000
+    app.config["RATE_LIMIT_API_WORK"] = 1_000_000
+    first = _query(client)
+    assert first.status_code == 200
+    limit = int(first.headers["X-RateLimit-Work-Limit"])
+    spent = limit - int(first.headers["X-RateLimit-Work-Remaining"])
+    assert spent == 1  # one coordinate, one value
+
+    # A samples-mode query over the same coordinate costs one unit per sample
+    # and per distance bin, which the headers now show.
+    heavy = client.post(
+        "/api/v2/bayestar2019/query", json={"l": 10.0, "b": 10.0, "mode": "samples"}
+    )
+    assert heavy.status_code == 200
+    remaining = int(heavy.headers["X-RateLimit-Work-Remaining"])
+    assert limit - remaining - spent > 1
 
 
 def test_limits_are_per_endpoint_kind(client, app):

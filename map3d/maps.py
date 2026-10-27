@@ -139,8 +139,9 @@ class MapSpec:
     # Keyword arguments the map's query object accepts. Required, so that a new
     # map cannot be added without deciding what the API may forward to it.
     schema: dict
+    # How many values a query against this map returns; see "Size estimation".
+    size_estimator: Callable[[Any, Any, dict], int]
     doi: str = ""
-    size_kind: str = "scalar"  # 'scalar' | 'probabilistic'
     default_mode: str = "mean"
     stamp_distances: tuple[float, ...] | None = None
     supports_samples: bool = False
@@ -210,6 +211,13 @@ def check_schema(spec: MapSpec) -> None:
             f"must store samples"
         )
 
+    if not callable(spec.size_estimator):
+        raise TypeError(f"{spec.name}: size_estimator must be callable")
+    if spec.supports_flags and not getattr(spec.size_estimator, "handles_flags", False):
+        raise ValueError(
+            f"{spec.name}: supports flags, so its size_estimator must count them"
+        )
+
     if "mode" in spec.schema:
         if not spec.modes:
             raise ValueError(f"{spec.name}: 'mode' in schema but no modes declared")
@@ -236,6 +244,15 @@ def check_schema(spec: MapSpec) -> None:
 
 # ---------------------------------------------------------------------------
 # Size estimation
+#
+# Each map declares its own estimator, because what a query returns depends on
+# the map: a flat 2D map yields one value per coordinate, CSFD also yields a
+# flag record per coordinate, the probabilistic maps yield one value per sample
+# (or percentile) per distance bin, and so on. Nothing here guesses from the
+# shape of a query object; a new map states its own answer.
+#
+# An estimator is called as ``estimator(query, coords, args)`` and returns the
+# number of values the response will contain.
 # ---------------------------------------------------------------------------
 
 
@@ -249,50 +266,107 @@ def coords_have_distance(coords) -> bool:
     return hasattr(coords.distance, "kpc")
 
 
-def output_size(query, spec: MapSpec, coords, args: dict) -> int:
-    """Estimated number of output values, used to reject oversized requests."""
-    size = _value_count(query, spec, coords, args)
-    if args.get("return_flags"):
-        size *= 2
-    return size
+def size_flat_map(query, coords, args) -> int:
+    """One value per coordinate: SFD, the Planck 2014 maps, GNILC."""
+    return n_coords(coords)
 
 
-def _value_count(query, spec: MapSpec, coords, args: dict) -> int:
+def size_flat_map_with_flags(query, coords, args) -> int:
+    """One value and one flag record per coordinate: CSFD's bit mask."""
     n = n_coords(coords)
-    if spec.size_kind != "probabilistic":
-        return n
+    return 2 * n if args.get("return_flags") else n
 
-    get_size = getattr(query, "get_query_size", None)
-    if callable(get_size):
-        allowed = {"mode", "return_flags", "pct"}
-        try:
-            return int(get_size(coords, **{k: v for k, v in args.items() if k in allowed}))
-        except Exception:
-            pass
 
-    rec = getattr(query, "_rec", None)
-    mode = args.get("mode", spec.default_mode)
+size_flat_map_with_flags.handles_flags = True
+
+
+def _n_stored_samples(query) -> int:
+    for value in (
+        getattr(query, "_n_samples", None),
+        getattr(query, "n_samples", None),
+        getattr(getattr(query, "_rec", None), "n_samples", None),
+    ):
+        if value:
+            return int(value)
+    return 1
+
+
+def _n_distance_bins(query) -> int:
+    for count in (
+        getattr(query, "_n_distances", None),
+        getattr(getattr(query, "_rec", None), "n_radii", None),
+    ):
+        if count:
+            return int(count)
+    for axis in (
+        getattr(query, "distmods", None),
+        getattr(query, "distances", None),
+    ):
+        if axis is not None and np.size(axis):
+            return int(np.size(axis))
+    return 1
+
+
+def _count_samples_and_bins(query, coords, args) -> tuple[int, int]:
+    mode = args.get("mode")
     if mode == "samples":
-        n_samples = int(
-            getattr(query, "_n_samples", None)
-            or getattr(query, "n_samples", None)
-            or getattr(rec, "n_samples", None)
-            or 1
-        )
+        n_samples = _n_stored_samples(query)
     elif mode == "percentile":
         pct = args.get("pct")
         n_samples = int(np.size(pct)) if pct is not None else 1
     else:
         n_samples = 1
+    n_dists = 1 if coords_have_distance(coords) else _n_distance_bins(query)
+    return max(1, n_samples), max(1, n_dists)
 
-    if coords_have_distance(coords):
-        n_dists = 1
-    else:
-        n_dists = int(
-            getattr(query, "_n_distances", None) or getattr(rec, "n_radii", None) or 1
-        )
 
+def size_probabilistic(query, coords, args) -> int:
+    """Bayestar and DECaPS: values per sample and distance bin, plus flags.
+
+    The map knows its own sample and distance grid, so ask it; the arithmetic in
+    the fallback is for a query object without ``get_query_size``, and for
+    arguments the map rejects (which the query itself will reject too).
+    """
+    size = None
+    get_size = getattr(query, "get_query_size", None)
+    if callable(get_size):
+        try:
+            size = int(
+                get_size(coords, **{k: args[k] for k in ("mode", "pct") if k in args})
+            )
+        except Exception:
+            size = None
+    if size is None:
+        n_samples, n_dists = _count_samples_and_bins(query, coords, args)
+        size = n_coords(coords) * n_samples * n_dists
+
+    if args.get("return_flags"):
+        # One flag record per coordinate, not one per sample or distance bin.
+        size += n_coords(coords)
+    return size
+
+
+size_probabilistic.handles_flags = True
+
+
+def size_edenhofer(query, coords, args) -> int:
+    """Edenhofer 2023: one value per coordinate, or per stored sample.
+
+    The map has no flags, and its distance axis is only used when the request
+    omits a distance (which the API does not allow).
+    """
+    n = n_coords(coords)
+    n_samples = _n_stored_samples(query) if args.get("mode") == "samples" else 1
+    n_dists = 1 if coords_have_distance(coords) else _n_distance_bins(query)
     return n * max(1, n_samples) * max(1, n_dists)
+
+
+def output_size(query, spec: MapSpec, coords, args: dict) -> int:
+    """Estimated number of output values, used to reject oversized requests.
+
+    Delegates to the map's own estimator; see the comment above.
+    """
+    return spec.size_estimator(query, coords, args)
 
 
 # ---------------------------------------------------------------------------
@@ -489,7 +563,7 @@ def build_registry(config) -> MapRegistry:
             kind=KIND_3D,
             factory=bayestar("bayestar2015"),
             schema=BAYESTAR_SCHEMA,
-            size_kind="probabilistic",
+            size_estimator=size_probabilistic,
             default_mode="random_sample",
             stamp_distances=(300.0, 1000.0, 5000.0),
             supports_samples=True,
@@ -510,7 +584,7 @@ def build_registry(config) -> MapRegistry:
             kind=KIND_3D,
             factory=bayestar("bayestar2017"),
             schema=BAYESTAR_SCHEMA,
-            size_kind="probabilistic",
+            size_estimator=size_probabilistic,
             default_mode="random_sample",
             stamp_distances=(300.0, 1000.0, 5000.0),
             supports_samples=True,
@@ -532,7 +606,7 @@ def build_registry(config) -> MapRegistry:
             kind=KIND_3D,
             factory=bayestar("bayestar2019"),
             schema=BAYESTAR_SCHEMA,
-            size_kind="probabilistic",
+            size_estimator=size_probabilistic,
             default_mode="random_sample",
             stamp_distances=(300.0, 1000.0, 5000.0),
             supports_samples=True,
@@ -554,7 +628,7 @@ def build_registry(config) -> MapRegistry:
             kind=KIND_3D,
             factory=decaps,
             schema=DECAPS_SCHEMA,
-            size_kind="probabilistic",
+            size_estimator=size_probabilistic,
             default_mode="mean",
             stamp_distances=(500.0, 2000.0, 4000.0),
             supports_samples=True,
@@ -580,7 +654,7 @@ def build_registry(config) -> MapRegistry:
             kind=KIND_3D,
             factory=edenhofer2023,
             schema=EDENHOFER_SCHEMA,
-            size_kind="probabilistic",
+            size_estimator=size_edenhofer,
             default_mode="mean",
             stamp_distances=(300.0, 700.0, 1200.0),
             supports_samples=True,
@@ -599,6 +673,7 @@ def build_registry(config) -> MapRegistry:
             kind=KIND_2D,
             factory=sfd,
             schema=SFD_SCHEMA,
+            size_estimator=size_flat_map,
             supports_distance=False,
             api_units="E(B−V)",
             display_units="E(B−V)",
@@ -611,6 +686,7 @@ def build_registry(config) -> MapRegistry:
             kind=KIND_2D,
             factory=csfd,
             schema=CSFD_SCHEMA,
+            size_estimator=size_flat_map_with_flags,
             supports_distance=False,
             supports_flags=True,
             api_units="E(B−V)",
@@ -624,6 +700,7 @@ def build_registry(config) -> MapRegistry:
             kind=KIND_2D,
             factory=planck("tau353"),
             schema=PLANCK_SCHEMA,
+            size_estimator=size_flat_map,
             supports_distance=False,
             api_units="tau_353",
             display_units="tau_353",
@@ -636,6 +713,7 @@ def build_registry(config) -> MapRegistry:
             kind=KIND_2D,
             factory=planck("radiance"),
             schema=PLANCK_SCHEMA,
+            size_estimator=size_flat_map,
             supports_distance=False,
             api_units="radiance",
             display_units="radiance",
@@ -648,6 +726,7 @@ def build_registry(config) -> MapRegistry:
             kind=KIND_2D,
             factory=planck("extragalactic"),
             schema=PLANCK_SCHEMA,
+            size_estimator=size_flat_map,
             supports_distance=False,
             aliases=("planck",),
             api_units="E(B−V)",
@@ -661,6 +740,7 @@ def build_registry(config) -> MapRegistry:
             kind=KIND_2D,
             factory=planck_gnilc,
             schema=PLANCK_SCHEMA,
+            size_estimator=size_flat_map,
             supports_distance=False,
             api_units="E(B−V)",
             display_units="E(B−V)",
