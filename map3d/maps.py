@@ -42,46 +42,91 @@ BAYESTAR_MODES = (
 # DECaPS has no 'best' mode (the published best fit is not stored).
 DECAPS_MODES = tuple(mode for mode in BAYESTAR_MODES if mode != "best")
 
-BAYESTAR_SCHEMA = {
-    "mode": {
-        "type": "string",
-        "default": "random_sample",
-        "anyof": [
-            {"allowed": list(BAYESTAR_MODES[:-1])},
-            {"allowed": ["percentile"], "dependencies": "pct"},
-        ],
-    },
-    "pct": {
+EDENHOFER_MODES = ("mean", "std", "samples", "random_sample")
+
+# Every keyword argument any served map accepts. A schema may only use these, so
+# that a typo becomes an error at import time rather than a silently ignored
+# request field.
+QUERY_KWARGS = frozenset({"mode", "pct", "return_flags", "seed_or_rng", "order"})
+
+
+def _mode_field(modes, default: str) -> dict:
+    """Schema for ``mode``, accepting exactly the modes the map supports."""
+    branches = [{"allowed": [mode for mode in modes if mode != "percentile"]}]
+    if "percentile" in modes:
+        branches.append({"allowed": ["percentile"], "dependencies": "pct"})
+    return {"type": "string", "default": default, "anyof": branches}
+
+
+def _pct_field() -> dict:
+    return {
         "coerce": to_array("f8"),
         "type": "numberlike_ndarray",
         "minall": 0.0,
         "maxall": 100.0,
         "dependencies": {"mode": "percentile"},
         "nullable": True,
-    },
-    "return_flags": {"type": "boolean", "default": False},
+    }
+
+
+def _return_flags_field() -> dict:
+    return {"type": "boolean", "default": False}
+
+
+def _not_boolean(field, value, error):
+    if isinstance(value, bool):
+        error(field, "must be an integer seed, not a boolean")
+
+
+def _seed_field() -> dict:
+    """`seed_or_rng`, restricted to an integer seed.
+
+    ``dustmaps`` also accepts a :obj:`numpy.random.Generator` here, so that a
+    caller can continue its own random stream. That has no JSON representation
+    we are prepared to serialize (or to trust from a client), so the API takes
+    a seed only. Omitting it, or passing ``null``, gives OS-seeded randomness.
+    """
+    return {
+        "type": "integer",
+        "min": 0,
+        "nullable": True,
+        "check_with": _not_boolean,
+    }
+
+
+# Each schema below lists *every* keyword argument the map's query object
+# accepts; an empty schema means the map takes none. Anything not listed is
+# rejected by the API rather than passed through to `dustmaps`.
+
+BAYESTAR_SCHEMA = {
+    "mode": _mode_field(BAYESTAR_MODES, "random_sample"),
+    "pct": _pct_field(),
+    "return_flags": _return_flags_field(),
+    "seed_or_rng": _seed_field(),
 }
 
 DECAPS_SCHEMA = {
-    "mode": {
-        "type": "string",
-        "default": "mean",
-        "anyof": [
-            {"allowed": [m for m in DECAPS_MODES if m != "percentile"]},
-            {"allowed": ["percentile"], "dependencies": "pct"},
-        ],
-    },
-    "pct": BAYESTAR_SCHEMA["pct"],
-    "return_flags": {"type": "boolean", "default": False},
+    "mode": _mode_field(DECAPS_MODES, "mean"),
+    "pct": _pct_field(),
+    "return_flags": _return_flags_field(),
+    "seed_or_rng": _seed_field(),
 }
-
-SFD_SCHEMA = {"order": {"type": "integer", "min": 0, "max": 5}}
-
-EDENHOFER_MODES = ("mean", "std", "samples", "random_sample")
 
 EDENHOFER_SCHEMA = {
-    "mode": {"type": "string", "default": "mean", "allowed": list(EDENHOFER_MODES)},
+    "mode": _mode_field(EDENHOFER_MODES, "mean"),
+    "seed_or_rng": _seed_field(),
 }
+
+# SFD interpolates with scipy.ndimage.map_coordinates, which supports orders 0-5.
+SFD_SCHEMA = {"order": {"type": "integer", "min": 0, "max": 5}}
+
+# CSFD stores a bit mask (LSS correction, no IRAS data, cosmology-friendly) that
+# `return_flags=True` returns alongside the reddening.
+CSFD_SCHEMA = {"return_flags": _return_flags_field()}
+
+# The Planck 2014 components and GNILC take no query arguments at all: the
+# component is fixed by which map was requested.
+PLANCK_SCHEMA = {}
 
 
 @dataclass(frozen=True)
@@ -91,8 +136,10 @@ class MapSpec:
     citation: str
     kind: str
     factory: Callable[[], Any]
+    # Keyword arguments the map's query object accepts. Required, so that a new
+    # map cannot be added without deciding what the API may forward to it.
+    schema: dict
     doi: str = ""
-    schema: dict | None = None
     size_kind: str = "scalar"  # 'scalar' | 'probabilistic'
     default_mode: str = "mean"
     stamp_distances: tuple[float, ...] | None = None
@@ -123,9 +170,68 @@ class MapSpec:
     # its neighbors, as DECaPS does for sightlines just past its survey edge.
     infilled_warning: str = ""
 
+    def __post_init__(self) -> None:
+        check_schema(self)
+
     @property
     def is_3d(self) -> bool:
         return self.kind == KIND_3D
+
+
+def check_schema(spec: MapSpec) -> None:
+    """Reject a spec whose schema disagrees with the rest of its capabilities."""
+    if not isinstance(spec.schema, dict):
+        raise TypeError(
+            f"{spec.name}: schema must be a dict (use {{}} when the map takes no "
+            f"arguments), not {type(spec.schema).__name__}"
+        )
+
+    unknown = set(spec.schema) - QUERY_KWARGS
+    if unknown:
+        raise ValueError(
+            f"{spec.name}: schema declares unsupported argument(s) {sorted(unknown)}"
+        )
+
+    if "pct" in spec.schema:
+        if "mode" not in spec.schema:
+            raise ValueError(f"{spec.name}: 'pct' requires 'mode' in the schema")
+        if "percentile" not in spec.modes:
+            raise ValueError(f"{spec.name}: 'pct' but 'percentile' is not in modes")
+
+    if ("return_flags" in spec.schema) != spec.supports_flags:
+        raise ValueError(
+            f"{spec.name}: 'return_flags' in schema={('return_flags' in spec.schema)}, "
+            f"supports_flags={spec.supports_flags}; these must agree"
+        )
+
+    if "seed_or_rng" in spec.schema and not spec.supports_samples:
+        raise ValueError(
+            f"{spec.name}: 'seed_or_rng' only affects the random modes, so the map "
+            f"must store samples"
+        )
+
+    if "mode" in spec.schema:
+        if not spec.modes:
+            raise ValueError(f"{spec.name}: 'mode' in schema but no modes declared")
+        declared = set(spec.schema["mode"].get("allowed", ()))
+        for branch in spec.schema["mode"].get("anyof", ()):
+            declared.update(branch.get("allowed", ()))
+        if declared != set(spec.modes):
+            raise ValueError(
+                f"{spec.name}: schema allows {sorted(declared)} but modes are "
+                f"{sorted(spec.modes)}; they must agree"
+            )
+        default = spec.schema["mode"].get("default", spec.modes[0])
+        if default != spec.default_mode:
+            raise ValueError(
+                f"{spec.name}: schema default mode {default!r} != "
+                f"default_mode {spec.default_mode!r}"
+            )
+    elif spec.modes:
+        raise ValueError(f"{spec.name}: declares modes but no 'mode' argument")
+
+    if "order" in spec.schema and spec.is_3d:
+        raise ValueError(f"{spec.name}: 'order' is a 2D interpolation argument")
 
 
 # ---------------------------------------------------------------------------
@@ -145,6 +251,13 @@ def coords_have_distance(coords) -> bool:
 
 def output_size(query, spec: MapSpec, coords, args: dict) -> int:
     """Estimated number of output values, used to reject oversized requests."""
+    size = _value_count(query, spec, coords, args)
+    if args.get("return_flags"):
+        size *= 2
+    return size
+
+
+def _value_count(query, spec: MapSpec, coords, args: dict) -> int:
     n = n_coords(coords)
     if spec.size_kind != "probabilistic":
         return n
@@ -308,6 +421,7 @@ class MapRegistry:
                 "supports_distance": spec.supports_distance,
                 "supports_samples": spec.supports_samples,
                 "supports_flags": spec.supports_flags,
+                "query_kwargs": sorted(spec.schema),
                 "modes": list(spec.modes),
                 "warning": spec.warning,
                 "no_coverage_warning": spec.no_coverage_warning,
@@ -496,7 +610,9 @@ def build_registry(config) -> MapRegistry:
             doi="https://doi.org/10.3847/1538-4357/ab1668",
             kind=KIND_2D,
             factory=csfd,
+            schema=CSFD_SCHEMA,
             supports_distance=False,
+            supports_flags=True,
             api_units="E(B−V)",
             display_units="E(B−V)",
         ),
@@ -507,6 +623,7 @@ def build_registry(config) -> MapRegistry:
             doi="https://doi.org/10.1051/0004-6361/201323195",
             kind=KIND_2D,
             factory=planck("tau353"),
+            schema=PLANCK_SCHEMA,
             supports_distance=False,
             api_units="tau_353",
             display_units="tau_353",
@@ -518,6 +635,7 @@ def build_registry(config) -> MapRegistry:
             doi="https://doi.org/10.1051/0004-6361/201323195",
             kind=KIND_2D,
             factory=planck("radiance"),
+            schema=PLANCK_SCHEMA,
             supports_distance=False,
             api_units="radiance",
             display_units="radiance",
@@ -529,6 +647,7 @@ def build_registry(config) -> MapRegistry:
             doi="https://doi.org/10.1051/0004-6361/201323195",
             kind=KIND_2D,
             factory=planck("extragalactic"),
+            schema=PLANCK_SCHEMA,
             supports_distance=False,
             aliases=("planck",),
             api_units="E(B−V)",
@@ -541,6 +660,7 @@ def build_registry(config) -> MapRegistry:
             doi="https://doi.org/10.1051/0004-6361/201629057",
             kind=KIND_2D,
             factory=planck_gnilc,
+            schema=PLANCK_SCHEMA,
             supports_distance=False,
             api_units="E(B−V)",
             display_units="E(B−V)",

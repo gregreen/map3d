@@ -47,6 +47,97 @@ def test_registry_does_not_open_any_map(registry):
     assert registry.loaded() == []
 
 
+def test_every_map_declares_a_schema(registry):
+    for name in registry.names():
+        spec = registry.spec(name)
+        assert isinstance(spec.schema, dict), name
+        assert set(spec.schema) <= {
+            "mode",
+            "pct",
+            "return_flags",
+            "seed_or_rng",
+            "order",
+        }, name
+
+
+def test_probabilistic_maps_accept_a_seed(registry):
+    for name in ("bayestar2015", "bayestar2017", "bayestar2019", "decaps", "edenhofer2023"):
+        assert "seed_or_rng" in registry.spec(name).schema, name
+    for name in ("sfd", "csfd", "planck-ebv", "planck-gnilc"):
+        assert "seed_or_rng" not in registry.spec(name).schema, name
+
+
+def test_schemas_agree_with_capabilities(registry):
+    for name, spec in registry.specs.items():
+        assert ("return_flags" in spec.schema) == spec.supports_flags, name
+        assert ("mode" in spec.schema) == bool(spec.modes), name
+        assert ("order" in spec.schema) == (not spec.is_3d and name == "sfd"), name
+
+
+def test_schema_of_each_2d_map():
+    registry = build_registry({"MAX_SAMPLES": 5})
+    assert set(registry.spec("sfd").schema) == {"order"}
+    assert set(registry.spec("csfd").schema) == {"return_flags"}
+    for name in ("planck-tau353", "planck-radiance", "planck-ebv", "planck-gnilc"):
+        assert registry.spec(name).schema == {}
+
+
+def _make_spec(**overrides):
+    values = {
+        "name": "x",
+        "description": "",
+        "citation": "",
+        "kind": "2d",
+        "factory": lambda: None,
+        "schema": {},
+    }
+    values.update(overrides)
+    return MapSpec(**values)
+
+
+def test_schema_must_be_a_dict():
+    with pytest.raises(TypeError, match="schema must be a dict"):
+        _make_spec(schema=None)
+
+
+def test_schema_cannot_declare_unknown_arguments():
+    with pytest.raises(ValueError, match="unsupported argument"):
+        _make_spec(schema={"nope": {"type": "string"}})
+
+
+def test_schema_return_flags_must_match_supports_flags():
+    with pytest.raises(ValueError, match="must agree"):
+        _make_spec(schema={"return_flags": {"type": "boolean"}})
+
+
+def test_schema_pct_requires_mode():
+    with pytest.raises(ValueError, match="requires 'mode'"):
+        _make_spec(schema={"pct": {"type": "numberlike_ndarray"}})
+
+
+def test_schema_modes_must_match_declared_modes():
+    schema = {"mode": {"type": "string", "default": "mean", "allowed": ["mean", "best"]}}
+    with pytest.raises(ValueError, match="must agree"):
+        _make_spec(kind="3d", schema=schema, modes=("mean",), default_mode="mean")
+
+
+def test_schema_order_rejected_on_3d_map():
+    with pytest.raises(ValueError, match="2D interpolation"):
+        _make_spec(kind="3d", schema={"order": {"type": "integer"}}, supports_flags=False)
+
+
+def test_schema_seed_requires_samples():
+    with pytest.raises(ValueError, match="must store samples"):
+        _make_spec(kind="3d", schema={"seed_or_rng": {"type": "integer", "min": 0}})
+
+
+def test_schema_seed_accepted_with_samples():
+    spec = _make_spec(
+        kind="3d", schema={"seed_or_rng": {"type": "integer", "min": 0}}, supports_samples=True
+    )
+    assert "seed_or_rng" in spec.schema
+
+
 def test_3d_maps_declare_stamps_and_modes(registry):
     for name in ("bayestar2015", "bayestar2017", "bayestar2019", "decaps", "edenhofer2023"):
         spec = registry.spec(name)
@@ -82,6 +173,7 @@ def test_alias_collision_rejected(registry):
         citation="",
         kind="2d",
         factory=lambda: None,
+        schema={},
         aliases=("sfd",),
     )
     with pytest.raises(ValueError):
@@ -132,6 +224,7 @@ def test_output_size_scalar_and_samples():
         citation="",
         kind="3d",
         factory=lambda: None,
+        schema={},
         size_kind="probabilistic",
         default_mode="mean",
     )

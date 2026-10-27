@@ -121,6 +121,82 @@ def test_query_2d_map_rejects_distance(client):
     assert "2D" in r.get_json()["error"]
 
 
+def test_query_sfd_accepts_order(client, decode):
+    r = client.post("/api/v2/sfd/query", json={"l": 120.0, "b": 10.0, "order": 3})
+    assert r.status_code == 200
+    assert np.allclose(decode(r.data), 0.12)
+
+
+def test_query_sfd_rejects_out_of_range_order(client):
+    r = client.post("/api/v2/sfd/query", json={"l": 120.0, "b": 10.0, "order": 9})
+    assert r.status_code == 400
+    assert "order" in r.get_json()["input_errors"]
+
+
+def test_query_csfd_return_flags(client, decode):
+    r = client.post(
+        "/api/v2/csfd/query", json={"l": 120.0, "b": 10.0, "return_flags": True}
+    )
+    assert r.status_code == 200, r.data
+    out = decode(r.data)
+    assert len(out) == 2
+    assert np.allclose(out[0], 0.12)
+    assert int(np.asarray(out[1]).ravel()[0]) == 4
+
+
+def test_query_2d_map_without_arguments_rejects_kwargs(client):
+    r = client.post(
+        "/api/v2/planck-ebv/query", json={"l": 120.0, "b": 10.0, "mode": "mean"}
+    )
+    assert r.status_code == 400
+    assert "no additional keyword arguments" in r.get_json()["error"]
+
+
+def test_query_edenhofer_rejects_pct(client):
+    r = client.post(
+        "/api/v2/edenhofer2023/query",
+        json={"l": 120.0, "b": 10.0, "d": 0.5, "mode": "mean", "pct": [50.0]},
+    )
+    assert r.status_code == 400
+    assert "pct" in r.get_json()["input_errors"]
+
+
+def test_seed_makes_random_mode_reproducible(client, decode):
+    body = {"l": 120.0, "b": 10.0, "mode": "random_sample", "seed_or_rng": 42}
+    first = client.post("/api/v2/bayestar2019/query", json=body)
+    second = client.post("/api/v2/bayestar2019/query", json=body)
+    assert first.status_code == 200, first.data
+    assert second.status_code == 200, second.data
+    np.testing.assert_array_equal(decode(first.data), decode(second.data))
+
+
+def test_seed_accepted_by_every_probabilistic_map(client):
+    for name, extra in [
+        ("bayestar2015", {}),
+        ("bayestar2017", {}),
+        ("decaps", {}),
+        ("edenhofer2023", {"d": 0.5}),
+    ]:
+        body = {"l": 120.0, "b": 10.0, "seed_or_rng": 7, **extra}
+        r = client.post(f"/api/v2/{name}/query", json=body)
+        assert r.status_code == 200, (name, r.data)
+
+
+def test_seed_must_be_an_integer(client):
+    for seed in ["42", 1.5, -1, True, [1, 2]]:
+        r = client.post(
+            "/api/v2/bayestar2019/query", json={"l": 120.0, "b": 10.0, "seed_or_rng": seed}
+        )
+        assert r.status_code == 400, seed
+        assert "seed_or_rng" in r.get_json()["input_errors"], seed
+
+
+def test_seed_rejected_for_2d_map(client):
+    r = client.post("/api/v2/sfd/query", json={"l": 120.0, "b": 10.0, "seed_or_rng": 1})
+    assert r.status_code == 400
+    assert "seed_or_rng" in json.dumps(r.get_json())
+
+
 def test_query_map_requiring_distance(client):
     r = client.post("/api/v2/edenhofer2023/query", json={"l": 120.0, "b": 10.0})
     assert r.status_code == 400

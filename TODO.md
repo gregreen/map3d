@@ -354,3 +354,28 @@ Legend: `[x]` done · `[~]` partially done · `[ ]` not started
   table agree, and it propagates to the code snippets, the `lostable` header and the docs. The
   `lostable` endpoint is now served as `text/plain; charset=utf-8` (it was US-ASCII). Numeric values
   keep ASCII minus signs — input fields, tick labels and table cells stay copy-pasteable and parseable.
+- [x] **Every map declares the complete set of query arguments it accepts.** `MapSpec.schema` is now
+  a required field (an empty dict where a map has none), so a map cannot be added without deciding
+  what the API may forward to it, and `MapSpec.__post_init__` cross-checks the schema against the
+  rest of the spec: it may only contain `mode`, `pct`, `return_flags` and `order`; `pct` requires
+  `mode`; `return_flags` must agree with `supports_flags`; the values allowed for `mode` must equal
+  the declared `modes` and its default must equal `default_mode`; and `order` is rejected on a 3D
+  map. Two schemas were added: `CSFD_SCHEMA` (`return_flags`, which returns CSFD's large-scale
+  structure / no-IRAS / cosmology bit mask — CSFD rejected it before) and `PLANCK_SCHEMA` (empty:
+  the Planck 2014 components and GNILC take no query arguments, the component being fixed by which
+  map was requested). Shared field definitions are now builders (`_mode_field`, `_pct_field`,
+  `_return_flags_field`) instead of one dict aliased between maps, so tuning one map's percentiles
+  can no longer change another's. `/api/v2/maps` publishes `query_kwargs` per map, `output_size()`
+  counts the flags array so `return_flags` cannot slip past `MAX_OUTPUT_VALUES`, and the
+  Documentation page now lists the per-map arguments (and explains what CSFD's bits mean).
+- [x] **`seed_or_rng` exposed on the maps that support it, integers only.** Bayestar 2015/2017/2019,
+  DECaPS and Edenhofer 2023 accept a random seed, so `mode: "random_sample"` and
+  `"random_sample_per_pix"` can now be made reproducible (the same seed returns the same draw; a
+  different seed returns a different one). The schema takes an integer only: `dustmaps` also accepts
+  a `numpy.random.Generator` so a caller can continue its own stream, but that has no JSON
+  representation we are willing to serialize — or to accept from a client — so the API rejects it
+  (there is nothing to serialize and no deserializer to trust). Validation is cerberus's `integer`
+  type with `min: 0` plus a `check_with` rule that rejects booleans, which Python would otherwise
+  accept as integers (`seed_or_rng: true` would silently become seed 1). `null` or an absent key
+  keeps OS-seeded randomness. A registry invariant requires `supports_samples` for any map that
+  declares the argument. The OpenAPI document and the Documentation page list the new argument.

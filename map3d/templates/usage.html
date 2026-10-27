@@ -129,7 +129,9 @@
           <code>random_sample_per_pix</code>, and <code>samples</code> (the stored samples
           themselves: <code>{{ max_samples }}</code> of them for Bayestar and DECaPS, and all 12 for
           Edenhofer 2023). Which modes a map supports is in its entry in
-          <a href="/api/v2/maps"><code>/api/v2/maps</code></a>.
+          <a href="/api/v2/maps"><code>/api/v2/maps</code></a>. The <code>random_sample</code>
+          modes draw at random from the posterior; pass <code>seed_or_rng</code> (a non-negative
+          integer) to make that draw reproducible.
         </p>
       </section>
 
@@ -142,6 +144,12 @@
           that range the map is extrapolated. Request these with <code>return_flags=True</code>;
           the <a href="/query">interactive page</a> hatches those distances and labels them
           "unreliable". Edenhofer et al. (2023) does not provide these flags.
+        </p>
+        <p>
+          CSFD also accepts <code>return_flags=True</code>, but its flags mean something else: an
+          integer bit mask recording where the map was corrected for large-scale structure
+          (bit 0), where no IRAS data were available (bit 1), and where it is suitable for
+          precision cosmology (bit 2).
         </p>
       </section>
 
@@ -221,9 +229,14 @@
           <code>POST /api/v2/&lt;map&gt;/query</code> accepts a JSON body with coordinates
           (<code>l</code>, <code>b</code>), (<code>ra</code>, <code>dec</code>, optional
           <code>frame</code>), or a dustmaps-serialized <code>coords</code> object, plus an optional
-          distance <code>d</code> in kpc and map-specific keyword arguments such as
-          <code>mode</code>, <code>pct</code> and <code>return_flags</code>. Arrays are base64
-          encoded, exactly as produced by <code>dustmaps.json_serializers</code>.
+          distance <code>d</code> in kpc and map-specific keyword arguments: <code>mode</code> and
+          <code>pct</code> for the probabilistic maps, <code>return_flags</code> for the maps that
+          provide flags, <code>seed_or_rng</code> (a non-negative integer) to reproduce a random
+          draw, and <code>order</code> (0–5) for the interpolation order of SFD. Each
+          map's accepted arguments are listed in its <code>query_kwargs</code> entry in
+          <a href="/api/v2/maps"><code>/api/v2/maps</code></a>; anything else is rejected with a
+          <code>400</code>. Arrays are base64 encoded, exactly as produced by
+          <code>dustmaps.json_serializers</code>.
         </p>
         <div class="add-click-select">{{ snippets.http|safe }}</div>
         <p>Discover the available maps and their capabilities:</p>

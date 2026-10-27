@@ -45,7 +45,7 @@ def query(coords, map_name):
     cfg = current_app.config
 
     kwargs = dict(g.args or {})
-    if spec.schema is not None:
+    if spec.schema:
         validator = ExtendedValidator(spec.schema, allow_unknown=False)
         if not validator.validate(kwargs):
             return json_error("Invalid keyword arguments.", 400, input_errors=validator.errors)
@@ -227,6 +227,14 @@ def openapi():
                                             "description": "Percentiles, when mode='percentile'",
                                         },
                                         "return_flags": {"type": "boolean"},
+                                        "seed_or_rng": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "description": (
+                                                "Seed for the random modes. An integer only; "
+                                                "numpy generators are not accepted."
+                                            ),
+                                        },
                                         "order": {"type": "integer", "description": "SFD interpolation order"},
                                     },
                                 }

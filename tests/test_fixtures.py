@@ -50,8 +50,12 @@ class Fake2DQuery:
         self.name = name
         self.value = value
 
-    def __call__(self, coords, **kwargs):
-        return np.full(np.shape(coords), self.value, dtype="f8")
+    def __call__(self, coords, return_flags=False, **kwargs):
+        values = np.full(np.shape(coords), self.value, dtype="f8")
+        if not return_flags:
+            return values
+        # CSFD's 'cosmology' bit, which is the only one set in this fake.
+        return values, np.full(np.shape(coords), 4, dtype="u1")
 
 
 class Fake3DDistanceSamples:
