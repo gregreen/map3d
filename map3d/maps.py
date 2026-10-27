@@ -109,6 +109,19 @@ class MapSpec:
     modes: tuple[str, ...] = ()
     aliases: tuple[str, ...] = ()
     deprecated: bool = False
+    # Shown when the map reports that a sightline inside its footprint is
+    # unusable (its fit did not converge).
+    warning: str = (
+        "The line-of-sight fit did not converge in this direction; "
+        "treat the values with caution."
+    )
+    # Shown instead when the sightline has no data at all, which for a partial-
+    # coverage map means it lies outside the survey footprint. Empty for maps
+    # that cover the whole sky.
+    no_coverage_warning: str = ""
+    # Shown instead of `warning` when the map reports the pixel as infilled from
+    # its neighbors, as DECaPS does for sightlines just past its survey edge.
+    infilled_warning: str = ""
 
     @property
     def is_3d(self) -> bool:
@@ -296,6 +309,8 @@ class MapRegistry:
                 "supports_samples": spec.supports_samples,
                 "supports_flags": spec.supports_flags,
                 "modes": list(spec.modes),
+                "warning": spec.warning,
+                "no_coverage_warning": spec.no_coverage_warning,
                 "stamp_distances_pc": (
                     list(spec.stamp_distances) if spec.stamp_distances else None
                 ),
@@ -369,6 +384,7 @@ def build_registry(config) -> MapRegistry:
             display_units="E(g−r)",
             display_scale=0.901,
             modes=BAYESTAR_MODES,
+            no_coverage_warning="This sightline is outside the Bayestar footprint.",
         ),
         MapSpec(
             name="bayestar2017",
@@ -389,6 +405,7 @@ def build_registry(config) -> MapRegistry:
             display_units="E(g−r)",
             display_scale=0.901,
             modes=BAYESTAR_MODES,
+            no_coverage_warning="This sightline is outside the Bayestar footprint.",
         ),
         MapSpec(
             name="bayestar2019",
@@ -410,6 +427,7 @@ def build_registry(config) -> MapRegistry:
             display_units="E(g−r)",
             display_scale=0.901,
             modes=BAYESTAR_MODES,
+            no_coverage_warning="This sightline is outside the Bayestar footprint.",
         ),
         MapSpec(
             name="decaps",
@@ -431,6 +449,11 @@ def build_registry(config) -> MapRegistry:
             display_units="E(B−V)",
             display_scale=1.0,
             modes=DECAPS_MODES,
+            no_coverage_warning="This sightline is outside the DECaPS footprint.",
+            infilled_warning=(
+                "This sightline was infilled from neighboring pixels; "
+                "treat the values with caution."
+            ),
         ),
         MapSpec(
             name="edenhofer2023",

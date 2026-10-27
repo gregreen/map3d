@@ -71,3 +71,30 @@ def test_interactive_endpoint():
     assert payload["map"] == "bayestar2019"
     assert len(payload["best"]) == len(payload["distmod"])
     assert payload["units"] == "E(g−r)"
+
+@requires_api
+def test_bayestar_warnings_distinguish_footprint_from_failure():
+    """Two different problems, two different messages, on the real map."""
+    base = API.rstrip("/").replace("/api/v2", "") + "/api/v2/interactive"
+
+    def losdata(lon, lat):
+        url = f"{base}/bayestar2019/losdata?lon={lon}&lat={lat}&coordsys=gal"
+        with urllib.request.urlopen(url, timeout=60) as response:
+            return json.load(response)
+
+    # l = 0, b = -45 is below the declination limit of the survey
+    outside = losdata(0, -45)
+    assert outside["converged"] is False
+    assert outside["success"] is False
+    assert outside["warning"] == "This sightline is outside the Bayestar footprint."
+
+    # A high-latitude sightline the survey does cover, whose fit did not converge
+    failed = losdata(180.27, 53.77)
+    assert failed["converged"] is False
+    assert failed["success"] is True
+    assert "did not converge" in failed["warning"]
+
+    # An ordinary sightline carries no warning at all
+    covered = losdata(120, 10)
+    assert covered["converged"] is True
+    assert covered["warning"] is None

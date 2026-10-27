@@ -11,7 +11,12 @@ import pytest
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from dustmaps.bayestar import BayestarQuery
-from test_fixtures import Fake2DQuery, Fake3DDistanceSamples, make_bayestar_h5
+from test_fixtures import (
+    Fake2DQuery,
+    Fake3DDistanceSamples,
+    FakeFootprintQuery,
+    make_bayestar_h5,
+)
 
 from map3d import create_app
 from map3d.maps import MapRegistry, build_registry
@@ -62,6 +67,8 @@ def _registry(config, h5_path) -> MapRegistry:
             )
         elif spec.name == "edenhofer2023":
             specs.append(_replace(spec, factory=Fake3DDistanceSamples))
+        elif spec.name in ("decaps",):
+            specs.append(_replace(spec, factory=FakeFootprintQuery))
         else:
             specs.append(spec)
     return MapRegistry(specs)

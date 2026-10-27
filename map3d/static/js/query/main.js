@@ -192,7 +192,14 @@ async function runQuery(query, { updateHistory = true } = {}) {
       (data.has_samples ? "" : " · mean curve (no posterior samples for this map)");
     dom.stampsUnits.textContent = data.units ? `(${data.units})` : "";
 
-    dom.convergence.classList.toggle("d-none", data.converged !== false);
+    // Which counsel applies depends on the map: no coverage, a failed fit and an
+    // infilled pixel are different things, and the API names the right one.
+    if (data.warning) {
+      dom.convergence.textContent = data.warning;
+      dom.convergence.classList.remove("d-none");
+    } else {
+      dom.convergence.classList.add("d-none");
+    }
 
     // The single curve is the map's best fit where it has one, and its mean
     // otherwise; a posterior alone does not tell us which.

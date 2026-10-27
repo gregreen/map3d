@@ -116,6 +116,13 @@ Legend: `[x]` done · `[~]` partially done · `[ ]` not started
 - [x] **`docker/docker-compose.yml`** — `web` (gunicorn 4×2, no `--preload`) plus `caddy`, the data
   volume mounted read-only for serving (writable for maintenance runs), a state volume for SQLite, and
   log rotation.
+- [x] **`DEPLOY.md` §9 — capping the compute spend.** The On-Demand vCPU service quota
+  (`L-1216C47A`, "Running On-Demand Standard") is lowered to 2 vCPUs, so a second `t4g.large`
+  cannot be launched anywhere in the region, by anything. The section also records what the
+  quota does *not* cover: `t4g` burst credits (launched with `CpuCredits=standard`),
+  EBS/EIP/egress while stopped (~$33/month), and total spend (AWS Budget with an alert).
+- [x] **`DEPLOY.md` §10 — cost table**, per month and per year (≈ $84 / ≈ $1,013 on demand,
+  ≈ $840 with a one-year compute savings plan, ≈ $2.90 for a day-long test).
 - [x] **`DEPLOY.md`** — console-and-compose deployment: launch the instance, add and mount the data
   volume, fetch the maps into it, `compose up`, certificate checks, day-2 operations, sizing,
   scaling path and troubleshooting. Deliberately *not* Terraform/CI-based: a single instance is
@@ -245,6 +252,38 @@ Legend: `[x]` done · `[~]` partially done · `[ ]` not started
   each is released under the terms its own team chose. Both the footer and the usage page's License
   section now only state that the code snippets are MIT licensed; map citations and data releases
   are left to the papers page.
+- [x] **The no-data banner now says which problem it is.** One sentence was being used for three
+  different situations. The registry holds three wordings per map — `warning` (a fit that did not
+  converge inside the footprint), `no_coverage_warning` (a sightline with no data at all, i.e.
+  outside the survey footprint) and `infilled_warning` (DECaPS pixels filled from their neighbors) —
+  and `views/interactive.py::_warning_for` picks one from the map's flags plus whether any value came
+  back:
+  | situation | Bayestar | DECaPS |
+  |---|---|---|
+  | all values NaN | "This sightline is outside the Bayestar footprint." | "…outside the DECaPS footprint." |
+  | finite, fit failed | "The line-of-sight fit did not converge…" | same, unless the pixel was infilled |
+  | finite, infilled | — | "This sightline was infilled from neighboring pixels…" |
+
+  Verified on the real maps: Bayestar at (0°, −45°) now reports the footprint message instead of a
+  convergence failure, while (180.3°, +53.8°) — covered, but with a fit that failed — keeps the
+  convergence caution. `/losdata` sends `warning` and `infilled`; the page shows the banner whenever a
+  warning is present rather than keying off `converged` alone.
+- [x] **Unreliable distances are hatched and labelled, as on the original site.** The plot no longer
+  tints a "reliable range" band (which left the reader to work out what the tint meant); instead the
+  distances *outside* the map's reliable span are covered by the old site's faint diagonal hatch, with
+  a rotated caption reading "unreliable" knocked out of it, in both directions. The SVG defines the
+  pattern as a `<pattern>` (8 px cell, 3 px stroke, 6 % opacity) and the caption uses a white
+  `paint-order: stroke` halo rather than the old mask pair, which looks the same and is a fraction of
+  the code. Cases handled, all driven by `min_reliable_distmod` / `max_reliable_distmod`: an ordinary
+  span gives two panels; a span that reaches the edge of the plot gives one; a sightline the map
+  reports no reliable range for (the 999/-999 sentinels) hatches the whole plot with a single caption,
+  as the old site did; and a map that reports no flags at all (Edenhofer) gets no hatching. Captions
+  are omitted when a panel is too narrow to hold one. The captions sit at 60 % opacity so they read as
+  background, and they slide with their panels when a new query moves the boundaries (a caption that
+  was hidden appears in place rather than flying in from its previous position). A sightline the map
+  has no data for is a different case, and says so: the whole plot is hatched and the caption reads
+  **"outside map footprint"**, horizontally, in the same style. `/losdata` grew an `in_footprint`
+  flag for that (the same test the warning wording uses), so the plot does not have to infer it.
 - [x] **Red hover dot removed from the postage stamps.** The browser's `crosshair` cursor is the
   pointer, so the JS-drawn dot could only ever trail behind it. The centred crosshairs (which mark
   the query direction) and the hover coordinate readout are unchanged, and clicking a panel still

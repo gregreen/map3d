@@ -78,3 +78,73 @@ class Fake3DDistanceSamples:
         if mode == "random_sample":
             return mean
         raise ValueError(f"unsupported mode {mode!r}")
+
+class FakeFootprintQuery:
+    """Stand-in for DECaPS: data only inside a small patch of sky.
+
+    Mirrors what the real map reports through its flags: inside the footprint the
+    fit converges, on the rim the pixel is infilled from its neighbors and may
+    not have converged, and everywhere else there is no data at all.
+    """
+
+    distances = np.linspace(200.0, 8000.0, 6) * u.pc
+    _n_samples = 2
+
+    # (l_min, l_max, b_min, b_max) of the patch that has its own fits, and the
+    # strip just outside it that is infilled from them.
+    footprint = (115.0, 125.0, 5.0, 15.0)
+    infilled = (125.0, 128.0)
+
+    def _state(self, coord):
+        l = float(coord.l.deg) % 360.0
+        b = float(coord.b.deg)
+        l_min, l_max, b_min, b_max = self.footprint
+        if l_min <= l <= l_max and b_min <= b <= b_max:
+            return "inside"
+        i_min, i_max = self.infilled
+        if i_min < l <= i_max and b_min <= b <= b_max:
+            return "infilled"
+        return "outside"
+
+    def _profile(self, coord):
+        # A monotonic curve, so a profile is distinguishable from a constant
+        return np.linspace(0.1, 0.6, self.distances.size) * (1.0 + 0.01 * coord.l.deg)
+
+    def __call__(self, coords, mode="mean", return_flags=False, **kwargs):
+        one = np.ndim(coords) == 0
+        coords_1d = np.atleast_1d(coords)
+        states = [self._state(c) for c in coords_1d]
+
+        n = len(coords_1d)
+        n_dist = self.distances.size
+        if mode == "samples":
+            out = np.empty((n, self._n_samples, n_dist), dtype="f8")
+            for i, (c, state) in enumerate(zip(coords_1d, states)):
+                out[i] = self._profile(c) if state != "outside" else np.nan
+        else:
+            out = np.empty((n, n_dist), dtype="f8")
+            for i, (c, state) in enumerate(zip(coords_1d, states)):
+                out[i] = self._profile(c) if state != "outside" else np.nan
+        if one:
+            out = out[0]
+
+        if not return_flags:
+            return out
+
+        flags = np.empty(
+            n,
+            dtype=[
+                ("converged", "bool"),
+                ("infilled", "bool"),
+                ("min_reliable_distmod", "f4"),
+                ("max_reliable_distmod", "f4"),
+            ],
+        )
+        for i, state in enumerate(states):
+            flags["converged"][i] = state == "inside"
+            flags["infilled"][i] = state == "infilled"
+            flags["min_reliable_distmod"][i] = 4.0 if state != "outside" else np.nan
+            flags["max_reliable_distmod"][i] = 12.0 if state != "outside" else np.nan
+        if one:
+            flags = flags[:1]
+        return out, flags

@@ -107,6 +107,16 @@ def test_public_metadata_capabilities(registry):
     assert meta["bayestar2019"]["display_units"] == "E(g−r)"
     assert meta["bayestar2019"]["display_scale"] == 0.901
     assert meta["decaps"]["display_units"] == "E(B−V)"
+    # Partial-coverage maps name their footprint; full-sky maps do not
+    assert meta["decaps"]["no_coverage_warning"] == (
+        "This sightline is outside the DECaPS footprint."
+    )
+    for name in ("bayestar2015", "bayestar2017", "bayestar2019"):
+        assert meta[name]["no_coverage_warning"] == (
+            "This sightline is outside the Bayestar footprint."
+        )
+    assert meta["edenhofer2023"]["no_coverage_warning"] == ""
+    assert "did not converge" in meta["bayestar2019"]["warning"]
     assert meta["edenhofer2023"]["display_units"] == "E(440 nm − 550 nm)"
     assert meta["edenhofer2023"]["display_scale"] == pytest.approx(0.9663921356201177)
 

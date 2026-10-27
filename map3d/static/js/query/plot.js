@@ -7,6 +7,14 @@ const MARGIN = { top: 30, right: 28, bottom: 62, left: 82 };
 const TRANSITION_MS = 500;
 const KPC_TICKS = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100];
 
+// The part of a line of sight the map cannot speak for is hatched, as on the
+// original site, and labelled rather than left to be inferred.
+const HATCH_ID = "map3d-unreliable-hatch";
+const UNRELIABLE_LABEL = "unreliable";
+const OUTSIDE_LABEL = "outside map footprint";
+// Below this many pixels a panel is too narrow to hold its caption.
+const LABEL_MIN_WIDTH = 64;
+
 function kpcFromDistmod(dm) {
   return Math.pow(10, dm / 5 - 2);
 }
@@ -96,6 +104,9 @@ function buildModel(data, units, seriesLabel) {
     seriesLabel,
     dmMin: data.min_reliable_distmod,
     dmMax: data.max_reliable_distmod,
+    // A sightline the map has no data for is outside its footprint, which is a
+    // different thing from one it cannot vouch for.
+    inFootprint: data.in_footprint !== false,
   };
 }
 
@@ -114,12 +125,31 @@ function createStructure(state) {
   const root = svg.append("g").attr("transform", `translate(${MARGIN.left},${MARGIN.top})`);
   state.root = root;
 
-  const reliable = root.append("g").attr("class", "reliable-group");
-  state.layers.reliableRect = reliable.append("rect").attr("class", "reliable-range");
-  state.layers.reliableEdges = [
-    reliable.append("line").attr("class", "reliable-edge"),
-    reliable.append("line").attr("class", "reliable-edge"),
+  // Diagonal hatch, at the old site's density and opacity
+  const pattern = svg
+    .insert("defs", ":first-child")
+    .append("pattern")
+    .attr("id", HATCH_ID)
+    .attr("patternUnits", "userSpaceOnUse")
+    .attr("width", 8)
+    .attr("height", 8);
+  pattern
+    .append("path")
+    .attr("d", "M-2,2 l4,-4 M0,8 l8,-8 M6,10 l4,-4")
+    .attr("stroke", "#000")
+    .attr("stroke-width", 3);
+
+  const unreliable = root.append("g").attr("class", "unreliable-group");
+  state.layers.unreliablePanels = [
+    unreliable.append("rect").attr("class", "unreliable-panel"),
+    unreliable.append("rect").attr("class", "unreliable-panel"),
   ];
+  // Drawn after the panels so the caption sits on a clean halo of its own
+  state.layers.unreliableLabels = [
+    unreliable.append("text").attr("class", "unreliable-label").text(UNRELIABLE_LABEL),
+    unreliable.append("text").attr("class", "unreliable-label").text(UNRELIABLE_LABEL),
+  ];
+  state.unreliableShown = [false, false];
 
   state.xAxis = d3.axisBottom(state.x).ticks(6).tickFormat(d3.format(".1f"));
   state.yAxis = d3.axisLeft(state.y).ticks(6).tickFormat(d3.format(".2f"));
@@ -165,7 +195,7 @@ function createStructure(state) {
   const legend = root
     .append("g")
     .attr("class", "legend")
-    .attr("transform", `translate(${innerWidth - legendWidth - 12},12)`);
+    .attr("transform", `translate(12,12)`);
 
   legend
     .append("rect")
@@ -209,6 +239,12 @@ function createStructure(state) {
     .attr("class", "hover-line")
     .attr("y1", 0)
     .attr("y2", innerHeight);
+  // The same line horizontally, from the y-axis to the curve: it reads the
+  // reddening off the axis without following the pointer across the plot.
+  state.layers.hoverCross = hover
+    .append("line")
+    .attr("class", "hover-line")
+    .attr("x1", 0);
   state.layers.hoverDot = hover.append("circle").attr("class", "hover-dot").attr("r", 4.5);
 
   const overlay = root
@@ -232,12 +268,21 @@ function createStructure(state) {
       const value = interpolate(stats ? stats.med : model.best, at);
       const px = state.x(dmValue);
 
+      const py = state.y(value);
+      const finite = Number.isFinite(value);
+
       state.layers.hover.style("display", null);
       state.layers.hoverLine.attr("x1", px).attr("x2", px);
+      state.layers.hoverCross
+        .attr("x1", 0)
+        .attr("x2", px)
+        .attr("y1", py)
+        .attr("y2", py)
+        .style("display", finite ? null : "none");
       state.layers.hoverDot
         .attr("cx", px)
-        .attr("cy", state.y(value))
-        .style("display", Number.isFinite(value) ? null : "none");
+        .attr("cy", py)
+        .style("display", finite ? null : "none");
 
       if (state.onHover) {
         state.onHover({
@@ -275,6 +320,89 @@ function drawSinglePath(group, values, className, pathFor, duration) {
   return merged;
 }
 
+/**
+ * Hatch the distances the map is not reliable at, and name them.
+ *
+ * The map reports the reliable span of each sightline, so the panels are what
+ * lies outside it: distances nearer than `min_reliable_distmod` and beyond
+ * `max_reliable_distmod`. A sightline with no usable flags gets no panels, and a
+ * caption is only drawn when its panel is wide enough to hold one.
+ */
+function drawUnreliable(state, move) {
+  const { model, innerWidth, innerHeight } = state;
+  const { x } = state;
+  const clamp = (value) => Math.min(Math.max(value, 0), innerWidth);
+
+  // The API sends the pixel's reliable distance-moduli span, with sentinels
+  // (999/-999) when the map reported none for this sightline, and nulls when the
+  // map reports no such flags at all (Edenhofer).
+  const reported = Number.isFinite(model.dmMin) && Number.isFinite(model.dmMax);
+  const hasMin = reported && Math.abs(model.dmMin) < 100;
+  const hasMax = reported && Math.abs(model.dmMax) < 100;
+
+  // Panels are the complement of the reliable span. With no usable span — as on
+  // the original site — the whole plot is unreliable; with no flags, none of it
+  // is claimed to be either way. A sightline the map has no data for is hatched
+  // the same way but says so, since "unreliable" is not the right word for it.
+  let panels = [];
+  let caption = UNRELIABLE_LABEL;
+  let rotated = true;
+
+  if (!model.inFootprint) {
+    panels = [{ x: 0, width: innerWidth }];
+    caption = OUTSIDE_LABEL;
+    rotated = false;
+  } else if (reported) {
+    const lo = hasMin ? clamp(x(Math.min(model.dmMin, model.dmMax))) : 0;
+    const hi = hasMax ? clamp(x(Math.max(model.dmMin, model.dmMax))) : innerWidth;
+    if (!hasMin || !hasMax || hi - lo < 1) {
+      panels = [{ x: 0, width: innerWidth }];
+    } else {
+      panels = [
+        { x: 0, width: lo },
+        { x: hi, width: innerWidth - hi },
+      ];
+    }
+  }
+
+  [0, 1].forEach((idx) => {
+    const panel = panels[idx];
+    const rect = state.layers.unreliablePanels[idx];
+    const label = state.layers.unreliableLabels[idx];
+
+    const drawn = panel && panel.width >= 1;
+    rect.style("display", drawn ? null : "none");
+    if (drawn) {
+      move(rect)
+        .attr("x", panel.x)
+        .attr("y", 0)
+        .attr("width", Math.max(0, panel.width))
+        .attr("height", innerHeight);
+    }
+
+    // A horizontal caption is longer, so it needs more room than a rotated one
+    const room = rotated ? LABEL_MIN_WIDTH : LABEL_MIN_WIDTH * 5;
+    const shown = Boolean(drawn && panel.width >= room);
+    label.style("display", shown ? null : "none");
+    if (shown) {
+      if (label.text() !== caption) {
+        label.text(caption);
+      }
+      // rotate(-90) about the middle of the panel lays the caption along it;
+      // d3 interpolates translate+rotate, so the caption slides with its panel.
+      // A caption that was hidden appears where it belongs rather than flying in
+      // from wherever it was last drawn.
+      const centre = panel.x + panel.width / 2;
+      const transform = rotated
+        ? `translate(${centre},${innerHeight / 2}) rotate(-90)`
+        : `translate(${centre},${innerHeight / 2})`;
+      const target = state.unreliableShown[idx] ? move(label) : label;
+      target.attr("transform", transform);
+    }
+    state.unreliableShown[idx] = shown;
+  });
+}
+
 function draw(state, duration) {
   const { model, innerWidth, innerHeight } = state;
   const { x, y } = state;
@@ -309,34 +437,7 @@ function draw(state, duration) {
     state.layers.xAxisTop.selectAll("*").remove();
   }
 
-  const dmMin = model.dmMin;
-  const dmMax = model.dmMax;
-  const hasReliable =
-    Number.isFinite(dmMin)
-    && Number.isFinite(dmMax)
-    && dmMax > dmMin
-    && Math.abs(dmMin) < 100
-    && Math.abs(dmMax) < 100
-    && dmMin >= xDomain[0] - 0.001
-    && dmMax <= xDomain[1] + 0.001;
-
-  state.layers.reliableRect
-    .style("display", hasReliable ? null : "none")
-    .call((sel) =>
-      move(sel)
-        .attr("x", hasReliable ? x(dmMin) : 0)
-        .attr("width", hasReliable ? Math.max(1, x(dmMax) - x(dmMin)) : 0)
-        .attr("y", 0)
-        .attr("height", innerHeight),
-    );
-  [dmMin, dmMax].forEach((dm, idx) => {
-    move(state.layers.reliableEdges[idx])
-      .style("display", hasReliable ? null : "none")
-      .attr("x1", hasReliable ? x(dm) : 0)
-      .attr("x2", hasReliable ? x(dm) : 0)
-      .attr("y1", 0)
-      .attr("y2", innerHeight);
-  });
+  drawUnreliable(state, move);
 
   const line = d3
     .line()

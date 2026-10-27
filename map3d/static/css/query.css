@@ -74,15 +74,30 @@
   stroke-dasharray: 6 4;
 }
 
-#los-plot .reliable-range {
-  fill: #f2c14e;
-  fill-opacity: 0.14;
+/* Distances the map is not reliable at: hatched, as on the original site.
+   The pattern comes from the SVG defs; the opacity keeps it a background. */
+#los-plot .unreliable-panel {
+  fill: url(#map3d-unreliable-hatch);
+  fill-opacity: 0.06;
 }
 
-#los-plot .reliable-edge {
-  stroke: #b8860b;
-  stroke-dasharray: 4 4;
-  stroke-width: 1;
+#los-plot .unreliable-label {
+  fill: #5b6770;
+  font-family: var(--sans);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-anchor: middle;
+  /* Centres the caption in its panel in both orientations */
+  dominant-baseline: middle;
+  /* A white outline cuts the caption out of the hatching instead of fighting it */
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 9;
+  stroke-opacity: 0.9;
+  pointer-events: none;
+  /* Present, but not competing with the data */
+  opacity: 0.6;
 }
 
 #los-plot .hover-line {
@@ -98,6 +113,8 @@
 
 #los-plot .legend-frame {
   fill: #fff;
+  /* The panel can sit over hatching, so let some of it through */
+  fill-opacity: 0.75;
   stroke: var(--site-rule);
 }
 

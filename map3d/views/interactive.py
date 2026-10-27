@@ -42,6 +42,25 @@ def _finite_or_none(value, default):
     return value if np.isfinite(value) else default
 
 
+def _warning_for(spec, best, converged, infilled):
+    """Wording for an unusable sightline, or None if the map is happy.
+
+    The three cases are different things and each map reports them differently:
+    a Bayestar or DECaPS sightline with no data at all (all-NaN profile) is
+    outside the survey footprint, one whose fit failed inside the footprint is a
+    non-convergence, and DECaPS additionally flags pixels infilled from their
+    neighbors. The wording lives in the registry, since it names the survey.
+    """
+    covered = bool(np.any(np.isfinite(np.asarray(best, dtype="f8"))))
+    if not covered:  # no data at all: outside the survey footprint
+        return spec.no_coverage_warning or (spec.warning if converged is False else None)
+    if converged is False:
+        if infilled and spec.infilled_warning:
+            return spec.infilled_warning
+        return spec.warning
+    return None
+
+
 def _galactic(coords):
     if coords.frame.name == "galactic":
         return coords
@@ -132,17 +151,27 @@ def losdata(coords, map_name):
     best = best * spec.display_scale
 
     converged = None
+    infilled = None
     min_rel_dm = None
     max_rel_dm = None
     if flags is not None:
         converged = bool(np.all(flags["converged"]))
+        if "infilled" in (flags.dtype.names or ()):
+            infilled = bool(np.all(flags["infilled"]))
         min_rel_dm = _finite_or_none(flags["min_reliable_distmod"], 999.0)
         max_rel_dm = _finite_or_none(flags["max_reliable_distmod"], -999.0)
+
+    warning = _warning_for(spec, best, converged, infilled)
+
+    covered = bool(np.any(np.isfinite(best)))
 
     result = {
         "map": spec.name,
         "units": spec.display_units or spec.api_units,
         "success": bool(np.all(np.isfinite(best))),
+        # False when the map has nothing at all for this direction, which for a
+        # partial-coverage map means the sightline is outside its footprint.
+        "in_footprint": covered,
         "l": float(coords.l.deg),
         "b": float(coords.b.deg),
         "radius": RADIUS,
@@ -151,6 +180,8 @@ def losdata(coords, map_name):
         "samples": None if samples is None else np.asarray(samples, dtype="f8").tolist(),
         "has_samples": samples is not None,
         "converged": converged,
+        "infilled": infilled,
+        "warning": warning,
         "min_reliable_distmod": min_rel_dm,
         "max_reliable_distmod": max_rel_dm,
     }

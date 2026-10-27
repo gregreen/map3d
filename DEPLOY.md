@@ -24,6 +24,9 @@ infrastructure-as-code in this repository.
 * The data volume must hold ~55 GB, of which 20 GB is the Edenhofer 2023 sample file that
   the query page's posterior band is drawn from. A 150 GB volume leaves room for the stamp
   caches and for growth.
+* Budget: ≈ $84/month while running, ≈ $33/month stopped (§10). Cap it *before* you launch
+  by lowering the vCPU quota (§9) — that is what stops a forgotten instance from billing you
+  indefinitely.
 
 ## 1. Launch the instance
 
@@ -36,6 +39,7 @@ In EC2 → **Launch instance**:
 | Storage (root) | 30 GB gp3 |
 | Security group | inbound 80 and 443 from `0.0.0.0/0`, 22 from your address (or none, using SSM) |
 | IAM role | one with `AmazonSSMManagedInstanceCore`, so you can use Session Manager instead of SSH |
+| Credit specification | **Standard**, under *Advanced details* — `t4g` otherwise runs in unlimited mode and bills burst CPU as surplus credits (§9) |
 
 Point an `A` record for the site's hostname at the instance's public IP, and attach an
 **Elastic IP** so it survives a stop/start.
@@ -161,18 +165,129 @@ maps, rebuilding stamps) needs `MAP3D_DATA_MODE=rw` as above.
 | Elastic IP | | Free while attached to a running instance. |
 | Data transfer | | Responses are small and compressed. |
 
-Expect tens of dollars a month. `c7g.large` (non-burstable, same size) is the calm upgrade
-if CPU credits run out.
+Expect tens of dollars a month — roughly $85/month, or about $1,000/year, broken down in
+§10. `c7g.large` (non-burstable, same size) is the calm upgrade if CPU credits run out.
 
-## 9. When one instance is not enough
+## 9. Capping the compute spend
+
+EC2 bills per vCPU-hour, so the number of vCPUs that can be *running at once* sets the
+ceiling. The enforcement point is the **On-Demand vCPU service quota**, which is checked at
+launch: anything that would push the account over it is refused with
+`VcpuLimitExceeded`, whether it comes from the console, the CLI, or a forgotten script in
+another project.
+
+A `t4g.large` is 2 vCPUs, so a quota of 2 vCPUs means exactly one instance of this size and
+no second one anywhere in the region.
+
+### Look at the current state
+
+```bash
+# what is running, and how many vCPUs each type holds
+aws ec2 describe-instances \
+  --filters Name=instance-state-name,Values=running \
+  --query 'Reservations[].Instances[].{Instance:InstanceId,Type:InstanceType}' \
+  --output table
+
+aws ec2 describe-instance-types --instance-types t4g.large \
+  --query 'InstanceTypes[].{Type:InstanceType,vCPUs:VCpuInfo.DefaultVCpus,GiB:MemoryInfo.SizeInMiB}'
+
+# the quota itself (On-Demand Standard covers every family whose type starts with
+# A, C, D, H, I, M, R, T or Z, which includes the Graviton t4g)
+aws service-quotas list-service-quotas --service-code ec2 \
+  --query "Quotas[?contains(QuotaName,'On-Demand Standard')].{name:QuotaName,code:QuotaCode,value:Value}" \
+  --output table
+```
+
+The quota for "Running On-Demand Standard (A, C, D, H, I, M, R, T, Z) instances" is
+usually `L-1216C47A`; confirm it with the command above before using the code below.
+
+### Lower it
+
+Console: **Service Quotas → AWS services → Amazon Elastic Compute Cloud (Amazon EC2) →
+Running On-Demand Standard (A, C, D, H, I, M, R, T, Z) instances → Request quota increase**,
+and enter `2`. Despite the menu name, a *decrease* is requested the same way.
+
+```bash
+aws service-quotas request-service-quota-increase \
+  --service-code ec2 --quota-code L-1216C47A --desired-value 2
+
+# it is a request, so check that it was applied
+aws service-quotas get-service-quota --service-code ec2 --quota-code L-1216C47A \
+  --query 'Quota.Value'
+```
+
+Decreases are normally approved within minutes. Things to know:
+
+* **Per region.** Set it in every region you use, or a stray launch elsewhere is unconstrained.
+* **Running vCPUs only.** A *stopped* instance holds no vCPU quota, so stop rather than
+  terminate when you are done for the day; only the EBS volumes keep billing.
+* **It cannot go below what is already running**, so stop the instance first if the request
+  is rejected.
+* **It also blocks unrelated launches** in that account and region — usually the point, but it
+  will surprise anyone else using the account. Revisit it deliberately before adding the
+  load balancer and autoscaling group of §11.
+* **Spot is separate.** There is a different quota for Spot requests, so Spot capacity can
+  still be launched; don't rely on this if Spot is in play.
+
+### The three things the quota does *not* cap
+
+| Risk | Bound it with |
+|---|---|
+| **Burstable CPU-credit surplus.** `t4g` defaults to *unlimited* mode: sustained CPU above the 40 % baseline is billed as surplus credits (~$0.05/vCPU-hour). This service is I/O-bound and should never exceed the baseline, but you can make it impossible: stop the instance, then **Actions → Instance settings → Change credit specification → Standard** (CLI: `--credit-specification CpuCredits=standard`), which throttles instead of charging. | Credit specification, plus a CloudWatch alarm on `CPUCreditBalance` |
+| **EBS, Elastic IP and egress.** These bill with no instance running at all: ~$29/month for the two volumes and their IOPS, $3.65/month for the address, $0.09/GB out. Stopping the instance for a month still costs ~$33. | Delete the volume and address when done; see §10 for the totals |
+| **Total spend.** The quota caps how many instances run, not how much the right one runs. | **AWS Budgets** with a monthly limit (e.g. $50), an email alert at 80 %, and an action that stops the instance if the threshold is passed |
+
+If you need something stricter than a quota — "only this instance type, in this region, from
+this account" — the tool is an IAM policy or an Organizations SCP with conditions on
+`ec2:InstanceType` and `ec2:Region`. That is more machinery than a single-instance site
+needs, but it is the only way to forbid, rather than merely cap, a launch.
+
+## 10. What it costs
+
+List prices for us-east-1, Linux/ARM, on-demand, checked October 2026. Check the
+[calculator](https://calculator.aws/) before committing to a savings plan; other regions run
+5-15 % higher.
+
+| Item | Rate | Per month | Per year |
+|---|---|---|---|
+| EC2 `t4g.large`, 730 h | $0.0672/h | $49.06 | $588.67 |
+| Data volume, 150 GB gp3 | $0.08/GB-month | $12.00 | $144.00 |
+| Data volume, 3000 IOPS above the 3000 included | $0.005/IOPS-month | $15.00 | $180.00 |
+| Root volume, 30 GB gp3 | $0.08/GB-month | $2.40 | $28.80 |
+| Public IPv4 (the Elastic IP, while attached) | $0.005/h | $3.65 | $43.80 |
+| Egress, ~20 GB/month | $0.09/GB | $1.80 | $21.60 |
+| CloudWatch Logs, ~20 MB/month | $0.50/GB | $0.01 | $0.12 |
+| Route 53 hosted zone, if DNS stays in AWS | $0.50/zone-month | $0.50 | $6.00 |
+| **Total** | | **≈ $84** | **≈ $1,013** |
+
+A one-year Compute Savings Plan (no upfront, ~28 % off the instance hour) takes about
+$176/year off, for **≈ $840/year**. Snapshots, if you keep one, add ~$3/month for 60 GB of
+changed blocks.
+
+With the instance **stopped** — the state it sits in between test sessions — the bill is
+≈ $33/month: the two volumes with their provisioned IOPS ($29.40) and the Elastic IP
+($3.65). Everything else stops. That is the number to compare against keeping a local copy of
+the maps and running the container on your own machine.
+
+A **day-long test** of the same configuration costs about **$2.90**: $1.61 of instance time,
+$0.39 + $0.49 for the data volume and its IOPS, $0.08 root, $0.12 address, $0.18 egress. The
+cost of a test is not the dollars but the data — a fresh volume means downloading ~55 GB of
+maps, so snapshot the volume (or seed it from S3) before terminating if you plan to repeat
+the exercise.
+
+Two lines dominate everything else: the instance hour (58 %) and the gp3 volume with its
+provisioned IOPS (28 %). The 6000 IOPS is $180/year on its own; with 8 GiB of page cache the
+baseline 3000 IOPS is a reasonable first try, which brings the year to ≈ $833.
+
+## 11. When one instance is not enough
 
 1. Put CloudFront in front for `/static/*` — the stamp images and JS are cacheable.
 2. Move to an ALB + ACM + an Auto Scaling Group. The app is stateless apart from SQLite,
    so rate limiting and statistics have to move to Postgres or be replaced by ALB/WAF
-   rules.
+   rules. Raise the vCPU quota of §9 at the same time, or the group cannot scale.
 3. Keep the map data on per-AZ volumes derived from a snapshot; EFS is too slow for mmap.
 
-## 10. Troubleshooting
+## 12. Troubleshooting
 
 | Symptom | Likely cause |
 |---|---|
