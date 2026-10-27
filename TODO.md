@@ -234,14 +234,16 @@ Legend: `[x]` done · `[~]` partially done · `[ ]` not started
 - [x] **Stamp images for Bayestar15/17** — built (nside 512, 300 pc / 1 kpc / 5 kpc, ≈100 s each).
   Every interactive map now has its three panels.
 - [ ] Consider a higher `MAP3D_STAMP_NSIDE` (1024) on the deployment for finer stamps (≈4× build time).
-- [ ] **Repacking fails inside our `.venv`**: `h5py` 3.16.0 on **HDF5 2.0.0** raises
-  `ValueError: Unable to synchronously create dataset (bad object header version number)` in
-  `h5_repack`, creating `best_fit` right after `samples` has been fully written (small files and
-  partly-written large files are fine). Repacking outside that environment succeeds, so this is a
-  library-version issue, not a dustmaps or data problem. It matters for deployment, where
-  `fetch_maps.py` must repack the published files itself: pin `h5py` to a wheel built against HDF5
-  1.14 in `requirements.txt`, or repack the maps on a machine with that version and ship the
-  repacked files.
+- [x] **Repacking was never broken — it was two repacks writing the same file.** An earlier note
+  here blamed `h5py` 3.16.0 / HDF5 2.0.0 for a `ValueError: ... (bad object header version number)`
+  in `h5_repack`, and suggested pinning `h5py`. That was wrong: `dustmaps.bayestar.fetch()` writes
+  the repacked map to `<map>.h5.repacked`, so a second repack started by hand while the first was
+  running targets the *same* path, and one process then reads object headers the other is rewriting.
+  Re-running `h5_repack` alone in the same venv (HDF5 2.0.0) succeeds, 126 s for bayestar2019, and
+  the output is byte-for-byte the size of the file we serve, with identical `samples` values and
+  `repacked`/`chunk_pixels` attributes. No dependency pin is needed, and nothing about the
+  deployment changes. The lesson for `fetch_maps.py` users: it is idempotent, but do not run two
+  copies against one data directory at the same time.
 
 ## Review fixes
 
